@@ -490,6 +490,5 @@ class WorkspaceSheetsService {
     }
   }
   }
-}
 
 module.exports = new WorkspaceSheetsService();
