@@ -36,7 +36,7 @@ function getCookie(req, name) {
 /**
  * Health Check Endpoint
  */
-app.get('/_healthz', (req, res) => {
+app.get(['/health', '/healthz', '/_healthz'], (req, res) => {
   res.status(200).send('OK');
 });
 

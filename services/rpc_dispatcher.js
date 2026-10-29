@@ -5,17 +5,16 @@ class RPCDispatcher {
   constructor() {
     this.hubs = [];
     this.loadHubs();
-    
-    // Bind aliases
+
+    // Map aliases
     this.getOrders = this.getRescueOrders.bind(this);
     this.rq_getOrders = this.getRescueOrders.bind(this);
+    this.flm_getKpiBundle = this.getKpiBundle.bind(this);
+    this.flm_getDailyStationKpi = this.getKpiBundle.bind(this);
     this.vp_getData = this.getComplaintData.bind(this);
-    this.vp_getComplaintData = this.getComplaintData.bind(this);
-    this.flm_getStationKpi = this.flm_getDailyStationKpi.bind(this);
-    this.getStationKpi = this.flm_getDailyStationKpi.bind(this);
-    this.auth_getHubs = this.getHubList.bind(this);
-    this.getStations = this.getHubList.bind(this);
-    this.checkRiderPlanAccess = this.rp_checkAccess.bind(this);
+    this.getComplaintData = this.getComplaintData.bind(this);
+    this.getHubList = this.getHubsList.bind(this);
+    this.auth_getHubs = this.getHubsList.bind(this);
   }
 
   loadHubs() {
@@ -26,13 +25,15 @@ class RPCDispatcher {
         this.hubs = JSON.parse(raw);
       }
     } catch (e) {
-      this.hubs = ["45-DLK Krong Pak 02 Hub", "31-NAN Anh Son 02 Hub", "47-DKG Dak RLap 03 Hub"];
+      this.hubs = ["45-DLK Krong Pak 02 Hub", "31-NAN Anh Son 02 Hub", "47-DKG Dak RLap 03 Hub", "47-DKG Dak Glong Hub"];
+    }
+    if (!this.hubs || this.hubs.length === 0) {
+      this.hubs = ["45-DLK Krong Pak 02 Hub", "31-NAN Anh Son 02 Hub", "47-DKG Dak RLap 03 Hub", "47-DKG Dak Glong Hub"];
     }
   }
 
-  async dispatch(action, payload = [], session = {}) {
+  async dispatch(action, payload = [], userEmail = '') {
     if (typeof action === 'object' && action !== null) {
-      session = payload || {};
       payload = action.args || action.payload || [];
       action = action.action || action.method;
     }
@@ -43,188 +44,202 @@ class RPCDispatcher {
     if (typeof this[action] === 'function') {
       return await this[action](...payload);
     }
-    if (action.startsWith('flm_')) return this.flm_getDailyStationKpi(payload[0], payload[1]);
-    if (action.startsWith('rq_')) return this.getRescueOrders(payload[0]);
-    if (action.startsWith('vp_')) return this.getComplaintData(payload[0]);
-    if (action.startsWith('rp_')) return this.rp_checkAccess(payload[0]);
-    if (action.startsWith('bi_')) return this.bi_getData(payload[0]);
-    
-    return { success: false, error: `Action ${action} not found` };
+    if (action === 'flm_getKpiBundle') return this.getKpiBundle();
+    if (action === 'getOrders' || action === 'rq_getOrders') return this.getRescueOrders(...payload);
+    if (action === 'flm_getFailOrdersByDay') return this.getFailOrdersByDay(...payload);
+    if (action.startsWith('rp_')) return this.rp_checkAccess(userEmail);
+    if (action.startsWith('vp_')) return this.getComplaintData(...payload);
+
+    return { success: true, data: [] };
   }
 
-  // --- 1. HUBS ---
-  async getHubList() {
-    return this.hubs.length > 0 ? this.hubs : ["45-DLK Krong Pak 02 Hub"];
+  getHubsList() {
+    return this.hubs;
   }
 
-  // --- 2. KPI MODULE ---
-  async flm_getDailyStationKpi(hub = '45-DLK Krong Pak 02 Hub', month = '10/2026') {
-    const isKrongPak = String(hub).includes('Krong Pak 02') || String(hub).includes('45-DLK');
+  // ==========================================================
+  // 1. KPI MODULE — flm_getKpiBundle (Khớp chính xác hình 2)
+  // ==========================================================
+  getKpiBundle() {
     const dates = [
-      '29/10', '28/10', '27/10', '26/10', '25/10', '24/10', '23/10', '22/10', 
-      '21/10', '20/10', '19/10', '18/10', '17/10', '16/10', '15/10', '14/10', 
-      '13/10', '12/10', '11/10', '10/10', '09/10', '08/10'
+      '2026-10-06', '2026-10-07', '2026-10-08', '2026-10-09', '2026-10-10', '2026-10-11',
+      '2026-10-12', '2026-10-13', '2026-10-14', '2026-10-15', '2026-10-16', '2026-10-17',
+      '2026-10-18', '2026-10-19', '2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23',
+      '2026-10-24', '2026-10-25', '2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29'
     ];
-    
-    let seed = 0;
-    const str = String(hub);
-    for (let i = 0; i < str.length; i++) seed = (seed + str.charCodeAt(i)) % 100;
-    const volBase = isKrongPak ? 1355 : (1200 + seed * 20);
 
-    const fmDaily = isKrongPak 
-      ? [100.0, 100.0, 100.0, 99.4, 100.0, 100.0, 100.0, 100.0, 100.0, 99.3, 100.0, 100.0, 100.0, 95.0, 99.3, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0]
-      : dates.map((_, idx) => parseFloat((99.0 + ((seed + idx) % 10) * 0.1).toFixed(1)));
+    // Chỉ số thực tế của Krông Pắc 02 (đảo theo thứ tự ngày từ 06/10 đến 29/10)
+    const kpVols = [1600, 1741, 1557, 1655, 1547, 2346, 2006, 2019, 2039, 1635, 1829, 1769, 1641, 1288, 1470, 1559, 1549, 1422, 1504, 1431, 1344, 1355];
+    const kpSucs = [0.850, 0.857, 0.834, 0.876, 0.837, 0.895, 0.914, 0.910, 0.886, 0.866, 0.859, 0.862, 0.851, 0.828, 0.877, 0.861, 0.862, 0.897, 0.885, 0.828, 0.875, 0.799];
+    const kpLms  = [1.000, 0.999, 0.999, 0.997, 0.999, 0.997, 0.999, 0.999, 0.999, 1.000, 0.998, 0.999, 0.999, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 0.999, 0.999];
+    const kpFms  = [1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 0.993, 0.950, 1.000, 1.000, 1.000, 0.993, 1.000, 1.000, 1.000, 1.000, 1.000, 0.994, 1.000, 1.000, 1.000];
 
-    const lmDaily = isKrongPak 
-      ? [99.9, 99.9, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 99.9, 99.9, 99.8, 100.0, 99.9, 99.9, 99.9, 99.7, 99.9, 99.7, 99.9, 99.9, 100.0, 100.0]
-      : dates.map((_, idx) => parseFloat((99.5 + ((seed + idx) % 5) * 0.1).toFixed(1)));
+    const hubEntries = this.hubs.map((hubName, hIdx) => {
+      const isKrongPak = hubName.includes('Krong Pak 02');
+      let seed = 0;
+      for (let i = 0; i < hubName.length; i++) seed = (seed + hubName.charCodeAt(i)) % 100;
 
-    const sopDaily = isKrongPak 
-      ? [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 3.57, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00]
-      : dates.map((_, idx) => idx === 10 ? 2.15 : 0.00);
+      // Tạo mảng daily cho từng ngày: [fm_dat, fm_tong, lm_dat, lm_tong, sop_loi, sop_tong, da_giao, duoc_giao]
+      const daily = dates.map((dateStr, dIdx) => {
+        let vol, sucPct, lmPct, fmPct, sopErr = 0, sopTot = 100;
 
-    const deliveryDaily = isKrongPak 
-      ? [79.9, 87.5, 82.8, 88.5, 89.7, 86.2, 86.1, 87.7, 82.8, 85.1, 86.2, 85.9, 86.6, 88.6, 91.0, 91.4, 89.5, 83.7, 87.6, 83.4, 85.7, 85.0]
-      : dates.map((_, idx) => parseFloat((84.0 + ((seed + idx) % 8)).toFixed(1)));
+        if (isKrongPak) {
+          vol = kpVols[dIdx % kpVols.length];
+          sucPct = kpSucs[dIdx % kpSucs.length];
+          lmPct = kpLms[dIdx % kpLms.length];
+          fmPct = kpFms[dIdx % kpFms.length];
+          if (dateStr === '2026-10-18') {
+            sopErr = 2;
+            sopTot = 56; // 2/56 = 3.57% (ô màu đỏ ngày CN 18/10)
+          }
+        } else {
+          vol = Math.round(1100 + ((seed * 17 + dIdx * 29) % 800));
+          sucPct = 0.84 + ((seed + dIdx) % 8) * 0.01;
+          lmPct = 0.995 + ((seed + dIdx) % 5) * 0.001;
+          fmPct = 0.990 + ((seed + dIdx) % 10) * 0.001;
+        }
 
-    const volDaily = isKrongPak 
-      ? [1355, 1344, 1431, 1504, 1422, 1549, 1559, 1470, 1288, 1641, 1769, 1829, 1635, 2039, 2019, 2006, 2346, 1547, 1655, 1557, 1741, 1600]
-      : dates.map((_, idx) => Math.round(volBase + ((seed * 17 + idx * 31) % 500)));
+        const duocGiao = vol;
+        const daGiao = Math.round(duocGiao * sucPct);
+        const lmDat = Math.round(duocGiao * lmPct);
+        const lmTong = duocGiao;
+        const fmDat = Math.round(duocGiao * fmPct);
+        const fmTong = duocGiao;
 
-    const cumulativeVol = isKrongPak ? 44570 : volDaily.reduce((a, b) => a + b, 0);
+        return [fmDat, fmTong, lmDat, lmTong, sopErr, sopTot, daGiao, duocGiao];
+      });
 
-    const resultData = {
-      hub,
-      month,
-      dates,
-      metrics: [
-        { name: '% FM đúng hạn', target: '99%', cumulative: isKrongPak ? '99.3%' : '99.1%', daily: fmDaily },
-        { name: '% LM đúng hạn', target: '99%', cumulative: isKrongPak ? '99.9%' : '99.7%', daily: lmDaily },
-        { name: 'Sai SOP', sub: 'Tỷ lệ trên số đơn lấy hàng', target: '≤ 0.5%', cumulative: isKrongPak ? '0.08%' : '0.12%', daily: sopDaily },
-        { name: '% Giao thành công', sub: 'Đã giao / Được giao', target: '—', cumulative: isKrongPak ? '86.3%' : '85.5%', daily: deliveryDaily },
-        { name: 'Sản lượng đơn', sub: 'Số đơn được giao', target: '—', cumulative: cumulativeVol.toLocaleString('en-US'), daily: volDaily }
-      ],
-      unmetOrders: isKrongPak ? [
-        { tracking_no: 'SPXVN06431408780A', hub, type: 'Sai SOP', detail: 'wrong fm - Sai quy trình bắn giao Pickup', date: '18/10', note: 'Chưa có' },
-        { tracking_no: 'SPXVN06555409864A', hub, type: 'Sai SOP', detail: 'wrong fm - Sai quy trình bắn giao Pickup', date: '18/10', note: 'Chưa có' }
-      ] : []
-    };
+      // MTD (Lũy kế tháng): s[7] = 44570 cho Krông Pắc 02
+      const mtdVol = isKrongPak ? 44570 : daily.reduce((a, b) => a + b[7], 0);
+      const mtdDaGiao = Math.round(mtdVol * (isKrongPak ? 0.863 : 0.855));
+      const mtdFmDat = Math.round(mtdVol * (isKrongPak ? 0.993 : 0.991));
+      const mtdLmDat = Math.round(mtdVol * (isKrongPak ? 0.999 : 0.997));
+      const mtdSopErr = isKrongPak ? 2 : 5;
+      const mtdSopTot = isKrongPak ? 2500 : 3000; // 0.08% cho Krông Pắc 02
 
-    return { status: 'success', success: true, data: resultData, result: resultData, ...resultData };
-  }
+      const monthly = [[mtdFmDat, mtdVol, mtdLmDat, mtdVol, mtdSopErr, mtdSopTot, mtdDaGiao, mtdVol]];
+      const weekly = [[mtdFmDat, mtdVol, mtdLmDat, mtdVol, mtdSopErr, mtdSopTot, mtdDaGiao, mtdVol]];
 
-  // --- 3. ĐƠN CẦU CỨU ---
-  async getRescueOrders(hub = '45-DLK Krong Pak 02 Hub') {
-    const isKrongPak = String(hub).includes('Krong Pak 02') || String(hub).includes('45-DLK');
-    const orders = isKrongPak ? [
-      {
-        tracking_no: 'SPXVN06639887886A',
-        region: 'Central',
-        station: '45-DLK Krong Pak 02 Hub',
-        driver: 'TRƯƠNG QUANG MẪN [80827]',
-        export_date: '2026-10-29',
-        remaining_time: 'Còn 8.3h',
-        severity: 'red',
-        level: 'ĐỎ',
-        muc_do: 'ĐỎ',
-        status: 'pending',
-        is_resolved: false,
-        resolved: false,
-        can_resolve: true,
-        action: 'Đã xử lý',
-        action_text: '✓ Đã xử lý'
-      }
-    ] : [];
+      const aomName = isKrongPak ? 'Trần Hữu Danh' : `AOM Khu Vực ${(hIdx % 4) + 1}`;
+      const supName = isKrongPak ? 'Trương Lê Uy Trí' : `SUP Cụm ${(hIdx % 8) + 1}`;
 
-    const resultData = {
-      status: 'success',
+      return [
+        hubName,
+        hubName.slice(0, 6),
+        aomName,
+        supName,
+        daily,
+        weekly,
+        monthly
+      ];
+    });
+
+    return JSON.stringify({
       success: true,
-      total: orders.length,
-      red: orders.filter(o => o.severity === 'red' || o.level === 'ĐỎ').length,
-      orange: 0,
-      green: 0,
-      urgent_banner: isKrongPak ? `1 ĐƠN KHẨN CẤP CẦN XỬ LÝ NGAY TẠI ${String(hub).toUpperCase()}` : null,
-      orders
+      builtAt: new Date().toISOString(),
+      asOf: '2026-10-28',
+      targets: { fm: 0.99, lm: 0.99, sopMax: 0.005 },
+      periods: {
+        d: dates,
+        w: ['2026-W40', '2026-W41', '2026-W42', '2026-W43'],
+        m: ['2026-10']
+      },
+      sources: {
+        FM: { lastDate: '2026-10-28' },
+        LM: { lastDate: '2026-10-28' },
+        SOP: { lastDate: '2026-10-28' },
+        SUC: { lastDate: '2026-10-28' }
+      },
+      hubs: hubEntries,
+      access: {
+        role: 'admin',
+        levelCode: 'L1',
+        levelNum: 1,
+        email: 'xuan.nguyenthanh01@spxexpress.com',
+        hubs: ['ALL', ...this.hubs]
+      }
+    });
+  }
+
+  // ==========================================================
+  // 2. ĐƠN CẦU CỨU — getOrders (Khớp chính xác hình 3)
+  // ==========================================================
+  getRescueOrders(force = false) {
+    // Xuất cách đây 15.7h -> còn 8.3h trong hạn 24h SLA -> Hiển thị Mức độ ĐỎ khẩn cấp
+    const exportTime = new Date(Date.now() - 3600000 * 15.7).toISOString();
+
+    return {
+      success: true,
+      resolved: [],
+      access: {
+        role: 'admin',
+        stations: ['ALL', ...this.hubs],
+        email: 'xuan.nguyenthanh01@spxexpress.com'
+      },
+      rows: [
+        {
+          tracking_no: 'SPXVN06639887886A',
+          region: 'Central',
+          station: '45-DLK Krong Pak 02 Hub',
+          station_name: '45-DLK Krong Pak 02 Hub',
+          driver: 'TRƯƠNG QUANG MẪN [80827]',
+          export_date: exportTime,
+          status: 'ĐỎ',
+          urgency: 'red',
+          level: 'ĐỎ',
+          reason: 'Đơn khẩn cấp quá hạn xử lý SLA',
+          recipient_name: 'Khách hàng Krông Pắc',
+          recipient_phone: '0905123456'
+        }
+      ]
     };
-
-    return { ...resultData, data: resultData, result: resultData };
   }
 
-  async rq_markResolved(tracking_no) {
-    return { success: true, tracking_no, status: 'resolved' };
+  getFailOrdersByDay(payloadStr = '{}') {
+    return {
+      success: true,
+      page: 1,
+      total: 2,
+      rows: [
+        { id: 'SPXVN06431408780A', hub: '45-DLK Krong Pak 02 Hub', category: 'SOP', type: 'wrong fm', reason: 'Sai quy trình bắn giao Pickup', date: '18/10', rider: 'Rider 102' },
+        { id: 'SPXVN06555409864A', hub: '45-DLK Krong Pak 02 Hub', category: 'SOP', type: 'wrong fm', reason: 'Sai quy trình bắn giao Pickup', date: '18/10', rider: 'Rider 105' }
+      ]
+    };
   }
 
-  // --- 4. VI PHẠM ---
-  async getComplaintData(hub = '45-DLK Krong Pak 02 Hub') {
-    const isKrongPak = String(hub).includes('Krong Pak 02') || String(hub).includes('45-DLK');
-    const total = isKrongPak ? 180 : 45;
-    const logistics = isKrongPak ? 100 : 25;
-    const nonShopee = isKrongPak ? 67 : 15;
-    const shopee = isKrongPak ? 13 : 5;
-    const ticketed = isKrongPak ? 52 : 12;
-
-    const sampleRecords = [];
-    for (let i = 1; i <= Math.min(total, 25); i++) {
-      sampleRecords.push({
+  // ==========================================================
+  // 3. VI PHẠM & RIDER PLAN
+  // ==========================================================
+  getComplaintData() {
+    const records = [];
+    for (let i = 1; i <= 25; i++) {
+      records.push({
         id: `VP-202610-${1000 + i}`,
-        station: hub,
+        station: '45-DLK Krong Pak 02 Hub',
         type: i % 3 === 0 ? 'Shopee' : (i % 2 === 0 ? 'Non-Shopee' : 'Logistics'),
-        category: i % 4 === 0 ? 'Thái độ giao hàng' : (i % 3 === 0 ? 'Giao trễ hẹn' : 'Không gọi trước khi giao'),
-        rider: `Rider ${100 + i} - Nguyễn Văn ${(i % 10) + 1}`,
+        category: i % 4 === 0 ? 'Thái độ giao hàng' : 'Giao trễ hẹn',
+        rider: `Trương Quang Mẫn [80827]`,
         date: `2026-10-${String((i % 28) + 1).padStart(2, '0')}`,
-        status: i <= ticketed ? 'Đã lên vé' : 'Chờ xác nhận',
-        punishment: i % 5 === 0 ? 'Trừ điểm thưởng' : 'Nhắc nhở'
+        status: i <= 15 ? 'Đã lên vé' : 'Chờ xác nhận'
       });
     }
-
-    const resultData = {
-      status: 'success',
+    return {
       success: true,
-      total,
-      summary: { logistics, nonShopee, shopee, ticketed },
-      records: sampleRecords
+      total: 180,
+      summary: { logistics: 100, nonShopee: 67, shopee: 13, ticketed: 52 },
+      records
     };
-
-    return { ...resultData, data: resultData, result: resultData };
   }
 
-  // --- 5. RIDER PLAN ---
-  async rp_checkAccess(email = '') {
+  rp_checkAccess(email = '') {
     return {
       success: true,
       allowed: true,
       isAdmin: true,
       role: 'admin',
       level: 1,
-      email: email || 'admin@spxexpress.com',
+      email: email || 'xuan.nguyenthanh01@spxexpress.com',
       permissions: ['view', 'edit', 'admin', 'export']
-    };
-  }
-
-  async rp_init(station = '45-DLK Krong Pak 02 Hub') {
-    return {
-      success: true,
-      allowed: true,
-      station,
-      shifts: ['Ca Sáng (07:00 - 15:00)', 'Ca Chiều (13:00 - 21:00)', 'Ca Tối (18:00 - 22:00)'],
-      rosterCount: 28,
-      planStatus: 'active'
-    };
-  }
-
-  async rp_getData(station = '45-DLK Krong Pak 02 Hub') {
-    return this.rp_init(station);
-  }
-
-  // --- 6. BI / FORWARD ORDER ---
-  async bi_getData(hub = '45-DLK Krong Pak 02 Hub') {
-    return {
-      status: 'success',
-      success: true,
-      hub,
-      hasData: false,
-      message: 'BƯU CỤC CHƯA CÓ DỮ LIỆU CA HÔM NAY',
-      promptUpload: true
     };
   }
 }
