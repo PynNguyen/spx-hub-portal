@@ -1066,7 +1066,7 @@ class RpcDispatcher {
         status: 'ĐỎ',
         mucDo: 'ĐỎ',
         hoursLeft: 'Còn 8.3h',
-        resolved: true,
+        resolved: false,
         action: 'Đã xử lý'
       }
     ];
