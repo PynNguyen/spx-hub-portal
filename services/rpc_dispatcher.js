@@ -855,6 +855,7 @@ class RpcDispatcher {
   // ============================================================
   spx_getOverviewPart(part, hub, force, userEmail = 'xuan.nguyenthanh01@spxexpress.com') {
     const auth = authManager.getUser(userEmail);
+    const isSpecificHub = hub && (hub.includes('Krong Pak') || hub.includes('Krông Pắk') || (hub !== 'ALL' && hub !== ''));
 
     if (part === 'meta') {
       return JSON.stringify({
@@ -873,19 +874,17 @@ class RpcDispatcher {
     }
 
     if (part === 'aging') {
-      const coreLen = (db.data.agingData && db.data.agingData.core ? db.data.agingData.core.length : 24);
-      const lostLen = (db.data.agingData && db.data.agingData.lost ? db.data.agingData.lost.length : 5);
       return JSON.stringify({
         success: true,
         data: {
-          total: coreLen + lostLen,
-          overdueCount: coreLen,
-          closedLostCount: lostLen,
+          total: isSpecificHub ? 0 : 58,
+          overdueCount: isSpecificHub ? 0 : 58,
+          closedLostCount: 0,
           hubs: {
-            '45-DLK Krong Pak 02 Hub': 12,
-            'Buôn Ma Thuột': 8,
-            'Ea Kar': 5,
-            'Cư Kuin': 4
+            '45-DLK Krong Pak 02 Hub': 0,
+            'Buôn Ma Thuột': 25,
+            'Ea Kar': 18,
+            'Cư Kuin': 15
           },
           lastSync: new Date().toLocaleTimeString('vi-VN')
         }
@@ -896,13 +895,13 @@ class RpcDispatcher {
       return JSON.stringify({
         success: true,
         data: {
-          totalFail: 6,
-          totalFM: 2,
-          totalLM: 3,
-          totalSOP: 1,
+          totalFail: isSpecificHub ? 2 : 6,
+          totalFM: 1,
+          totalLM: 1,
+          totalSOP: 0,
           hubs: {
-            '45-DLK Krong Pak 02 Hub': 3,
-            'Buôn Ma Thuột': 2,
+            '45-DLK Krong Pak 02 Hub': 2,
+            'Buôn Ma Thuột': 3,
             'Ea Kar': 1
           },
           lastSync: new Date().toLocaleTimeString('vi-VN')
@@ -911,16 +910,15 @@ class RpcDispatcher {
     }
 
     if (part === 'rescue') {
-      const redCount = (db.data.rescueOrders ? db.data.rescueOrders.length : 3);
       return JSON.stringify({
         success: true,
         data: {
-          redCount: redCount,
-          total: redCount,
+          redCount: isSpecificHub ? 0 : 3,
+          total: isSpecificHub ? 0 : 3,
           orangeCount: 0,
           hubs: {
-            '45-DLK Krong Pak 02 Hub': 2,
-            'Buôn Ma Thuột': 1
+            '45-DLK Krong Pak 02 Hub': 0,
+            'Buôn Ma Thuột': 2
           },
           lastSync: new Date().toLocaleTimeString('vi-VN')
         }
@@ -928,16 +926,15 @@ class RpcDispatcher {
     }
 
     if (part === 'violation') {
-      const vCount = (db.data.violations ? db.data.violations.length : 3);
       return JSON.stringify({
         success: true,
         data: {
-          noTicketCount: 2,
-          total: vCount,
+          noTicketCount: isSpecificHub ? 0 : 2,
+          total: isSpecificHub ? 0 : 3,
           ticketedCount: 1,
           hubs: {
-            '45-DLK Krong Pak 02 Hub': 2,
-            'Buôn Ma Thuột': 1
+            '45-DLK Krong Pak 02 Hub': 0,
+            'Buôn Ma Thuột': 2
           },
           lastSync: new Date().toLocaleTimeString('vi-VN')
         }
@@ -951,6 +948,9 @@ class RpcDispatcher {
           missingCount: 0,
           total: 12,
           completedCount: 12,
+          inboundActual: 1683,
+          inboundFc: 1836,
+          rate: 92,
           hubs: {
             '45-DLK Krong Pak 02 Hub': 1
           },
@@ -968,20 +968,117 @@ class RpcDispatcher {
   ana_askMascotAssistant(prompt, ctxJson) {
     return {
       success: true,
-      answer: '🤖 [SPX AI Assistant] Ca vận hành hôm nay tại khu vực Tây Nguyên ổn định. Các trạm cần lưu ý giải tỏa 24 đơn quá hạn tại Krông Pắc và Buôn Ma Thuột trước 14:00. Tồn đọng FMS và Pick đang ở mức kiểm soát tốt.'
+      answer: '🤖 [SPX AI Assistant] Ca vận hành hôm nay tại khu vực Tây Nguyên ổn định. Trạm Krông Pắc 02 ghi nhận 58 đơn tồn đọng trong tầm kiểm soát (24 đơn 1-2 ngày, 31 đơn 3-5 ngày, 3 đơn trên 5 ngày). Không có rủi ro thất lạc hay đơn khẩn cấp cần can thiệp.'
     };
   }
 
   ana_askGeminiAI(prompt, ctxJson) {
     return {
       success: true,
-      answer: '🤖 [SPX AI Assistant] Phân tích vận hành: 24 đơn quá hạn tập trung chủ yếu ở trạm Krông Pắc 02 (12 đơn) do lý do Khách hẹn lại (Reschedule). Đề xuất điều phối 2 tài xế hỗ trợ giao ca chiều để đảm bảo tỷ lệ SLA đạt trên 98.5%.'
+      answer: '🤖 [SPX AI Assistant] Phân tích chi tiết: Trạm Krông Pắc 02 đạt tỷ lệ hoàn thành kế hoạch Rider 92% (1.683 / 1.836 đơn). 3 đơn tồn trên 5 ngày đang được tài xế giao lại trong ca trưa. Đề xuất ưu tiên xử lý dứt điểm trước 17:00.'
     };
   }
 
   // ============================================================
-  // 11. TRA CỨU, TÀI LIỆU & TIỆN ÍCH KHÁC
+  // 11. TRA CỨU, TÀI LIỆU & QUẢN TRỊ ADMIN ZONE
   // ============================================================
+  spx_getPendingAccessList() {
+    const list = [
+      {
+        email: 'xuan.nguyenthanh01@spxexpress.com',
+        name: 'Admin Xuân',
+        role: 'admin',
+        level: 1,
+        station: '45-DLK Krong Pak 02 Hub',
+        status: 'Duyệt',
+        luongStatus: 'Duyệt',
+        requestedAt: '2026-10-29 08:00:00'
+      },
+      {
+        email: 'lead.krongpak02@spxexpress.com',
+        name: 'Lead Krông Pắc 02',
+        role: 'lead',
+        level: 4,
+        station: '45-DLK Krong Pak 02 Hub',
+        status: 'Duyệt',
+        luongStatus: 'Duyệt',
+        requestedAt: '2026-10-29 08:15:00'
+      },
+      {
+        email: 'sup.daklak@spxexpress.com',
+        name: 'SUP Đắk Lắk',
+        role: 'sup',
+        level: 3,
+        station: '45-DLK Krong Pak 02 Hub',
+        status: 'Duyệt',
+        luongStatus: 'Chờ',
+        requestedAt: '2026-10-29 08:30:00'
+      }
+    ];
+    return JSON.stringify({
+      success: true,
+      list: list
+    });
+  }
+
+  spx_getAdminList(userEmail = 'xuan.nguyenthanh01@spxexpress.com') {
+    return JSON.stringify({
+      success: true,
+      myEmail: userEmail,
+      list: [
+        {
+          email: 'xuan.nguyenthanh01@spxexpress.com',
+          name: 'Admin Xuân',
+          role: 'Root Admin (L1)',
+          addedAt: '2026-10-29'
+        }
+      ]
+    });
+  }
+
+  spx_setAccessLoginStatus(email, status, userEmail) {
+    return JSON.stringify({ success: true, email, status });
+  }
+
+  spx_setAccessLuongStatus(email, status, userEmail) {
+    return JSON.stringify({ success: true, email, status });
+  }
+
+  spx_setLoginAndLuongStatus(email, userEmail) {
+    return JSON.stringify({ success: true, email });
+  }
+
+  spx_addAdmin(email, role, userEmail) {
+    return JSON.stringify({ success: true, email, role });
+  }
+
+  spx_removeAdmin(email, userEmail) {
+    return JSON.stringify({ success: true, email });
+  }
+
+  spx_addExtraStation(email, station, userEmail) {
+    return JSON.stringify({ success: true, email, station });
+  }
+
+  spx_revokeExtraStation(email, station, userEmail) {
+    return JSON.stringify({ success: true, email, station });
+  }
+
+  spx_refreshSystem() {
+    return JSON.stringify({ success: true, message: 'Đã làm mới toàn bộ hệ thống.' });
+  }
+
+  spx_listAllTriggers() {
+    return JSON.stringify({ success: true, triggers: [] });
+  }
+
+  spx_getRecentErrors() {
+    return JSON.stringify({ success: true, errors: [] });
+  }
+
+  spx_adminSetBanner() { return { success: true }; }
+  spx_adminSetMaintenance() { return { success: true }; }
+  spx_adminSetModuleStatus() { return { success: true }; }
   tracuu_getAllWards() {
     return [
       { ward: 'Thị trấn Phước An', station: '45-DLK Krong Pak 02 Hub', zoneId: 'Zone 1' },

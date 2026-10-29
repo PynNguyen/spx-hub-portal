@@ -302,51 +302,75 @@ class WorkspaceDatabase {
     if (!this.data.agingData || !Array.isArray(this.data.agingData.core) || this.data.agingData.core.length === 0) {
       const core = [];
       const lost = [];
-      const sampleWards = ['Phường Tân Lập', 'Xã Ea Kly', 'Thị trấn Phước An', 'Xã Hòa An', 'Xã Hòa Đông', 'Xã Ea Phê', 'Xã Ea Yông'];
-      const reasons = ['Customer Reschedule', 'Bad weather', 'Insufficient time', 'Address not found', 'Customer refused'];
+      const sampleWards = ['Thị trấn Phước An', 'Xã Ea Kly', 'Xã Hòa An', 'Xã Hòa Đông', 'Xã Ea Phê', 'Xã Ea Yông'];
+      const reasons = ['Customer Reschedule', 'Bad weather', 'Insufficient time'];
 
+      // 24 đơn tồn 1-2 ngày
       for (let i = 1; i <= 24; i++) {
-        const hub = STATIONS[i % STATIONS.length];
-        const ward = sampleWards[i % sampleWards.length];
-        const days = Number((1.2 + (i % 6) * 0.9).toFixed(1));
-        const bucket = days <= 2 ? '1–2 ngày' : (days <= 5 ? '2–5 ngày' : '> 7 ngày');
         core.push({
-          shipmentId: 'SPX' + (793000000000 + i),
-          hubName: hub,
-          aom: 'AOM Đắk Lắk - Tây Nguyên',
-          sup: 'SUP Krông Pắk',
-          ward: ward,
-          processStatus: 'On Hold',
+          shipmentId: 'SPXKP01' + String(i).padStart(4, '0'),
+          hubName: '45-DLK Krong Pak 02 Hub',
+          Hub: '45-DLK Krong Pak 02 Hub',
+          station: '45-DLK Krong Pak 02 Hub',
+          aom: 'Trần Hữu Oanh',
+          sup: 'Trưởng Lê Uy Trí',
+          ward: sampleWards[i % sampleWards.length],
+          processStatus: 'Đang xử lý',
           finalStatus: 'onhold',
-          lostToday: (i % 2 === 0) ? 'today' : '',
-          timingDate: days,
-          aging: days,
-          agingBucket: bucket,
-          att: (i % 4) + 1,
-          inboundAt: new Date(Date.now() - days * 86400000).toISOString().slice(0, 16),
-          cogs: 180000 + (i * 25000),
+          lostToday: '',
+          timingDate: 1.5,
+          aging: 1.5,
+          agingBucket: '1–2 ngày',
+          att: 1,
+          inboundAt: new Date(Date.now() - 1.5 * 86400000).toISOString().slice(0, 16),
+          cogs: 250000,
           reason: reasons[i % reasons.length]
         });
       }
 
-      for (let j = 1; j <= 5; j++) {
-        const hub = STATIONS[j % STATIONS.length];
-        const days = Number((6.0 + j * 0.5).toFixed(1));
-        lost.push({
-          shipmentId: 'SPXLST' + (893000000000 + j),
-          hubName: hub,
-          aom: 'AOM Đắk Lắk - Tây Nguyên',
-          sup: 'SUP Krông Pắk',
-          processStatus: 'Chốt Lost',
-          finalStatus: 'lost',
-          isChotLost: true,
-          lostToday: 'today',
-          timingDate: days,
-          aging: days,
-          agingBucket: '> 7 ngày',
+      // 31 đơn tồn 3-5 ngày
+      for (let i = 25; i <= 55; i++) {
+        core.push({
+          shipmentId: 'SPXKP02' + String(i).padStart(4, '0'),
+          hubName: '45-DLK Krong Pak 02 Hub',
+          Hub: '45-DLK Krong Pak 02 Hub',
+          station: '45-DLK Krong Pak 02 Hub',
+          aom: 'Trần Hữu Oanh',
+          sup: 'Trưởng Lê Uy Trí',
+          ward: sampleWards[i % sampleWards.length],
+          processStatus: 'Đang xử lý',
+          finalStatus: 'onhold',
+          lostToday: '',
+          timingDate: 3.5,
+          aging: 3.5,
+          agingBucket: '2–5 ngày',
+          att: 2,
+          inboundAt: new Date(Date.now() - 3.5 * 86400000).toISOString().slice(0, 16),
+          cogs: 320000,
+          reason: reasons[i % reasons.length]
+        });
+      }
+
+      // 3 đơn tồn > 5 ngày (5-7 ngày)
+      for (let i = 56; i <= 58; i++) {
+        core.push({
+          shipmentId: 'SPXKP03' + String(i).padStart(4, '0'),
+          hubName: '45-DLK Krong Pak 02 Hub',
+          Hub: '45-DLK Krong Pak 02 Hub',
+          station: '45-DLK Krong Pak 02 Hub',
+          aom: 'Trần Hữu Oanh',
+          sup: 'Trưởng Lê Uy Trí',
+          ward: sampleWards[i % sampleWards.length],
+          processStatus: 'Đang xử lý',
+          finalStatus: 'onhold',
+          lostToday: '',
+          timingDate: 5.5,
+          aging: 5.5,
+          agingBucket: '5–7 ngày',
           att: 3,
-          inboundAt: new Date(Date.now() - days * 86400000).toISOString().slice(0, 16),
-          cogs: 450000 + (j * 75000)
+          inboundAt: new Date(Date.now() - 5.5 * 86400000).toISOString().slice(0, 16),
+          cogs: 450000,
+          reason: reasons[i % reasons.length]
         });
       }
 
