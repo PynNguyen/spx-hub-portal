@@ -278,8 +278,18 @@ app.get('/', (req, res) => {
     html = processGasScriptlets(html, user, bootstrapData);
 
     // 3. Tiêm bộ RPC Bridge & Thanh công cụ Đăng xuất / Chuyển tài khoản
+    const realAgingData = (db.data.agingData && db.data.agingData.core && db.data.agingData.core.length > 0)
+      ? db.data.agingData.core
+      : (fs.existsSync(path.join(__dirname, 'data', 'real_dataset.json')) ? require('./data/real_dataset.json').aging_core : []);
+
     const bridgeScript = `
-    <script>window.RUNTIME_CACHE = window.RUNTIME_CACHE || { agingData: [], agingDataLoaded: true };</script>
+    <script>
+      window.RUNTIME_CACHE = window.RUNTIME_CACHE || {
+        agingData: ${JSON.stringify(realAgingData)},
+        agingDataLoaded: true,
+        timestamp: Date.now()
+      };
+    </script>
     <!-- SPX Hub Multi-Hub RPC Bridge & Authentication Bar -->
     <script>
       window.__SPX_CURRENT_USER__ = ${JSON.stringify(user)};
