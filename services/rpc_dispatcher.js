@@ -6,15 +6,18 @@ class RPCDispatcher {
     this.hubs = [];
     this.loadHubs();
 
-    // Map aliases
+    // Bind methods
     this.getOrders = this.getRescueOrders.bind(this);
     this.rq_getOrders = this.getRescueOrders.bind(this);
     this.flm_getKpiBundle = this.getKpiBundle.bind(this);
     this.flm_getDailyStationKpi = this.getKpiBundle.bind(this);
+    this.flm_getFailOrdersByDay = this.getFailOrdersByDay.bind(this);
     this.vp_getData = this.getComplaintData.bind(this);
     this.getComplaintData = this.getComplaintData.bind(this);
     this.getHubList = this.getHubsList.bind(this);
     this.auth_getHubs = this.getHubsList.bind(this);
+    this.spx_getOverviewPart = this.getOverviewPart.bind(this);
+    this.spx_getHeartbeat = this.getHeartbeat.bind(this);
   }
 
   loadHubs() {
@@ -22,10 +25,11 @@ class RPCDispatcher {
       const hubsPath = path.join(__dirname, '../data/standard_hubs.json');
       if (fs.existsSync(hubsPath)) {
         const raw = fs.readFileSync(hubsPath, 'utf8').replace(/^\uFEFF/, '');
-        this.hubs = JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        this.hubs = Array.isArray(parsed) ? parsed.map(h => typeof h === 'string' ? h : (h.name || h.station || String(h))) : [];
       }
     } catch (e) {
-      this.hubs = ["45-DLK Krong Pak 02 Hub", "31-NAN Anh Son 02 Hub", "47-DKG Dak RLap 03 Hub", "47-DKG Dak Glong Hub"];
+      this.hubs = [];
     }
     if (!this.hubs || this.hubs.length === 0) {
       this.hubs = ["45-DLK Krong Pak 02 Hub", "31-NAN Anh Son 02 Hub", "47-DKG Dak RLap 03 Hub", "47-DKG Dak Glong Hub"];
@@ -47,10 +51,12 @@ class RPCDispatcher {
     if (action === 'flm_getKpiBundle') return this.getKpiBundle();
     if (action === 'getOrders' || action === 'rq_getOrders') return this.getRescueOrders(...payload);
     if (action === 'flm_getFailOrdersByDay') return this.getFailOrdersByDay(...payload);
+    if (action === 'spx_getOverviewPart') return this.getOverviewPart();
+    if (action === 'spx_getHeartbeat') return this.getHeartbeat();
     if (action.startsWith('rp_')) return this.rp_checkAccess(userEmail);
     if (action.startsWith('vp_')) return this.getComplaintData(...payload);
 
-    return { success: true, data: [] };
+    return JSON.stringify({ success: true, data: [] });
   }
 
   getHubsList() {
@@ -58,7 +64,7 @@ class RPCDispatcher {
   }
 
   // ==========================================================
-  // 1. KPI MODULE — flm_getKpiBundle (Khớp chính xác hình 2)
+  // 1. KPI MODULE — flm_getKpiBundle
   // ==========================================================
   getKpiBundle() {
     const dates = [
@@ -68,18 +74,17 @@ class RPCDispatcher {
       '2026-10-24', '2026-10-25', '2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29'
     ];
 
-    // Chỉ số thực tế của Krông Pắc 02 (đảo theo thứ tự ngày từ 06/10 đến 29/10)
     const kpVols = [1600, 1741, 1557, 1655, 1547, 2346, 2006, 2019, 2039, 1635, 1829, 1769, 1641, 1288, 1470, 1559, 1549, 1422, 1504, 1431, 1344, 1355];
     const kpSucs = [0.850, 0.857, 0.834, 0.876, 0.837, 0.895, 0.914, 0.910, 0.886, 0.866, 0.859, 0.862, 0.851, 0.828, 0.877, 0.861, 0.862, 0.897, 0.885, 0.828, 0.875, 0.799];
     const kpLms  = [1.000, 0.999, 0.999, 0.997, 0.999, 0.997, 0.999, 0.999, 0.999, 1.000, 0.998, 0.999, 0.999, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 0.999, 0.999];
     const kpFms  = [1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 0.993, 0.950, 1.000, 1.000, 1.000, 0.993, 1.000, 1.000, 1.000, 1.000, 1.000, 0.994, 1.000, 1.000, 1.000];
 
-    const hubEntries = this.hubs.map((hubName, hIdx) => {
-      const isKrongPak = hubName.includes('Krong Pak 02');
+    const hubEntries = this.hubs.map((hItem, hIdx) => {
+      const hubName = typeof hItem === 'string' ? hItem : (hItem.name || String(hItem));
+      const isKrongPak = hubName.includes('Krong Pak 02') || hubName.includes('45-DLK');
       let seed = 0;
       for (let i = 0; i < hubName.length; i++) seed = (seed + hubName.charCodeAt(i)) % 100;
 
-      // Tạo mảng daily cho từng ngày: [fm_dat, fm_tong, lm_dat, lm_tong, sop_loi, sop_tong, da_giao, duoc_giao]
       const daily = dates.map((dateStr, dIdx) => {
         let vol, sucPct, lmPct, fmPct, sopErr = 0, sopTot = 100;
 
@@ -90,7 +95,7 @@ class RPCDispatcher {
           fmPct = kpFms[dIdx % kpFms.length];
           if (dateStr === '2026-10-18') {
             sopErr = 2;
-            sopTot = 56; // 2/56 = 3.57% (ô màu đỏ ngày CN 18/10)
+            sopTot = 56; // 3.57%
           }
         } else {
           vol = Math.round(1100 + ((seed * 17 + dIdx * 29) % 800));
@@ -109,13 +114,12 @@ class RPCDispatcher {
         return [fmDat, fmTong, lmDat, lmTong, sopErr, sopTot, daGiao, duocGiao];
       });
 
-      // MTD (Lũy kế tháng): s[7] = 44570 cho Krông Pắc 02
       const mtdVol = isKrongPak ? 44570 : daily.reduce((a, b) => a + b[7], 0);
       const mtdDaGiao = Math.round(mtdVol * (isKrongPak ? 0.863 : 0.855));
       const mtdFmDat = Math.round(mtdVol * (isKrongPak ? 0.993 : 0.991));
       const mtdLmDat = Math.round(mtdVol * (isKrongPak ? 0.999 : 0.997));
       const mtdSopErr = isKrongPak ? 2 : 5;
-      const mtdSopTot = isKrongPak ? 2500 : 3000; // 0.08% cho Krông Pắc 02
+      const mtdSopTot = isKrongPak ? 2500 : 3000;
 
       const monthly = [[mtdFmDat, mtdVol, mtdLmDat, mtdVol, mtdSopErr, mtdSopTot, mtdDaGiao, mtdVol]];
       const weekly = [[mtdFmDat, mtdVol, mtdLmDat, mtdVol, mtdSopErr, mtdSopTot, mtdDaGiao, mtdVol]];
@@ -162,12 +166,40 @@ class RPCDispatcher {
   }
 
   // ==========================================================
-  // 2. ĐƠN CẦU CỨU — getOrders (Khớp chính xác hình 3)
+  // 2. TỔNG QUAN & HEARTBEAT (Tránh lỗi phân tích dữ liệu)
+  // ==========================================================
+  getOverviewPart() {
+    return JSON.stringify({
+      success: true,
+      data: {
+        station: '45-DLK Krong Pak 02 Hub',
+        asOf: '2026-10-28',
+        kpi: { fm: 99.3, lm: 99.9, sop: 0.08, volume: 44570, deliveryRate: 86.3 },
+        rescue: { total: 1, red: 1, orange: 0, green: 0 },
+        violations: { total: 180, logistics: 100, nonShopee: 67, shopee: 13, ticketed: 52 }
+      }
+    });
+  }
+
+  getHeartbeat() {
+    return JSON.stringify({
+      success: true,
+      timestamp: Date.now(),
+      asOf: '2026-10-28',
+      modules: {
+        kpifail: { status: 'normal' },
+        doncaucuu: { status: 'normal' },
+        vipham: { status: 'normal' },
+        rider_plan: { status: 'normal' }
+      }
+    });
+  }
+
+  // ==========================================================
+  // 3. ĐƠN CẦU CỨU — getOrders
   // ==========================================================
   getRescueOrders(force = false) {
-    // Xuất cách đây 15.7h -> còn 8.3h trong hạn 24h SLA -> Hiển thị Mức độ ĐỎ khẩn cấp
-    const exportTime = new Date(Date.now() - 3600000 * 15.7).toISOString();
-
+    const exportTime = new Date(Date.now() - 3600000 * 15.7).toISOString(); // còn 8.3h
     return {
       success: true,
       resolved: [],
@@ -208,7 +240,7 @@ class RPCDispatcher {
   }
 
   // ==========================================================
-  // 3. VI PHẠM & RIDER PLAN
+  // 4. VI PHẠM & RIDER PLAN
   // ==========================================================
   getComplaintData() {
     const records = [];
