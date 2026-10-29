@@ -6,19 +6,6 @@
 
 <base target="_top">
 
-<!-- [ZERO-LATENCY BOOTSTRAP] Nhận trực tiếp dữ liệu phân quyền & trạng thái từ máy chủ -->
-<script>
-  window.__SERVER_BOOTSTRAP__ = <?!= (typeof BOOTSTRAP_JSON !== 'undefined' && BOOTSTRAP_JSON) ? BOOTSTRAP_JSON : 'null' ?>;
-  window.__SERVER_MOD_STATUS__ = <?!= (typeof MOD_STATUS_JSON !== 'undefined' && MOD_STATUS_JSON) ? MOD_STATUS_JSON : 'null' ?>;
-  if (window.__SERVER_MOD_STATUS__) {
-    window.SPX_MODULE_STATUS = window.__SERVER_MOD_STATUS__;
-    window._spxModStatusReady = true;
-  }
-  if (window.__SERVER_BOOTSTRAP__ && window.__SERVER_BOOTSTRAP__.hubOrgDir) {
-    window._spxHubOrgDir = window.__SERVER_BOOTSTRAP__.hubOrgDir;
-  }
-</script>
-
 <!-- ============================================================
      SAFE STORAGE WRITE GUARD (additive, không đụng code cũ)
      Bọc Storage.prototype.setItem ở mức global — mọi lệnh
@@ -1155,13 +1142,6 @@ Giu nguyen binding logic, chi dieu chinh khung nhin va muc uu tien.
 .spx-hub-switch-card{background:var(--qh-cmp-head-bg,#fff);border-radius:16px;padding:20px 28px;box-shadow:0 20px 50px rgba(0,0,0,.25);display:flex;align-items:center;gap:14px;max-width:360px;border:1px solid var(--qh-cmp-border)}
 .spx-hub-switch-title{font-size:12.5px;font-weight:800;color:var(--qh-cmp-text);text-transform:uppercase}
 .spx-hub-switch-desc{font-size:11.5px;color:var(--qh-cmp-text-muted);margin-top:2px}
-/* [MỚI — UI/UX Shimmer] Skeleton Loading hiện đại — tương phản cao, sóng quét ánh sáng sắc nét */
-@keyframes spxShimmerSweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
-.spx-skeleton-box { position: relative; overflow: hidden; background-color: #cbd5e1; border-radius: 6px; }
-.spx-skeleton-box::after { content: ''; position: absolute; inset: 0; transform: translateX(-100%); background-image: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.85) 50%, transparent 100%); animation: spxShimmerSweep 1.4s infinite ease-in-out; }
-.dark .spx-skeleton-box { background-color: #334155; }
-.dark .spx-skeleton-box::after { background-image: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%); }
-.spx-recent-hub-pill:hover { border-color: #ee4d2d !important; color: #ee4d2d !important; transform: translateY(-1px); }
 .spx-module-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:56px 20px;min-height:160px}
 .spx-module-loading-icon-wrap{width:52px;height:52px;border-radius:50%;background:rgba(238,77,45,.1);display:flex;align-items:center;justify-content:center}
 .dark .spx-module-loading-icon-wrap{background:rgba(238,77,45,.16)}
@@ -1669,85 +1649,38 @@ box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
   box-shadow: 0 0 0 3px rgba(238,77,45,0.12);
 }
 
-/* ── Last sync box (Data Freshness & Warning Badge - Phương án B) ── */
+/* ── Last sync box ───────────────────────────────────────── */
 #last-sync-box {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 11px;
-  border-radius: 9999px;
-  font-size: 11.5px;
-  font-weight: 700;
-  border: 1px solid var(--spxnew--line, #e2e8f0);
-  background: #f8fafc;
-  color: #64748b;
-  cursor: pointer;
-  white-space: nowrap;
-  user-select: none;
-  transition: all 0.25s ease;
   animation: fadeInDown 0.35s cubic-bezier(0.22,1,0.36,1) both 0.25s;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
-#last-sync-box:hover {
-  filter: brightness(0.96);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-}
-#last-sync-text {
-  font-size: 11.5px;
-  font-weight: 700;
-  line-height: 1;
-  transition: color 0.3s ease;
-}
+#last-sync-text { transition: color 0.3s ease; }
 
-/* Đang xác nhận / Bản lưu tạm: Amber nổi bật */
+/* ── Trạng thái data freshness ───────────────────────────── */
+/* Đang xác nhận: box màu amber nhạt, text mờ hơn */
 #last-sync-box.spx-confirming {
-  background-color: #fffbeb !important;
-  border-color: #fcd34d !important;
+  background-color: #fef9c3 !important;
+  border-color: #fde68a !important;
 }
-#last-sync-box.spx-confirming #last-sync-text { color: #b45309 !important; }
+#last-sync-box.spx-confirming #last-sync-text { color: #92400e !important; }
 #last-sync-box.spx-confirming i { color: #d97706 !important; }
 
-/* Đã xác nhận máy chủ: Emerald dịu mắt */
+/* Đã xác nhận: box màu emerald nhạt */
 #last-sync-box.spx-confirmed {
-  background-color: #ecfdf5 !important;
-  border-color: #a7f3d0 !important;
+  background-color: #d1fae5 !important;
+  border-color: #6ee7b7 !important;
 }
-#last-sync-box.spx-confirmed #last-sync-text { color: #047857 !important; }
+#last-sync-box.spx-confirmed #last-sync-text { color: #065f46 !important; }
 #last-sync-box.spx-confirmed i { color: #059669 !important; }
-
-/* Cảnh báo link bảo trì / dữ liệu cũ */
-#last-sync-box.spx-warn {
-  background-color: #fff7ed !important;
-  border-color: #fed7aa !important;
-}
-#last-sync-box.spx-warn #last-sync-text { color: #c2410c !important; }
-#last-sync-box.spx-warn i { color: #ea580c !important; }
-
-/* Lỗi mất kết nối máy chủ */
-#last-sync-box.spx-error {
-  background-color: #fff1f2 !important;
-  border-color: #fecdd3 !important;
-}
-#last-sync-box.spx-error #last-sync-text { color: #be123c !important; }
-#last-sync-box.spx-error i { color: #e11d48 !important; }
 
 /* Vừa cập nhật số mới: flash nền xanh lá */
 @keyframes spxDataFlash {
   0%   { background-color: #bbf7d0; border-color: #34d399; }
   60%  { background-color: #bbf7d0; border-color: #34d399; }
-  100% { background-color: #ecfdf5; border-color: #a7f3d0; }
+  100% { background-color: #d1fae5; border-color: #6ee7b7; }
 }
 #last-sync-box.spx-updated {
   animation: spxDataFlash 1.4s ease forwards;
-}
-
-@media (max-width: 680px) {
-  #last-sync-box span.sync-full-text { display: none !important; }
-  #last-sync-box span.sync-short-text { display: inline !important; }
-}
-@media (min-width: 681px) {
-  #last-sync-box span.sync-short-text { display: none !important; }
-  #last-sync-box span.sync-full-text { display: inline !important; }
 }
 
 /* Stat chips: mờ khi đang pending xác nhận từ server */
@@ -3197,42 +3130,6 @@ body {
   border-color: transparent !important;
 }
 
-
-/* ── FMS & PICK COMPACT 1-ROW KPI STRIP & FULL-WIDTH TABLES (UI/UX 2.0) ── */
-#view-tondong #fmsTopKpiBarManual,
-#view-pick #pickManualToolbar {
-  width: 100% !important;
-  max-width: 100% !important;
-}
-#view-tondong .data-table,
-#view-pick .data-table {
-  min-width: 1100px !important;
-}
-
-
-/* ── FMS & PICK FULL-WIDTH ZERO-SIDEBAR LAYOUT (UI/UX 2.0) ── */
-#view-tondong, #view-pick {
-  display: flex !important;
-  flex-direction: column !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  height: 100% !important;
-  flex: 1 1 auto !important;
-  min-width: 0 !important;
-  overflow: hidden !important;
-}
-#view-tondong > main, #view-pick > main,
-#view-tondong > #fms-root, #view-pick > #pick-root {
-  display: flex !important;
-  flex-direction: column !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  height: 100% !important;
-  flex: 1 1 auto !important;
-  min-width: 0 !important;
-  overflow: hidden !important;
-}
-
 /* ── SIDEBAR COLLAPSE ── */
 .spx-aside {
   transition: width 0.25s cubic-bezier(0.22,1,0.36,1);
@@ -3917,17 +3814,8 @@ body.spx-sidebar-active > #spx-aside-backdrop { display: none !important; }
 .spx-topheader-note{font-size:11px;color:#8490a3}
 .spx-hub-label{font-size:12.5px;font-weight:700;color:#354157}
 .dark .spx-hub-label{color:#dce7f8}
-.spx-header-preview-level:not(.hidden){display:flex;align-items:center;gap:7px;background:#fff7ed;border:1px solid #fed7aa;border-radius:9px;padding:5px 9px;color:#9a3412;font-size:11px}
-.spx-header-preview-level-select{background:#fff;border:1px solid #fed7aa;border-radius:6px;padding:3px 8px;font-size:11.5px;font-weight:700;color:#9a3412;cursor:pointer;outline:none;transition:border-color .15s}
-.spx-header-preview-level-select:hover,.spx-header-preview-level-select:focus{border-color:#f97316}
-.dark .spx-header-preview-level-select{background:#151e2f;border-color:rgba(251,146,60,.3);color:#fdba74}
-.sidebar-admin-toggle{width:100%;display:flex;align-items:center;gap:8px;border:1px dashed rgba(251,146,60,.4);background:rgba(251,146,60,.08);color:var(--spxnew--sb-text);border-radius:8px;padding:7px 10px;font-size:12px;cursor:pointer;transition:all .18s;margin-bottom:6px}
-.sidebar-admin-toggle:hover{background:rgba(251,146,60,.16);border-color:#f97316}
-.sidebar.collapsed .sidebar-admin-toggle{justify-content:center}
-#spxLegendBox{display:none !important}
+.spx-header-preview-level:not(.hidden){display:flex;align-items:center;gap:8px;background:#fff7ed;border:1px solid #fed7aa;border-radius:9px;padding:6px 10px;color:#9a3412;font-size:11px}
 .dark .spx-header-preview-level{background:rgba(251,146,60,.12);border-color:rgba(251,146,60,.3);color:#fdba74}
-.spx-header-preview-level-select{border-color:#c7d7f5;color:#1e3a8a}
-.dark .spx-header-preview-level-select{border-color:rgba(147,180,255,.3);color:#b7ccff}
 .spx-header-preview-level-label{font-weight:800;text-transform:uppercase;white-space:nowrap}
 .spx-header-preview-level-btn{padding:3px 9px;border-radius:6px;font-size:11px;font-weight:800;border:1px solid #fed7aa;background:#fff;color:#9a3412;cursor:pointer;white-space:nowrap}
 .dark .spx-header-preview-level-btn{border-color:rgba(251,146,60,.3);background:transparent;color:#fdba74}
@@ -4263,7 +4151,6 @@ th{color:#7a8597;font-weight:650;background:var(--spxnew--spxnew--panel-soft);po
   </div>
   <nav class="nav" id="spxNavRoot"></nav>
   <div class="sidebar-bottom">
-    <button id="spxAdminShowHiddenBtn" class="sidebar-admin-toggle hidden" onclick="spxToggleAdminShowHidden()" title="Chế độ hiển thị module nháp (dành cho Admin)"><span class="st-ico">🛠️</span><span class="st-label" id="spxAdminShowHiddenLabel">Hiện module nháp</span></button>
     <button class="sidebar-toggle-full" onclick="spxSidebarToggleCollapse()"><span class="st-ico" id="spxSbToggleIcon">◀</span><span class="st-label" data-i18n-ui="Thu gọn menu">Thu gọn menu</span></button>
   </div>
 </aside>
@@ -4283,26 +4170,7 @@ th{color:#7a8597;font-weight:650;background:var(--spxnew--spxnew--panel-soft);po
          không cần thiết). GIỜ: chỉ còn NHÃN hiển thị tên trạm (không phải ô
          chọn), nút "Chuyển trạm" MỞ POPUP riêng — chọn + xác nhận trong popup
          mới thực sự đổi, đúng luồng BI cũ. -->
-    <span id="spxHeaderHubLabel" class="spx-hub-label" data-i18n-ui="Chưa chọn Hub" data-i18n-dynamic="1"><?!= (function(){
-  var boot = (typeof BOOTSTRAP_DATA !== 'undefined') ? BOOTSTRAP_DATA : null;
-  var hub = '';
-  if (boot && boot.moduleAccess && boot.moduleAccess.hubs && boot.moduleAccess.hubs.length === 1) {
-    hub = boot.moduleAccess.hubs[0];
-  }
-  return hub || 'Chưa chọn Hub';
-})() ?></span>
-<script>
-  // Fast hydration cho Hub từ localStorage ngay lúc parse HTML (trước khi sơn khung hình)
-  (function(){
-    try {
-      var savedHub = localStorage.getItem('spx_default_hub') || localStorage.getItem('SPX_selectedHub');
-      if (savedHub && savedHub !== 'ALL') {
-        var el = document.getElementById('spxHeaderHubLabel');
-        if (el && el.textContent === 'Chưa chọn Hub') el.textContent = savedHub;
-      }
-    } catch(e) {}
-  })();
-</script>
+    <span id="spxHeaderHubLabel" class="spx-hub-label" data-i18n-ui="Chưa chọn Hub" data-i18n-dynamic="1">Chưa chọn Hub</span>
     <select id="spxHeaderHubSelect" class="hidden"><option value="">Chọn Hub...</option></select>
     <button id="spxHeaderHubConfirmBtn" class="spx-hub-confirm-btn" onclick="spxOpenHubPickerModal()" title="Chuyển sang trạm khác"><i class="fas fa-exchange-alt"></i> <span data-i18n-ui="Chuyển trạm">Chuyển trạm</span></button>
   </div>
@@ -4314,18 +4182,10 @@ th{color:#7a8597;font-weight:650;background:var(--spxnew--spxnew--panel-soft);po
        cùng nguyên tắc đã áp dụng cho mọi nút admin-only khác trong app). Đổi
        level ở đây tác động NGAY module đang mở qua spxSetPreviewLevel()
        (cùng kiến trúc dispatch theo currentActiveModule như đổi Hub). -->
-  <div id="spxHeaderPreviewLevelWrap" class="spx-header-preview-level <?= (typeof BOOTSTRAP_DATA !== 'undefined' && BOOTSTRAP_DATA && BOOTSTRAP_DATA.moduleAccess && BOOTSTRAP_DATA.moduleAccess.role === 'admin') ? '' : 'hidden' ?>" title="Xem thử giao diện theo từng cấp — dữ liệu vẫn là dữ liệu thật của Admin">
-    <i class="fas fa-eye text-amber-500"></i>
-    <span class="spx-header-preview-level-label" data-i18n-ui="Xem thử:">Xem thử:</span>
-    <select id="spxHeaderPreviewLevelSelect" class="spx-header-preview-level-select" onchange="spxSetPreviewLevel(this.value)">
-      <option value="admin">👑 Admin (Toàn hệ thống)</option>
-      <option value="rom">🌐 L1 · ROM (Toàn vùng)</option>
-      <option value="aom">🏢 L2 · AOM (Khu vực)</option>
-      <option value="sup">🛡️ L3 · SUP (Nhóm Hub)</option>
-      <option value="lead">📍 L4 · Lead (Trưởng Hub)</option>
-      <option value="staff">🚴 L5 · Staff (Nhân viên)</option>
-    </select>
-    <div id="spxHeaderPreviewLevelBtns" style="display:none"></div>
+  <div id="spxHeaderPreviewLevelWrap" class="spx-header-preview-level hidden" title="Xem thử giao diện theo từng cấp — dữ liệu vẫn là dữ liệu thật của Admin">
+    <i class="fas fa-eye"></i>
+    <span class="spx-header-preview-level-label">Xem thử:</span>
+    <div id="spxHeaderPreviewLevelBtns"></div>
   </div>
   <!-- [MỚI — theo yêu cầu "cần có lựa chọn ROM/AOM/SUP/Lead/Staff CỤ THỂ,
        giống kiểu chọn trạm hiện tại"] Dropdown chọn ĐÚNG 1 AOM/SUP thật để mô
@@ -4360,7 +4220,7 @@ th{color:#7a8597;font-weight:650;background:var(--spxnew--spxnew--panel-soft);po
       <button onclick="spxSetLanguage('vi')" data-lang-btn="vi" class="px-2 py-1.5 transition-colors">VI</button>
       <button onclick="spxSetLanguage('en')" data-lang-btn="en" class="px-2 py-1.5 transition-colors">EN</button>
     </div>
-    <button onclick="runBackgroundSync(true)" class="ops-icon-btn" aria-label="Đồng bộ dữ liệu ngay" title="Đồng bộ toàn bộ dữ liệu (tất cả các module) — Bấm để làm mới ngay"><i id="topSyncIcon" class="fas fa-check-circle text-emerald-500"></i></button>
+    <button onclick="runBackgroundSync(true)" class="ops-icon-btn" aria-label="Đồng bộ dữ liệu ngay" title="Đồng bộ ngay — tự động làm mới đúng dữ liệu của module đang mở"><i id="topSyncIcon" class="fas fa-sync text-sky-500"></i></button>
     <button id="spx-cleanup-btn" onclick="spxOpenCleanupModal()" class="ops-icon-btn relative" aria-label="Dọn dẹp bộ nhớ đệm" title="Dọn dẹp bộ nhớ đệm (Cache)">
       <i class="fas fa-broom text-amber-500"></i>
       <span id="spx-cleanup-badge-dot" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-[#0b1121]" style="pointer-events:none"></span>
@@ -4395,7 +4255,7 @@ th{color:#7a8597;font-weight:650;background:var(--spxnew--spxnew--panel-soft);po
     <div id="spx-userinfo-wrap" class="flex items-center gap-3 pl-3 md:pl-4 border-l border-slate-200 dark:border-slate-700">
       <div class="flex flex-col items-end hidden sm:flex">
         <span id="navCurrentUserDisplay" class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase"><?= typeof Session !== 'undefined' ? Session.getActiveUser().getEmail().split('@')[0] : 'ADMIN XUÂN' ?></span>
-        <span id="navCurrentUserLevel" class="text-[11px] font-bold text-slate-400 uppercase"><?= (typeof BOOTSTRAP_DATA !== 'undefined' && BOOTSTRAP_DATA && BOOTSTRAP_DATA.moduleAccess && BOOTSTRAP_DATA.moduleAccess.role && BOOTSTRAP_DATA.moduleAccess.role !== 'denied') ? (BOOTSTRAP_DATA.moduleAccess.role === 'admin' ? 'ADMIN' : BOOTSTRAP_DATA.moduleAccess.role.toUpperCase()) : 'Đang tải...' ?></span>
+        <span id="navCurrentUserLevel" class="text-[11px] font-bold text-slate-400 uppercase">Đang tải...</span>
       </div>
       <div class="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 relative shadow-sm">
         <i class="fas fa-user-shield"></i>
@@ -4521,78 +4381,9 @@ function pendingIntegrationView(title, reason){
 // =========================================================================
 // Thứ tự = thứ tự xếp hàng (mỗi tab tối đa 4 lệnh cùng lúc): phần dự kiến chậm nhất (Vi phạm, Quá hạn) chạy ĐẦU để tổng thời gian chờ = phần chậm nhất.
 var SPX_OV_PARTS = ['violation', 'aging', 'kpifail', 'riderplan', 'rescue'];
-
-// [MỚI — UI/UX Shimmer Dashboard 0ms] Dựng ngay bộ khung Skeleton Dashboard tại 0ms
-// thay vì để trống hay hiện thông báo chữ vàng.
-function spxRenderOverviewSkeleton(body) {
-  if (!body) return;
-  var isRealAdmin = !!(window.SPX_ACCESS && window.SPX_ACCESS.role === 'admin');
-  var effectiveLevel = (isRealAdmin && SPX_PREVIEW_LEVEL) ? SPX_PREVIEW_LEVEL : ((window.SPX_ACCESS && window.SPX_ACCESS.role) || 'admin');
-  var levelLabel = (typeof SPX_LEVEL_LABEL !== 'undefined' && SPX_LEVEL_LABEL[effectiveLevel]) || effectiveLevel;
-  var titleMap = {
-    admin: spxUiLabel('Tổng quan điều hành toàn hệ thống'), rom: spxUiLabel('Tổng quan điều hành toàn vùng'),
-    aom: spxUiLabel('Tổng quan điều hành khu vực (AOM)'), sup: spxUiLabel('Điều hành nhóm Hub'),
-    lead: spxUiLabel('Trung tâm điều hành Hub'), staff: spxUiLabel('Work Queue – Công việc của tôi')
-  };
-
-  var s = header_(titleMap[effectiveLevel] || spxUiLabel('Tổng quan'), levelLabel, 'SPX HUB / ' + spxUiLabel('Tổng quan') + ' / ' + effectiveLevel.toUpperCase());
-
-  // Priority Cards Section
-  s += '<div style="font-size:11px;font-weight:800;color:#354157;text-transform:uppercase;letter-spacing:.03em;margin:14px 0 8px">⚡ ' + spxUiLabel('Ưu tiên vận hành') + ' <span style="font-weight:400;color:#8490a3;text-transform:none">— ' + spxUiLabel('5 chỉ số thật cần xử lý trước') + '</span></div>';
-  s += '<div id="spxOvPriorityCards"><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">';
-  
-  var cards = [
-    { tag: 'SLA CẢNH BÁO', color: '#ef4444', bg: 'rgba(239,68,68,.08)', border: 'rgba(239,68,68,.3)', title: '↻ ' + spxUiLabel('Quá Hạn & Lost') },
-    { tag: 'KPI THÁNG NÀY', color: '#f59e0b', bg: 'rgba(245,158,11,.08)', border: 'rgba(245,158,11,.3)', title: '◎ KPI Fail Hub' },
-    { tag: 'KHẨN CẤP', color: '#ef4444', bg: 'rgba(239,68,68,.08)', border: 'rgba(239,68,68,.3)', title: '🆘 ' + spxUiLabel('Đơn cần cầu cứu') },
-    { tag: 'CẦN THEO DÕI', color: '#f59e0b', bg: 'rgba(245,158,11,.08)', border: 'rgba(245,158,11,.3)', title: '📋 ' + spxUiLabel('Vi phạm chưa xử lý') },
-    { tag: 'HÔM NAY', color: '#0ea5e9', bg: 'rgba(14,165,233,.08)', border: 'rgba(14,165,233,.3)', title: '🏍 ' + spxUiLabel('Rider Plan hôm nay') }
-  ];
-
-  cards.forEach(function(c) {
-    s += '<div style="background:' + c.bg + ';border:1px solid ' + c.border + ';border-radius:14px;padding:16px">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-size:9.5px;font-weight:800;color:' + c.color + ';background:' + c.color + '1a;padding:2px 8px;border-radius:5px">' + spxUiLabel(c.tag) + '</span></div>' +
-      '<div style="font-size:13px;font-weight:800;color:var(--qh-cmp-text,#1e293b)">' + c.title + '</div>' +
-      '<div style="font-size:28px;font-weight:900;margin:6px 0"><span class="spx-skeleton-box" style="display:inline-block;height:28px;width:100px;border-radius:6px;vertical-align:middle"></span></div>' +
-      '<div style="margin-top:4px"><span class="spx-skeleton-box" style="display:inline-block;height:12px;width:75%;border-radius:4px;vertical-align:middle"></span></div>' +
-    '</div>';
-  });
-  s += '</div></div>';
-
-  // AI Card Skeleton
-  s += '<div id="spxOverviewAICard" style="margin:16px 0;background:linear-gradient(135deg,#f5f3ff,#fff);border:1px solid #ddd6fe;border-radius:14px;padding:16px">' +
-    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><i class="fas fa-brain" style="color:#7c3aed"></i><span style="font-size:11px;font-weight:800;color:#4c1d95;text-transform:uppercase;letter-spacing:.03em">' + spxUiLabel('AI Phân Tích Ca Vận Hành') + '</span><span style="font-size:10px;color:#a78bfa;font-weight:400;text-transform:none">— ' + spxUiLabel('tự động, chạy song song lúc tải Tổng quan') + '</span></div>' +
-    '<div id="spxOverviewAIBody" style="display:flex;flex-direction:column;gap:8px">' +
-      '<div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#7c3aed;font-weight:700"><i class="fas fa-sparkles fa-spin"></i> ' + spxUiLabel('Đang tổng hợp dữ liệu ca vận hành...') + '</div>' +
-      '<div class="spx-skeleton-box" style="height:13px;width:95%;border-radius:4px"></div>' +
-      '<div class="spx-skeleton-box" style="height:13px;width:80%;border-radius:4px"></div>' +
-      '<div class="spx-skeleton-box" style="height:13px;width:60%;border-radius:4px"></div>' +
-    '</div>' +
-  '</div>';
-
-  // Detail Zone Skeleton
-  s += '<div style="font-size:11px;font-weight:800;color:#354157;text-transform:uppercase;letter-spacing:.03em;margin:16px 0 8px">🗂️ ' + spxUiLabel('Chi tiết giám sát vận hành') + '</div>';
-  s += '<div id="spxOverviewDetailZone" style="background:var(--spxnew--panel,#fff);border:1px solid var(--spxnew--line,#e2e8f0);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px">' +
-    '<div class="spx-skeleton-box" style="height:18px;width:220px;border-radius:4px"></div>' +
-    '<div class="spx-skeleton-box" style="height:14px;width:100%;border-radius:4px"></div>' +
-    '<div class="spx-skeleton-box" style="height:14px;width:95%;border-radius:4px"></div>' +
-    '<div class="spx-skeleton-box" style="height:14px;width:88%;border-radius:4px"></div>' +
-  '</div>';
-
-  // Operational Modules
-  s += '<div style="font-size:11px;font-weight:800;color:#354157;text-transform:uppercase;letter-spacing:.03em;margin:16px 0 8px">🟢 ' + spxUiLabel('Chức năng vận hành') + '</div>';
-  s += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">' +
-    spxOverviewModuleCard('fmsmodule', '🧱', '#fee2e2', '#b91c1c', 'Tồn Đọng LastMile', 'Module JS_FMS thật.') +
-    spxOverviewModuleCard('pickmodule', '🏍', '#dbeafe', '#1d4ed8', 'Quản lý Pick', 'Nạp Task/Assign, theo dõi tiến độ.') +
-    spxOverviewModuleCard('cost', '💰', '#dcfce7', '#15803d', 'Lương Sản Lượng', 'Tính lương Rider theo vùng, ngày.') +
-    spxOverviewModuleCard('reports', '📊', '#ede9fe', '#6d28d9', 'Phân Tích Chuyên Sâu', 'Dashboard BI thật.') +
-  '</div>';
-
-  body.innerHTML = s;
-}
-
 function spxRenderRealOverview(body, opts){
-  spxRenderOverviewSkeleton(body);
+  body.innerHTML = header_(spxUiLabel('Tổng quan'), spxUiLabel('ĐANG TẢI...'), 'SPX HUB / ' + spxUiLabel('Tổng quan')) +
+    '<div class="module-note wip-note">⏳ ' + spxUiLabel('Đang tải dữ liệu thật...') + '</div>';
 
   if (!(typeof google !== 'undefined' && google.script && google.script.run)) {
     body.innerHTML = header_(spxUiLabel('Tổng quan'), spxUiLabel('XEM NGOÀI'), 'SPX HUB / ' + spxUiLabel('Tổng quan')) +
@@ -4705,10 +4496,8 @@ function spxOvBuildPriorityCards_(res) {
   var aging = res.aging || {}, kpi = res.kpifail || {};
   var isRealAdmin = res.levelCode === 'admin';
   var pend = res._pending || {}, perr = res._partErr || {}, refr = res._refreshing || {};
-  var effectiveLevel = (isRealAdmin && typeof SPX_PREVIEW_LEVEL !== 'undefined' && SPX_PREVIEW_LEVEL) ? SPX_PREVIEW_LEVEL : (res.levelCode || (window.SPX_ACCESS && window.SPX_ACCESS.role) || 'admin');
-  var levelLabel = (typeof SPX_LEVEL_LABEL !== 'undefined' && SPX_LEVEL_LABEL[effectiveLevel]) || effectiveLevel;
   var ov = function (part, html) {
-    if (pend[part]) return '<span class="spx-skeleton-box" style="display:inline-block;height:28px;width:95px;border-radius:6px;vertical-align:middle"></span>';
+    if (pend[part]) return '<span style="opacity:.35">…</span>';
     if (perr[part] && !res[part]) return '<span title="' + spxEscHtml(perr[part]) + '" style="color:#b45309">—</span>';
     var warn = perr[part] ? ' <span title="' + spxEscHtml(perr[part]) + '" style="color:#b45309;font-size:14px">⚠</span>' : '';
     return refr[part] ? '<span style="opacity:.5" title="' + spxEscHtml(spxUiLabel('Đang cập nhật...')) + '">' + html + '</span>' + warn : html + warn;
@@ -4764,7 +4553,7 @@ function spxOvBuildPriorityCards_(res) {
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-size:9.5px;font-weight:800;color:var(--spx-sev-warning,#f59e0b);background:rgba(245,158,11,.15);padding:2px 8px;border-radius:5px">' + spxUiLabel('KPI THÁNG NÀY') + '</span></div>' +
       '<div style="font-size:13px;font-weight:800;color:var(--qh-cmp-text,#1e293b)">◎ KPI Fail Hub</div>' +
       '<div style="font-size:28px;font-weight:900;color:var(--qh-cmp-text,#1e293b);margin:4px 0">' + ov('kpifail', kpiFailTotal.toLocaleString('vi-VN') + ' ' + spxUiLabel('đơn')) + '</div>' +
-      '<div style="font-size:11px;color:var(--qh-cmp-text-muted,#8490a3)">' + ((pend.kpifail || (perr.kpifail && !res.kpifail)) ? '<span class="spx-skeleton-box" style="display:inline-block;height:12px;width:160px;vertical-align:middle"></span>' : ('FM Late ' + (kpi.totalFM||0) + ' · LM Late ' + (kpi.totalLM||0) + ' · Wrong SOP ' + (kpi.totalSOP||0))) + '</div>' +
+      '<div style="font-size:11px;color:var(--qh-cmp-text-muted,#8490a3)">' + ((pend.kpifail || (perr.kpifail && !res.kpifail)) ? '' : ('FM Late ' + (kpi.totalFM||0) + ' · LM Late ' + (kpi.totalLM||0) + ' · Wrong SOP ' + (kpi.totalSOP||0))) + '</div>' +
       scopeCaveat +
     '</div>' +
     '<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:14px;padding:16px;cursor:pointer" onclick="spxJumpToNav(\'rescue\')">' +
@@ -4788,9 +4577,8 @@ function spxOvBuildPriorityCards_(res) {
       // "số trạm chưa nhập" vô nghĩa. Nhiều trạm -> giữ cách đếm cũ.
       (function(){
         if (pend.riderplan || (perr.riderplan && !res.riderplan)) {
-          return '<div style="font-size:13px;font-weight:800;color:var(--qh-cmp-text,#1e293b)">🏍 Rider Plan ' + spxUiLabel('hôm nay') + '</div>' +
-            '<div style="font-size:28px;font-weight:900;color:var(--qh-cmp-text,#1e293b);margin:4px 0"><span class="spx-skeleton-box" style="display:inline-block;height:28px;width:110px;border-radius:6px;vertical-align:middle"></span></div>' +
-            '<div style="font-size:11px;color:var(--qh-cmp-text-muted,#8490a3)"><span class="spx-skeleton-box" style="display:inline-block;height:12px;width:170px;vertical-align:middle"></span></div>';
+          return '<div style="font-size:13px;font-weight:800;color:var(--qh-cmp-text,#1e293b)">🏍 Rider Plan</div>' +
+            '<div style="font-size:28px;font-weight:900;color:var(--qh-cmp-text,#1e293b);margin:4px 0">' + ov('riderplan', '') + '</div>';
         }
         var sg = res.riderplan && res.riderplan.single;
         if (sg) {
@@ -4920,27 +4708,13 @@ var SPX_PREVIEW_ENTITY = '';
 // ẩn/hiện cả khung theo ĐÚNG quyền admin thật (gọi từ cùng chỗ đã gọi
 // _spxUpdateHeaderUserLevel() lúc bootstrap access).
 function spxRenderHeaderPreviewLevelBtns(){
-  var effective = SPX_PREVIEW_LEVEL || 'admin';
-  var sel = document.getElementById('spxHeaderPreviewLevelSelect');
-  if (sel) {
-    sel.value = effective;
-    var isEn = (typeof SPX_LANG !== 'undefined' && SPX_LANG === 'en');
-    if (sel.options && sel.options.length >= 6) {
-      sel.options[0].textContent = isEn ? '👑 Admin (Full System)' : '👑 Admin (Toàn hệ thống)';
-      sel.options[1].textContent = isEn ? '🌐 L1 · ROM (Region)' : '🌐 L1 · ROM (Toàn vùng)';
-      sel.options[2].textContent = isEn ? '🏢 L2 · AOM (Area)' : '🏢 L2 · AOM (Khu vực)';
-      sel.options[3].textContent = isEn ? '🛡️ L3 · SUP (Hub Cluster)' : '🛡️ L3 · SUP (Nhóm Hub)';
-      sel.options[4].textContent = isEn ? '📍 L4 · Lead (Hub Lead)' : '📍 L4 · Lead (Trưởng Hub)';
-      sel.options[5].textContent = isEn ? '🚴 L5 · Staff (Operations)' : '🚴 L5 · Staff (Nhân viên)';
-    }
-  }
   var wrap = document.getElementById('spxHeaderPreviewLevelBtns');
-  if (wrap) {
-    wrap.innerHTML = SPX_PREVIEW_LEVELS.map(function(r){
-      var active = r.key === effective;
-      return '<button type="button" class="spx-header-preview-level-btn' + (active ? ' active' : '') + '" onclick="spxSetPreviewLevel(\'' + r.key + '\')">' + r.label + '</button>';
-    }).join('');
-  }
+  if (!wrap) return;
+  var effective = SPX_PREVIEW_LEVEL || 'admin';
+  wrap.innerHTML = SPX_PREVIEW_LEVELS.map(function(r){
+    var active = r.key === effective;
+    return '<button type="button" class="spx-header-preview-level-btn' + (active ? ' active' : '') + '" onclick="spxSetPreviewLevel(\'' + r.key + '\')">' + r.label + '</button>';
+  }).join('');
 }
 function spxRefreshHeaderPreviewLevelVisibility(access){
   var box = document.getElementById('spxHeaderPreviewLevelWrap');
@@ -4948,8 +4722,9 @@ function spxRefreshHeaderPreviewLevelVisibility(access){
   var isAdmin = !!(access && access.role === 'admin');
   box.classList.toggle('hidden', !isAdmin);
   if (isAdmin) spxRenderHeaderPreviewLevelBtns();
+  // [MỚI] Dropdown "Chọn cụ thể" đi CÙNG vòng đời admin-only với khung Level —
+  // gọi lại ở đây để lần đầu bootstrap access cũng ẩn/hiện đúng ngay.
   spxRenderHeaderPreviewEntityPicker();
-  if (typeof spxUpdateAdminShowHiddenBtn === 'function') spxUpdateAdminShowHiddenBtn();
 }
 
 // [MỚI — theo yêu cầu "cần có lựa chọn ROM/AOM/SUP/Lead/Staff CỤ THỂ, giống
@@ -5017,12 +4792,20 @@ function spxSetPreviewEntity(value){
       try { if (typeof spxRenderRealOverview === 'function' && currentSpxNav === 'index') spxRenderRealOverview(); } catch (e) {}
     });
   }
-  try { if (typeof qhApplyPreviewLevel === 'function') qhApplyPreviewLevel(SPX_PREVIEW_LEVEL); } catch (e) { console.error(e); }
-  try { if (typeof kpifailApplyPreviewLevel === 'function') kpifailApplyPreviewLevel(SPX_PREVIEW_LEVEL); } catch (e) { console.error(e); }
-  try { if (typeof rpApplyPreviewLevel === 'function') rpApplyPreviewLevel(SPX_PREVIEW_LEVEL); } catch (e) { console.error(e); }
-  try { if (typeof rqApplyPreviewLevel === 'function') rqApplyPreviewLevel(SPX_PREVIEW_LEVEL); } catch (e) { console.error(e); }
-  try { if (typeof vpApplyPreviewLevel === 'function') vpApplyPreviewLevel(SPX_PREVIEW_LEVEL); } catch (e) { console.error(e); }
-  try { if (typeof pickApplyPreviewLevel === 'function') pickApplyPreviewLevel(SPX_PREVIEW_LEVEL); } catch (e) { console.error(e); }
+  if (typeof qhApplyPreviewLevel === 'function') qhApplyPreviewLevel(SPX_PREVIEW_LEVEL);
+  if (typeof kpifailApplyPreviewLevel === 'function') kpifailApplyPreviewLevel(SPX_PREVIEW_LEVEL);
+  // [MỚI — Bước 5 Rider Plan] Tự bỏ qua an toàn nếu module chưa từng mở trong
+  // phiên (lazy-load, RAW chưa tồn tại) — sẽ tự áp dụng lại lúc module tải
+  // xong (xem cuối _finishInitRiderPlan()).
+  if (typeof rpApplyPreviewLevel === 'function') rpApplyPreviewLevel(SPX_PREVIEW_LEVEL);
+  // [MỚI — hoàn thành "phân hoá view theo level" cho Đơn cần cầu cứu]
+  if (typeof rqApplyPreviewLevel === 'function') rqApplyPreviewLevel(SPX_PREVIEW_LEVEL);
+  // [MỚI — hoàn thành "phân hoá view theo level" cho Vi phạm]
+  if (typeof vpApplyPreviewLevel === 'function') vpApplyPreviewLevel(SPX_PREVIEW_LEVEL);
+  // [SỬA LỖI THẬT — báo cáo kèm ảnh: đổi AOM/SUP ở dropdown mà số liệu module
+  // Quản lý Pick KHÔNG đổi] Danh sách gọi lại này TRƯỚC ĐÂY bỏ sót hoàn toàn
+  // pickApplyPreviewLevel — nên Pick không hề biết Admin vừa chọn người khác.
+  if (typeof pickApplyPreviewLevel === 'function') pickApplyPreviewLevel(SPX_PREVIEW_LEVEL);
   // [MỚI — nhất quán 3 module đã làm Bước 5] Tổng quan cũng phải phản ứng khi
   // Admin chọn 1 AOM/SUP cụ thể — trước đây dropdown mới CHỈ có tác dụng ở
   // Quá Hạn/KPI Fail, Tổng quan bị bỏ sót hoàn toàn.
@@ -5091,12 +4874,7 @@ function spxSetPreviewLevel(level){
   // [MỚI] Đổi Level -> entity cụ thể đang chọn (nếu có) không còn hợp lệ nữa
   // (VD đang chọn 1 SUP tên X, đổi sang AOM thì tên đó không có nghĩa gì) —
   // xoá luôn, tránh dính sai dữ liệu từ lựa chọn cũ.
-  if (level === 'aom' || level === 'sup' || level === 'rom') {
-    var _availEnts = (typeof spxGetOrgEntityList === 'function') ? spxGetOrgEntityList(level) : [];
-    SPX_PREVIEW_ENTITY = (_availEnts && _availEnts.length > 0) ? _availEnts[0] : '';
-  } else {
-    SPX_PREVIEW_ENTITY = '';
-  }
+  SPX_PREVIEW_ENTITY = '';
   // [FIX LỖI THẬT — cùng nguyên nhân/cùng cách sửa đã áp dụng cho
   // syncHubSelection() trong JS_Quahan.html] Đổi Level cũng là đổi PHẠM VI xem
   // — bộ lọc category cũ (activeCategoryQH, VD đang lọc "Đang xử lý") có thể
@@ -5114,11 +4892,6 @@ function spxSetPreviewLevel(level){
   window._qhExplicitHubDrill = false;
   spxRenderHeaderPreviewLevelBtns();
   spxRenderHeaderPreviewEntityPicker();
-  if (typeof spxUpdateAdminShowHiddenBtn === 'function') spxUpdateAdminShowHiddenBtn();
-  if (typeof spxBuildNav === 'function') spxBuildNav();
-  if (level !== 'admin' && currentSpxNav && currentSpxNav.indexOf('admin') === 0) {
-    if (typeof spxJumpToNav === 'function') spxJumpToNav('overview');
-  }
 
   // [FIX LỖI THẬT — xác nhận qua báo cáo trực tiếp "đổi level nhưng Tổng quan
   // không tự đổi dữ liệu theo"] TRƯỚC ĐÂY chỉ vẽ lại với kết quả CŨ đã tải
@@ -5126,10 +4899,8 @@ function spxSetPreviewLevel(level){
   // backend giờ đã hỗ trợ lọc đúng theo overrideHub (xem spxRenderRealOverview()),
   // số liệu vẫn đứng yên vì chưa từng được yêu cầu tính lại. Giờ gọi lại toàn
   // bộ spxRenderRealOverview() để tải đúng số liệu theo phạm vi Level mới.
-  try {
-    var body = document.getElementById('spxDashboardBody');
-    if (body) spxRenderRealOverview(body);
-  } catch (eOv) { console.error('spxRenderRealOverview error:', eOv); }
+  var body = document.getElementById('spxDashboardBody');
+  if (body) spxRenderRealOverview(body);
 
   // [SỬA LỖI — phát hiện qua ảnh chụp thật "dữ liệu không đúng với trạm cố
   // định"] Trước đây CHỈ đồng bộ Quá Hạn khi nó ĐANG LÀ module hiển thị lúc
@@ -5149,11 +4920,11 @@ function spxSetPreviewLevel(level){
   // phạm vi mới TRƯỚC, rồi mới tự gọi qhApplyPreviewLevel() ở cuối (dòng cuối
   // của applyFiltersQH()) — đảm bảo bảng so sánh luôn nhận đúng KPI đã cập
   // nhật, không còn dính nội dung cũ nữa.
-  try { if (typeof applyFiltersQH === 'function') applyFiltersQH(); } catch (eQh) { console.error('applyFiltersQH error:', eQh); }
+  if (typeof applyFiltersQH === 'function') applyFiltersQH();
 
   // [MỚI — Bước 5 cho KPI Fail] Cùng nguyên tắc/kiến trúc đã áp dụng cho Quá
   // Hạn — gọi vô điều kiện, không kiểm tra module nào đang hiển thị.
-  try { if (typeof kpifailApplyPreviewLevel === 'function') kpifailApplyPreviewLevel(level); } catch (eKpi) { console.error('kpifailApplyPreviewLevel error:', eKpi); }
+  if (typeof kpifailApplyPreviewLevel === 'function') kpifailApplyPreviewLevel(level);
 
   // [MỚI — theo yêu cầu trực tiếp "mỗi level nhìn khác nhau, đồng bộ ngay khi
   // đổi, áp dụng cho mọi module hiện có + làm nền cho module tương lai"] FMS/
@@ -5162,17 +4933,17 @@ function spxSetPreviewLevel(level){
   // đã vá cho Quá Hạn/KPI Fail trước đây, nay mở rộng nốt cho đủ. Cả 3 hàm đã
   // tự bảo vệ (tự kiểm tra isRealAdmin/level, tự no-op nếu không áp dụng) nên
   // an toàn gọi vô điều kiện tại đây, không cần kiểm tra module nào đang mở.
-  try { if (typeof fmsApplyPreviewLevel === 'function') fmsApplyPreviewLevel(level); } catch (eFms) { console.error('fmsApplyPreviewLevel error:', eFms); }
-  try { if (typeof pickApplyPreviewLevel === 'function') pickApplyPreviewLevel(level); } catch (ePick) { console.error('pickApplyPreviewLevel error:', ePick); }
-  try { if (typeof luongApplyPreviewLevel === 'function') luongApplyPreviewLevel(level); } catch (eLg) { console.error('luongApplyPreviewLevel error:', eLg); }
+  if (typeof fmsApplyPreviewLevel === 'function') fmsApplyPreviewLevel(level);
+  if (typeof pickApplyPreviewLevel === 'function') pickApplyPreviewLevel(level);
+  if (typeof luongApplyPreviewLevel === 'function') luongApplyPreviewLevel(level);
 
   // [MỚI — Bước 5 Rider Plan] Đã rà kỹ xác nhận an toàn tuyệt đối với cơ chế
   // autosave/dirty-tracking trước khi nối — tự bỏ qua nếu module chưa mở.
-  try { if (typeof rpApplyPreviewLevel === 'function') rpApplyPreviewLevel(level); } catch (eRp) { console.error('rpApplyPreviewLevel error:', eRp); }
+  if (typeof rpApplyPreviewLevel === 'function') rpApplyPreviewLevel(level);
   // [MỚI — hoàn thành "phân hoá view theo level" cho Đơn cần cầu cứu]
-  try { if (typeof rqApplyPreviewLevel === 'function') rqApplyPreviewLevel(level); } catch (eRq) { console.error('rqApplyPreviewLevel error:', eRq); }
+  if (typeof rqApplyPreviewLevel === 'function') rqApplyPreviewLevel(level);
   // [MỚI — hoàn thành "phân hoá view theo level" cho Vi phạm]
-  try { if (typeof vpApplyPreviewLevel === 'function') vpApplyPreviewLevel(level); } catch (eVp) { console.error('vpApplyPreviewLevel error:', eVp); }
+  if (typeof vpApplyPreviewLevel === 'function') vpApplyPreviewLevel(level);
 }
 // [Tương thích ngược] Giữ tên hàm cũ cho chắc — nếu còn chỗ nào gọi
 // spxSwitchPreviewLevel() (không nên còn, nhưng phòng hờ), vẫn hoạt động đúng.
@@ -5182,7 +4953,7 @@ function spxRenderOverviewSummary(body, res, skipReload){
   window._spxOverviewRealRes = res; // lưu lại cho spxSwitchPreviewLevel dùng, tránh gọi lại backend
   var isRealAdmin = res.levelCode === 'admin';
   var effectiveLevel = (isRealAdmin && SPX_PREVIEW_LEVEL) ? SPX_PREVIEW_LEVEL : res.levelCode;
-  var levelLabel = (typeof SPX_LEVEL_LABEL !== 'undefined' && SPX_LEVEL_LABEL[effectiveLevel]) || effectiveLevel;
+  var levelLabel = SPX_LEVEL_LABEL[effectiveLevel] || effectiveLevel;
   var aging = res.aging || {}, kpi = res.kpifail || {};
 
   var titleMap = {
@@ -5231,13 +5002,8 @@ function spxRenderOverviewSummary(body, res, skipReload){
   // gọi spxLoadOverviewAIAnalysis() bên dưới, khớp đúng điều kiện early-return
   // sẵn có của hàm này).
   s += '<div id="spxOverviewAICard" style="margin:16px 0;background:linear-gradient(135deg,#f5f3ff,#fff);border:1px solid #ddd6fe;border-radius:14px;padding:16px">' +
-    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><i class="fas fa-brain" style="color:#7c3aed"></i><span style="font-size:11px;font-weight:800;color:#4c1d95;text-transform:uppercase;letter-spacing:.03em">' + spxUiLabel('AI Phân Tích Ca Vận Hành') + '</span><span style="font-size:10px;color:#a78bfa;font-weight:400;text-transform:none">— ' + spxUiLabel('tự động, chạy song song lúc tải Tổng quan') + '</span></div>' +
-    '<div id="spxOverviewAIBody" style="display:flex;flex-direction:column;gap:8px">' +
-      '<div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#7c3aed;font-weight:700"><i class="fas fa-sparkles fa-spin"></i> ' + spxUiLabel('Đang tổng hợp dữ liệu ca vận hành...') + '</div>' +
-      '<div class="spx-skeleton-box" style="height:13px;width:95%;border-radius:4px"></div>' +
-      '<div class="spx-skeleton-box" style="height:13px;width:80%;border-radius:4px"></div>' +
-      '<div class="spx-skeleton-box" style="height:13px;width:60%;border-radius:4px"></div>' +
-    '</div>' +
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><i class="fas fa-brain" style="color:#7c3aed"></i><span style="font-size:11px;font-weight:800;color:#4c1d95;text-transform:uppercase;letter-spacing:.03em">' + spxUiLabel('AI Phân Tích Ca Vận Hành') + '</span><span style="font-size:10px;color:#a78bfa;font-weight:400;text-transform:none">— ' + spxUiLabel('tự động, chạy song song lúc tải Tổng quan') + '</span></div>' +
+    '<div id="spxOverviewAIBody" style="font-size:13px;line-height:1.8;color:#334155"><i class="fas fa-spinner fa-spin" style="color:#8b5cf6"></i> ' + spxUiLabel('Đang phân tích ca vận hành...') + '</div>' +
   '</div>';
 
   var sectionTitleMap = {
@@ -5245,12 +5011,7 @@ function spxRenderOverviewSummary(body, res, skipReload){
     sup: spxUiLabel('CÁC HUB TÔI QUẢN LÝ'), lead: spxUiLabel('VIỆC VẬN HÀNH HÔM NAY'), staff: spxUiLabel('VIỆC CỦA TÔI')
   };
   s += '<div style="font-size:11px;font-weight:800;color:#354157;text-transform:uppercase;letter-spacing:.03em;margin:16px 0 8px">🗂️ ' + (sectionTitleMap[effectiveLevel]||'') + '</div>';
-  s += '<div id="spxOverviewDetailZone" style="background:var(--spxnew--panel,#fff);border:1px solid var(--spxnew--line,#e2e8f0);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px">' +
-    '<div class="spx-skeleton-box" style="height:18px;width:220px;border-radius:4px"></div>' +
-    '<div class="spx-skeleton-box" style="height:14px;width:100%;border-radius:4px"></div>' +
-    '<div class="spx-skeleton-box" style="height:14px;width:95%;border-radius:4px"></div>' +
-    '<div class="spx-skeleton-box" style="height:14px;width:88%;border-radius:4px"></div>' +
-  '</div>';
+  s += '<div id="spxOverviewDetailZone"><div class="module-note wip-note">⏳ ' + spxUiLabel('Đang tải bảng so sánh chi tiết...') + '</div></div>';
 
   // ===== 4 thẻ module vận hành — đúng demo =====
   s += '<div style="font-size:11px;font-weight:800;color:#354157;text-transform:uppercase;letter-spacing:.03em;margin:16px 0 8px">🟢 Chức năng vận hành</div>';
@@ -6841,8 +6602,6 @@ function spxSetLanguage(lang){
     if (!hasHub) lbl.textContent = spxNoHubLabel();
   })();
   if (typeof _spxUpdateHeaderUserLevel === 'function') _spxUpdateHeaderUserLevel(window._spxLastAccessForLevelLabel);
-  if (typeof spxRenderHeaderPreviewLevelBtns === 'function') spxRenderHeaderPreviewLevelBtns();
-  if (typeof spxUpdateAdminShowHiddenBtn === 'function') spxUpdateAdminShowHiddenBtn();
   // [FIX LỖI THẬT — xác nhận qua báo cáo trực tiếp "chỗ thì EN chỗ thì VI"]
   // TRƯỚC ĐÂY đổi ngôn ngữ KHÔNG hề vẽ lại nội dung module đang mở — chỉ vẽ
   // lại sidebar + phần tử HTML tĩnh có data-i18n-ui. Nội dung vẽ 1 LẦN lúc
@@ -6904,46 +6663,14 @@ document.addEventListener('DOMContentLoaded', function(){
 // điều kiện riêng -> đã từng sót nhánh menu bay. Gom về 1 chỗ để không lặp lại.
 function _spxNavItemVisible(it) {
   if (!it) return false;
+  var isAdm = !!(window.SPX_ACCESS && window.SPX_ACCESS.role === 'admin');
+  if (isAdm) return true;                    // admin luôn thấy (có nhãn đánh dấu)
   if (it.key === 'overview') return true;    // Tổng quan không bao giờ bị ẩn
-
-  var isRealAdmin = !!(window.SPX_ACCESS && window.SPX_ACCESS.role === 'admin');
-  var isEffectiveAdmin = isRealAdmin && (!SPX_PREVIEW_LEVEL || SPX_PREVIEW_LEVEL === 'admin');
-  var adminShowHidden = isEffectiveAdmin && (localStorage.getItem('spx_admin_show_hidden') === '1');
-
+  // Chưa biết trạng thái (lần đầu, chưa có bản lưu) -> tạm giữ lại, tránh hiện
+  // ra rồi mới biến mất. Tối đa 4 giây rồi tự hiện lại (xem SPX_MODSTATUS_LS_KEY).
+  if (!window._spxModStatusReady) return false;
   var m = (window.SPX_MODULE_STATUS || {})[REAL_MODULE_MAP[it.key] || it.key];
-  var isHidden = !!(m && m.status === 'hidden');
-
-  if (isHidden) {
-    return adminShowHidden;
-  }
-  if (!isEffectiveAdmin && it.status && it.status !== 'ok') {
-    return false;
-  }
-  return true;
-}
-
-function spxToggleAdminShowHidden(){
-  var cur = localStorage.getItem('spx_admin_show_hidden') === '1';
-  localStorage.setItem('spx_admin_show_hidden', cur ? '0' : '1');
-  spxUpdateAdminShowHiddenBtn();
-  if (typeof spxBuildNav === 'function') spxBuildNav();
-}
-
-function spxUpdateAdminShowHiddenBtn(){
-  var btn = document.getElementById('spxAdminShowHiddenBtn');
-  var lbl = document.getElementById('spxAdminShowHiddenLabel');
-  if (!btn) return;
-  var isRealAdmin = !!(window.SPX_ACCESS && window.SPX_ACCESS.role === 'admin');
-  var isEffectiveAdmin = isRealAdmin && (!SPX_PREVIEW_LEVEL || SPX_PREVIEW_LEVEL === 'admin');
-  btn.classList.toggle('hidden', !isEffectiveAdmin);
-  if (isEffectiveAdmin && lbl) {
-    var cur = localStorage.getItem('spx_admin_show_hidden') === '1';
-    var isEn = (typeof SPX_LANG !== 'undefined' && SPX_LANG === 'en');
-    lbl.textContent = cur ? (isEn ? 'Hide drafts' : 'Ẩn module nháp') : (isEn ? 'Show drafts' : 'Hiện module nháp');
-    btn.setAttribute('title', cur ? (isEn ? 'Hide under-construction modules from sidebar' : 'Ẩn các module đang xây dựng khỏi menu') : (isEn ? 'Show under-construction modules on sidebar' : 'Hiển thị các module đang xây dựng lên menu'));
-    btn.style.opacity = cur ? '1' : '0.65';
-    btn.style.borderColor = cur ? '#f97316' : '';
-  }
+  return !(m && m.status === 'hidden');
 }
 
 function spxNavBtnHtml(it){
@@ -6991,9 +6718,7 @@ function spxBuildNav(){
   // [FIX] Thêm nhóm Admin nếu ĐÚNG user thật là admin (window.SPX_ACCESS thật) —
   // có thể CHƯA tải xong ở lần gọi đầu tiên (bất đồng bộ) — xem vòng dò bên dưới.
   var navToRender = NAV.slice();
-  var isRealAdmin = !!(window.SPX_ACCESS && window.SPX_ACCESS.role === 'admin');
-  var isEffectiveAdmin = isRealAdmin && (!SPX_PREVIEW_LEVEL || SPX_PREVIEW_LEVEL === 'admin');
-  if (isEffectiveAdmin) {
+  if (window.SPX_ACCESS && window.SPX_ACCESS.role === 'admin') {
     // [SỬA LỖI THẬT — admin cấp 2 mở các tab Quản trị thấy toàn lỗi "yêu cầu
     // admin cấp 1"] Backend gán role:'admin' cho CẢ cấp 1 lẫn cấp 2 (phân biệt
     // bằng trường 'level'), nhưng menu chỉ xét role nên cấp 2 thấy đủ 7 tab.
@@ -7190,10 +6915,7 @@ function spxJumpToNav(key){
     // để nguyên đúng cơ chế class 'hidden' của openModule('index').
     if (typeof openModule === 'function') openModule('index'); // tự ẩn mọi view-* khác qua đúng class 'hidden', không can thiệp thêm
     var viewIndexEl = document.getElementById('view-index');
-    if (viewIndexEl) viewIndexEl.classList.add('hidden');
-    document.querySelectorAll('.module-view, [id^="view-"]').forEach(function(v) {
-      if (v.id !== 'spx-demo-dashboard') v.classList.add('hidden');
-    });
+    if (viewIndexEl) viewIndexEl.classList.add('hidden'); // openModule('index') vừa HIỆN view-index — ẩn lại vì ta dùng khung demo thay thế
     var dash = document.getElementById('spx-demo-dashboard');
     dash.classList.remove('hidden');
     dash.style.display = ''; // gỡ bỏ inline style cũ (nếu còn sót từ HTML gốc) — để đúng class 'hidden'/'module-view' toàn quyền quyết định
@@ -7361,37 +7083,6 @@ function spxPopulateHeaderHubList(){
 // =========================================================================
 var _spxHubPickerSelected = null;
 
-// [MỚI — UI/UX Helper] Chuẩn hoá tiếng Việt không dấu cho tìm kiếm mượt mà
-function _spxStripVnTones(str) {
-  if (!str) return '';
-  return String(str).normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd').replace(/Đ/g, 'D')
-    .toLowerCase().trim();
-}
-
-function _spxGetRecentHubs() {
-  try {
-    var raw = localStorage.getItem('spx_recent_hubs_v1');
-    return raw ? JSON.parse(raw) : [];
-  } catch(e) { return []; }
-}
-
-function _spxSaveRecentHub(hub) {
-  if (!hub || hub === 'ALL') return;
-  try {
-    var recents = _spxGetRecentHubs().filter(function(h){ return h && h !== hub && h !== 'ALL'; });
-    recents.unshift(hub);
-    if (recents.length > 5) recents = recents.slice(0, 5);
-    localStorage.setItem('spx_recent_hubs_v1', JSON.stringify(recents));
-  } catch(e) {}
-}
-
-function spxQuickSelectRecentHub(hubName){
-  _spxHubPickerSelected = hubName;
-  spxConfirmHubPicker();
-}
-
 function spxOpenHubPickerModal(){
   if (!window.MANAGED_STATIONS || !window.MANAGED_STATIONS.length) {
     if (typeof showToast === 'function') showToast(spxUiLabel('Chưa tải được danh sách trạm, vui lòng thử lại sau ít giây.'), 'error');
@@ -7400,7 +7091,7 @@ function spxOpenHubPickerModal(){
   _spxHubPickerSelected = null;
   document.getElementById('spxHubPickerConfirmBtn').disabled = true;
   document.getElementById('spxHubPickerSearch').value = '';
-  spxRenderHubPickerList(window.MANAGED_STATIONS, false);
+  spxRenderHubPickerList(window.MANAGED_STATIONS);
   document.getElementById('spxHubPickerOverlay').classList.remove('hidden');
   setTimeout(function(){ document.getElementById('spxHubPickerSearch').focus(); }, 50);
 }
@@ -7409,39 +7100,25 @@ function spxCloseHubPickerModal(){
   document.getElementById('spxHubPickerOverlay').classList.add('hidden');
 }
 
-function spxRenderHubPickerList(stations, isSearching){
+function spxRenderHubPickerList(stations){
   var list = document.getElementById('spxHubPickerList');
   var html = '';
-
-  // [MỚI — UI/UX CẢI TIẾN] Mục "Trạm gần đây" (Quick Access 1 chạm)
-  if (!isSearching) {
-    try {
-      var allStations = window.MANAGED_STATIONS || [];
-      var recents = _spxGetRecentHubs().filter(function(h){ return allStations.indexOf(h) !== -1; });
-      if (recents.length > 0) {
-        html += '<div style="padding:6px 12px 10px 12px;background:var(--qh-cmp-card-bg,rgba(248,250,252,0.6));border-radius:10px;margin:4px 6px 8px 6px;border:1px dashed var(--qh-cmp-border,#e2e8f0);">'
-          + '<div style="font-size:10.5px;font-weight:800;color:var(--qh-cmp-text-muted,#8490a3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:flex;align-items:center;gap:5px;">'
-          + '<i class="fas fa-clock-rotate-left" style="color:#ee4d2d;font-size:11px"></i> ' + spxUiLabel('Trạm gần đây')
-          + '</div>'
-          + '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
-        recents.forEach(function(rh){
-          var isCur = rh === spxHeaderSelectedHub;
-          html += '<button type="button" class="spx-recent-hub-pill" onclick="spxQuickSelectRecentHub(\'' + spxEscHtml(rh).replace(/'/g, "\\'") + '\')" '
-            + 'style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;border:1px solid ' + (isCur ? '#ee4d2d' : 'var(--qh-cmp-border,#cbd5e1)') + ';'
-            + 'background:' + (isCur ? 'rgba(238,77,45,0.1)' : 'var(--qh-cmp-head-bg,#fff)') + ';'
-            + 'color:' + (isCur ? '#ee4d2d' : 'var(--qh-cmp-text,#334155)') + ';cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all 0.15s ease;">'
-            + '<i class="fas fa-bolt" style="font-size:9.5px;color:' + (isCur ? '#ee4d2d' : '#f59e0b') + '"></i> '
-            + spxEscHtml(rh)
-            + '</button>';
-        });
-        html += '</div></div>';
-      }
-    } catch(eRec) {}
-  }
-
+  // [MỚI — theo yêu cầu "header phải có Tất cả để đồng bộ đúng với Rider Plan
+  // (và các module khác vốn đã hỗ trợ sẵn giá trị 'ALL')"] Luôn hiện "Tất cả"
+  // ở đầu danh sách — dùng đúng giá trị 'ALL' đã được hệ thống thật hỗ trợ
+  // xuyên suốt (đã xác nhận qua code changeHubIndex/syncHubSelection...).
   var isAllCur = spxHeaderSelectedHub === 'ALL';
+  // [SỬA LỖI THẬT — báo cáo kèm ảnh: user quản 1 trạm vẫn thấy "Tất cả trạm
+  // (Admin)"] Trước đây dòng này LUÔN hiện, không xét quyền hay số trạm.
+  // Đúng theo phân cấp:
+  //   - Admin              -> "Tất cả trạm" = TOÀN HỆ THỐNG
+  //   - ROM/AOM/SUP (≥2 trạm) -> "Tất cả trạm của tôi" = đúng các trạm MÌNH QUẢN
+  //     (dữ liệu vẫn đã được backend giới hạn theo quyền, nhãn chỉ cần nói đúng)
+  //   - Quản đúng 1 trạm   -> KHÔNG có mục "Tất cả" (nút chuyển trạm cũng ẩn)
   var _pkIsAdmin = !!(window.SPX_ACCESS && window.SPX_ACCESS.role === 'admin');
   if (_pkIsAdmin || stations.length > 1) {
+    // Tách số trạm ra NGOÀI hàm dịch — ghép số vào chuỗi sẽ không khớp từ điển
+    // tay và rơi xuống dịch máy.
     var _allLabel = _pkIsAdmin ? spxUiLabel('Tất cả trạm (toàn hệ thống)')
                                : (spxUiLabel('Tất cả trạm của tôi') + ' (' + stations.length + ')');
     html += '<div class="spx-hub-picker-item' + (isAllCur ? ' selected' : '') + '" data-hub="ALL" onclick="spxSelectHubInPicker(this)">'
@@ -7449,12 +7126,9 @@ function spxRenderHubPickerList(stations, isSearching){
       + (isAllCur ? '<i class="fas fa-check" style="color:#ee4d2d"></i>' : '')
       + '</div><div style="height:1px;background:#e4e9f1;margin:4px 10px"></div>';
   }
-
-  if (!stations.length) {
-    list.innerHTML = html + '<div style="padding:20px;text-align:center;color:var(--qh-cmp-text-muted,#8490a3);font-size:12px">' + spxUiLabel('Không tìm thấy trạm phù hợp') + '</div>';
-    return;
-  }
-
+  // [XOÁ CODE CHẾT] Dòng rác sót lại từ đợt sửa nút "Tất cả trạm" — câu lệnh không
+  // gán cho ai, không chạy vào đâu (công cụ lint mới bắt: no-unused-expressions).
+  if (!stations.length) { list.innerHTML = html + '<div style="padding:20px;text-align:center;color:#8490a3;font-size:12px">Không tìm thấy trạm phù hợp</div>'; return; }
   html += stations.map(function(h){
     var isCur = h === spxHeaderSelectedHub;
     return '<div class="spx-hub-picker-item' + (isCur ? ' selected' : '') + '" data-hub="' + spxEscHtml(h) + '" onclick="spxSelectHubInPicker(this)">'
@@ -7465,15 +7139,10 @@ function spxRenderHubPickerList(stations, isSearching){
   list.innerHTML = html;
 }
 
-// [MỚI — UI/UX Fuzzy Search] Tìm kiếm không phân biệt dấu tiếng Việt (krong pak -> Krông Pắc)
 function spxFilterHubPicker(query){
-  var qRaw = (query || '').toLowerCase().trim();
-  var qNorm = _spxStripVnTones(query);
-  var filtered = (window.MANAGED_STATIONS || []).filter(function(h){
-    if (!qNorm) return true;
-    return h.toLowerCase().indexOf(qRaw) !== -1 || _spxStripVnTones(h).indexOf(qNorm) !== -1;
-  });
-  spxRenderHubPickerList(filtered, !!qRaw);
+  var q = (query || '').toLowerCase().trim();
+  var filtered = (window.MANAGED_STATIONS || []).filter(function(h){ return h.toLowerCase().indexOf(q) !== -1; });
+  spxRenderHubPickerList(filtered);
 }
 
 function spxSelectHubInPicker(el){
@@ -7487,7 +7156,6 @@ function spxSelectHubInPicker(el){
 function spxConfirmHubPicker(){
   if (!_spxHubPickerSelected) return;
   var newHub = _spxHubPickerSelected;
-  _spxSaveRecentHub(newHub);
 
   // [RÀNG BUỘC 1 — BI đang đẩy dữ liệu lên Cloud] Dùng lại ĐÚNG hàm thật
   // window._anaIsStationBusy() của BI — kiểm tra đúng TRẠM SẮP RỜI ĐI (đang mở),
@@ -7720,30 +7388,28 @@ function spxHeaderHubChange(hubName, silent){
     if (typeof rqSelectStation === 'function') {
       if (hubName === 'ALL') {
         rqSelectStation('');
-      } else {
+      } else if (typeof RQ_access !== 'undefined' && RQ_access && RQ_access.stations) {
         var _rqNormFn = typeof cleanHubString === 'function' ? cleanHubString : function(s){ return (s||'').toString().trim().toLowerCase(); };
         var _rqNormTarget = _rqNormFn(hubName);
-        var _rqMatched = (typeof RQ_access !== 'undefined' && RQ_access && RQ_access.stations)
-          ? RQ_access.stations.find(function(s){ return _rqNormFn(s) === _rqNormTarget; })
-          : null;
-        rqSelectStation(_rqMatched || hubName);
+        var _rqMatched = RQ_access.stations.find(function(s){ return _rqNormFn(s) === _rqNormTarget; });
+        if (_rqMatched) rqSelectStation(_rqMatched);
       }
     }
   }
   // [MỚI — Vi phạm] Cùng quy ước vpSelectStation('') = "Tất cả trạm".
   // [FIX — cùng lỗi/cùng cách sửa như Đơn cầu cứu ở trên] So khớp CHUẨN HOÁ
-  // qua cleanHubString() — truyền thẳng hubName nếu trạm chưa có vụ nào
+  // qua cleanHubString() thay vì so khớp tuyệt đối từng ký tự
+  // (c.station_name === hubName) — tránh module đứng yên âm thầm khi tên trạm
+  // giữa 2 nguồn dữ liệu lệch định dạng dù cùng 1 trạm thật.
   if (typeof currentActiveModule !== 'undefined' && currentActiveModule === 'violation') {
     if (typeof vpSelectStation === 'function') {
       if (hubName === 'ALL') {
         vpSelectStation('');
-      } else {
+      } else if (typeof VP_allCases !== 'undefined' && Array.isArray(VP_allCases)) {
         var _vpNormFn = typeof cleanHubString === 'function' ? cleanHubString : function(s){ return (s||'').toString().trim().toLowerCase(); };
         var _vpNormTarget = _vpNormFn(hubName);
-        var _vpMatchedCase = (typeof VP_allCases !== 'undefined' && Array.isArray(VP_allCases))
-          ? VP_allCases.find(function(c){ return _vpNormFn(c.station_name) === _vpNormTarget; })
-          : null;
-        vpSelectStation(_vpMatchedCase ? _vpMatchedCase.station_name : hubName);
+        var _vpMatchedCase = VP_allCases.find(function(c){ return _vpNormFn(c.station_name) === _vpNormTarget; });
+        if (_vpMatchedCase) vpSelectStation(_vpMatchedCase.station_name);
       }
     }
   }
@@ -7786,129 +7452,7 @@ function spxHeaderHubChange(hubName, silent){
 // dots, không nút "Thử lại" riêng. spxModuleLoadingHtml() trả về đúng chuỗi
 // HTML này; mỗi module tự chèn vào ĐÚNG vùng hiển thị quen thuộc của mình
 // (không phải overlay che toàn màn hình).
-// [MỚI — UI/UX Shimmer] Hàm render Skeleton Table chuyên nghiệp
-function spxRenderSkeletonTableHtml(rowCount, colCount, message) {
-  var rows = rowCount || 5;
-  var cols = colCount || 5;
-  var html = '<div style="padding:16px 20px;width:100%;box-sizing:border-box;">';
-  if (message) {
-    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;color:var(--qh-cmp-text-muted,#64748b);font-size:12px;font-weight:700;">'
-      + '<i class="fas fa-circle-notch fa-spin" style="color:#ee4d2d"></i> ' + spxUiLabel(message)
-      + '</div>';
-  }
-  html += '<div style="display:grid;grid-template-columns:repeat(' + cols + ', 1fr);gap:12px;padding:10px 14px;background:rgba(148,163,184,0.08);border-radius:8px;margin-bottom:10px;">';
-  for (var c = 0; c < cols; c++) {
-    html += '<div class="spx-skeleton-box" style="height:14px;width:' + (c === 0 ? '60%' : '80%') + ';"></div>';
-  }
-  html += '</div>';
-  for (var r = 0; r < rows; r++) {
-    html += '<div style="display:grid;grid-template-columns:repeat(' + cols + ', 1fr);gap:12px;padding:12px 14px;border-bottom:1px solid var(--qh-cmp-border,rgba(226,232,240,0.6));">';
-    for (var c2 = 0; c2 < cols; c2++) {
-      var w = c2 === 0 ? '70%' : (c2 % 2 === 0 ? '85%' : '60%');
-      html += '<div class="spx-skeleton-box" style="height:16px;width:' + w + ';"></div>';
-    }
-    html += '</div>';
-  }
-  html += '</div>';
-  return html;
-}
-
-function spxRenderSkeletonCardsHtml(cardCount) {
-  var count = cardCount || 4;
-  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:14px;padding:14px;width:100%;box-sizing:border-box;">';
-  for (var i = 0; i < count; i++) {
-    html += '<div style="padding:16px 18px;border-radius:12px;border:1px solid var(--qh-cmp-border,#e2e8f0);background:var(--qh-cmp-card-bg,#fff);">'
-      + '<div class="spx-skeleton-box" style="height:12px;width:50%;margin-bottom:10px;"></div>'
-      + '<div class="spx-skeleton-box" style="height:26px;width:75%;margin-bottom:8px;"></div>'
-      + '<div class="spx-skeleton-box" style="height:10px;width:40%;"></div>'
-      + '</div>';
-  }
-  html += '</div>';
-  return html;
-}
-
-// [MỚI — UI/UX Shimmer] Skeleton toàn màn hình khi nạp module lazy-load
-function spxRenderSkeletonModuleHtml(toolKey) {
-  var moduleNames = {
-    rescue: 'Đơn cần cầu cứu',
-    quahan: 'Báo cáo Quá hạn',
-    tondong: 'Tồn đọng FMS',
-    pick: 'Quản lý Pick',
-    luong: 'Tính lương Hub',
-    riderplan: 'Rider Plan',
-    kpifail: 'KPI Fail',
-    analytics: 'Analytics BI',
-    violation: 'Vi phạm',
-    tracuu: 'Tra cứu thông tin',
-    tailieu: 'Tài liệu hướng dẫn',
-    adminzone: 'Quản trị hệ thống'
-  };
-  var title = moduleNames[toolKey] || 'Module';
-  return '<div style="padding:20px;width:100%;height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:16px;overflow-y:auto;background:transparent;">'
-    + '<div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:12px;border-bottom:1px solid var(--qh-cmp-border,rgba(226,232,240,0.8));flex-wrap:wrap;gap:10px;">'
-    + '  <div style="display:flex;align-items:center;gap:10px;">'
-    + '    <div class="spx-skeleton-box" style="height:24px;width:160px;border-radius:6px;"></div>'
-    + '    <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:11.5px;font-weight:700;color:#ee4d2d;background:rgba(238,77,45,0.08);border:1px solid rgba(238,77,45,0.2);">'
-    + '      <i class="fas fa-circle-notch fa-spin" style="font-size:11px;"></i> ' + spxUiLabel('Đang tải') + ' ' + title + '...'
-    + '    </span>'
-    + '  </div>'
-    + '  <div style="display:flex;align-items:center;gap:8px;">'
-    + '    <div class="spx-skeleton-box" style="height:32px;width:80px;border-radius:8px;"></div>'
-    + '    <div class="spx-skeleton-box" style="height:32px;width:110px;border-radius:8px;"></div>'
-    + '  </div>'
-    + '</div>'
-    + '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;">'
-    + '  <div style="padding:14px 16px;border-radius:12px;border:1px solid var(--qh-cmp-border,#e2e8f0);background:var(--qh-cmp-card-bg,#fff);">'
-    + '    <div class="spx-skeleton-box" style="height:12px;width:40%;margin-bottom:8px;"></div>'
-    + '    <div class="spx-skeleton-box" style="height:24px;width:65%;margin-bottom:6px;"></div>'
-    + '    <div class="spx-skeleton-box" style="height:10px;width:80%;"></div>'
-    + '  </div>'
-    + '  <div style="padding:14px 16px;border-radius:12px;border:1px solid var(--qh-cmp-border,#e2e8f0);background:var(--qh-cmp-card-bg,#fff);">'
-    + '    <div class="spx-skeleton-box" style="height:12px;width:50%;margin-bottom:8px;"></div>'
-    + '    <div class="spx-skeleton-box" style="height:24px;width:55%;margin-bottom:6px;"></div>'
-    + '    <div class="spx-skeleton-box" style="height:10px;width:70%;"></div>'
-    + '  </div>'
-    + '  <div style="padding:14px 16px;border-radius:12px;border:1px solid var(--qh-cmp-border,#e2e8f0);background:var(--qh-cmp-card-bg,#fff);">'
-    + '    <div class="spx-skeleton-box" style="height:12px;width:45%;margin-bottom:8px;"></div>'
-    + '    <div class="spx-skeleton-box" style="height:24px;width:70%;margin-bottom:6px;"></div>'
-    + '    <div class="spx-skeleton-box" style="height:10px;width:75%;"></div>'
-    + '  </div>'
-    + '  <div style="padding:14px 16px;border-radius:12px;border:1px solid var(--qh-cmp-border,#e2e8f0);background:var(--qh-cmp-card-bg,#fff);">'
-    + '    <div class="spx-skeleton-box" style="height:12px;width:35%;margin-bottom:8px;"></div>'
-    + '    <div class="spx-skeleton-box" style="height:24px;width:60%;margin-bottom:6px;"></div>'
-    + '    <div class="spx-skeleton-box" style="height:10px;width:60%;"></div>'
-    + '  </div>'
-    + '</div>'
-    + '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;border:1px solid var(--qh-cmp-border,#e2e8f0);background:var(--qh-cmp-card-bg,#fff);">'
-    + '  <div class="spx-skeleton-box" style="height:32px;width:220px;border-radius:8px;"></div>'
-    + '  <div class="spx-skeleton-box" style="height:32px;width:130px;border-radius:8px;"></div>'
-    + '  <div class="spx-skeleton-box" style="height:32px;width:100px;border-radius:8px;margin-left:auto;"></div>'
-    + '</div>'
-    + '<div style="flex:1;border-radius:12px;border:1px solid var(--qh-cmp-border,#e2e8f0);background:var(--qh-cmp-card-bg,#fff);padding:14px;display:flex;flex-direction:column;gap:10px;">'
-    + '  <div style="display:grid;grid-template-columns:repeat(5, 1fr);gap:10px;padding-bottom:10px;border-bottom:1px solid rgba(148,163,184,0.15);">'
-    + '    <div class="spx-skeleton-box" style="height:14px;width:60%;"></div>'
-    + '    <div class="spx-skeleton-box" style="height:14px;width:75%;"></div>'
-    + '    <div class="spx-skeleton-box" style="height:14px;width:80%;"></div>'
-    + '    <div class="spx-skeleton-box" style="height:14px;width:70%;"></div>'
-    + '    <div class="spx-skeleton-box" style="height:14px;width:65%;"></div>'
-    + '  </div>'
-    + '  <div class="spx-skeleton-box" style="height:28px;width:100%;"></div>'
-    + '  <div class="spx-skeleton-box" style="height:28px;width:100%;"></div>'
-    + '  <div class="spx-skeleton-box" style="height:28px;width:100%;"></div>'
-    + '  <div class="spx-skeleton-box" style="height:28px;width:100%;"></div>'
-    + '  <div class="spx-skeleton-box" style="height:28px;width:100%;"></div>'
-    + '  <div class="spx-skeleton-box" style="height:28px;width:100%;"></div>'
-    + '</div>'
-    + '</div>';
-}
-
-function spxModuleLoadingHtml(message, mode){
-  if (mode === 'table') {
-    return spxRenderSkeletonTableHtml(6, 5, message);
-  }
-  if (mode === 'cards') {
-    return spxRenderSkeletonCardsHtml(4);
-  }
+function spxModuleLoadingHtml(message){
   return '<div class="spx-module-loading">' +
     '<div class="spx-module-loading-icon-wrap"><i class="fas fa-circle-notch fa-spin"></i></div>' +
     '<span class="spx-module-loading-text">' + (message || 'Đang tải dữ liệu...') + '</span>' +
@@ -8433,17 +7977,15 @@ function spxResolvePreviewScope(level, entity, records, stationOf){
   if (typeof spxGetHubsInOrgScope !== 'function' || !records || !records.length) return null;
   var norm = function(s){ return (typeof cleanHubString === 'function') ? cleanHubString(s) : String(s || '').toLowerCase(); };
   var allow = {};
-  var orgHubs = (typeof spxGetHubsInOrgScope === 'function') ? spxGetHubsInOrgScope(level, entity) : [];
-  orgHubs.forEach(function(h){ allow[norm(h)] = 1; });
+  spxGetHubsInOrgScope(level, entity).forEach(function(h){ allow[norm(h)] = 1; });
   var seen = {}, list = [], set = {};
   for (var i = 0; i < records.length; i++) {
     var sn = stationOf(records[i]);
     if (!sn || seen[sn]) continue;
     seen[sn] = 1;
-    if (allow[norm(sn)]) { list.push(sn); set[sn] = 1; set[norm(sn)] = 1; }
+    if (allow[norm(sn)]) { list.push(sn); set[sn] = 1; }
   }
-  if (list.length === 0 && orgHubs.length > 0) { orgHubs.forEach(function(h){ set[h] = 1; set[norm(h)] = 1; }); }
-  return { list: (list.length ? list : orgHubs), set: set, orgHubs: orgHubs };
+  return { list: list, set: set };
 }
 function spxGetOrgEntityList(field){
   // [SỬA LỖI THẬT — báo cáo: "danh sách AOM/SUP quá chậm mới hiện" và "chọn AOM/SUP
@@ -8541,13 +8083,9 @@ function spxGetOrgEntityList(field){
 
 <div id="view-quahan" class="hidden module-view absolute inset-0 w-full h-full flex flex-row bg-[#f4f7fb] dark:bg-[#0b1121]"></div>
 
-<div id="view-tondong" class="hidden module-view absolute inset-0 w-full h-full flex flex-col bg-[#f1f5f9] dark:bg-[#0b1121] overflow-hidden">
-  <?!= include('JS_FMS'); ?>
-</div>
+<div id="view-tondong" class="hidden module-view absolute inset-0 w-full h-full flex flex-row bg-[#f1f5f9] dark:bg-[#0b1121]"></div>
 
-<div id="view-pick" class="hidden module-view absolute inset-0 w-full h-full flex flex-col bg-[#f1f5f9] dark:bg-[#0b1121] z-10 overflow-hidden">
-  <?!= include('JS_Pick'); ?>
-</div>
+<div id="view-pick" class="hidden module-view absolute inset-0 w-full h-full flex flex-row bg-[#f1f5f9] dark:bg-[#0b1121] z-10"></div>
 
 <div id="view-luong" class="hidden module-view absolute inset-0 w-full h-full flex flex-col bg-[#f1f5f9] dark:bg-[#0b1121] z-10 overflow-hidden"></div>
 <!-- [MỚI — container rỗng cho module "Quản trị hệ thống" (Phân quyền User +
@@ -8572,10 +8110,10 @@ function spxGetOrgEntityList(field){
      cơ chế tải riêng. Giao diện đã redesign theo Tailwind + cam thương hiệu (xem
      JS_DonCauCuu.html/JS_ViPham.html), logic dữ liệu giữ nguyên 100% từ
      backend_đơn_cầu_cứu.gs/backend_vi_phạm.gs (đã gỡ doGet() trùng). -->
-<div id="view-rescue" class="hidden module-view absolute inset-0 w-full h-full flex flex-col bg-slate-50 dark:bg-[#0b1121]">
+<div id="view-rescue" class="hidden module-view absolute inset-0 w-full h-full flex flex-col">
   <!-- [LAZY-LOAD] Xem khối script "SPX Lazy Module Loader" ở cuối file. -->
 </div>
-<div id="view-violation" class="hidden module-view absolute inset-0 w-full h-full flex flex-col bg-slate-100 dark:bg-[#0b1121]" data-scroll-root="true">
+<div id="view-violation" class="hidden module-view absolute inset-0 w-full h-full flex flex-col">
   <!-- [LAZY-LOAD] Xem khối script "SPX Lazy Module Loader" ở cuối file. -->
 </div>
 
@@ -8817,7 +8355,7 @@ trả về null suốt thời gian qua khiến nút hoàn toàn không có tác 
      nổi ở góc dưới như mong muốn. Chuyển toàn bộ sang inline style — luôn có
      hiệu lực ngay lập tức, không phụ thuộc nội dung file build. -->
 <button id="spx-back-to-top" onclick="_spxBackToTop()"
-  style="display:none;position:fixed;bottom:128px;right:24px;z-index:60;width:44px;height:44px;border-radius:9999px;background:rgba(51,65,85,0.9);color:#fff;border:none;box-shadow:0 10px 15px -3px rgba(0,0,0,0.3);align-items:center;justify-content:center;cursor:pointer;transition:transform 0.15s ease;backdrop-filter:blur(4px);"
+  style="display:none;position:fixed;bottom:128px;right:24px;z-index:40;width:44px;height:44px;border-radius:9999px;background:rgba(51,65,85,0.9);color:#fff;border:none;box-shadow:0 10px 15px -3px rgba(0,0,0,0.3);align-items:center;justify-content:center;cursor:pointer;transition:transform 0.15s ease;backdrop-filter:blur(4px);"
   onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='rgba(51,65,85,0.9)'"
   onmousedown="this.style.transform='scale(0.9)'" onmouseup="this.style.transform='scale(1)'"
   title="Về đầu trang" aria-label="Về đầu trang"><i class="fas fa-arrow-up"></i></button>
@@ -10047,7 +9585,7 @@ function openModule(toolKey) {
     try {
       var _SPX_TRACK_MAP = {
         quahan: 'JS_Quahan', pick: 'JS_Pick', tondong: 'JS_FMS', luong: 'JS_Luong',
-        tailieu: 'JS_Tailieu', tracuu: 'JS_Tracuu', riderplan: 'JS_Rider_plan',
+        tailieu: 'JS_TaiLieu', tracuu: 'JS_Tracuu', riderplan: 'JS_Rider_plan',
         kpifail: 'JS_KPIFail', analytics: 'Analytics_Block', rescue: 'JS_DonCauCuu',
         violation: 'JS_ViPham', adminzone: 'JS_AdminZone'
       };
@@ -10176,13 +9714,8 @@ function openModule(toolKey) {
     // giờ TẤT CẢ toolKey (trừ 'index') đều đi qua đường lazy-load, hàm này
     // luôn được gọi SAU KHI module đã tải xong DOM, không còn ngoại lệ nào.
     const _spxContinueOpenModule = () => {
-    if (typeof currentActiveModule !== 'undefined' && currentActiveModule !== toolKey) {
-        var staleTarget = document.getElementById('view-' + toolKey);
-        if (staleTarget) staleTarget.classList.add('hidden');
-        return;
-    }
 
-    const allViews = document.querySelectorAll('.module-view, [id^="view-"]');
+    const allViews = document.querySelectorAll('.module-view');
 
     allViews.forEach(view => { view.classList.add('hidden'); });
 
@@ -10251,15 +9784,10 @@ function openModule(toolKey) {
         rpApplyPreviewLevel(window.SPX_PREVIEW_LEVEL);
     }
     // [MỚI — hoàn thành "phân hoá view theo level" cho Đơn cần cầu cứu] Cùng
-    // lớp phòng vệ — đồng bộ ngay Header hub đang chọn + trạng thái Xem thử
-    if (toolKey === 'rescue') {
-        var _curRescueHub = (typeof spxReadHeaderHub === 'function') ? spxReadHeaderHub() : '';
-        if (typeof rqSelectStation === 'function') {
-            rqSelectStation(_curRescueHub);
-        }
-        if (typeof rqApplyPreviewLevel === 'function') {
-            rqApplyPreviewLevel(window.SPX_PREVIEW_LEVEL);
-        }
+    // lớp phòng vệ — bắt lại đúng trạng thái Xem thử nếu Admin đổi Level/Entity
+    // trong lúc module này chưa từng mở.
+    if (toolKey === 'rescue' && typeof rqApplyPreviewLevel === 'function') {
+        rqApplyPreviewLevel(window.SPX_PREVIEW_LEVEL);
     }
     // [MỚI — hoàn thành "phân hoá view theo level" cho Vi phạm] Cùng lớp
     // phòng vệ — bắt lại đúng trạng thái Xem thử nếu Admin đổi Level/Entity
@@ -10383,26 +9911,6 @@ function openModule(toolKey) {
     document.head.appendChild(s1);
   }
 
-  // [MỚI — Kiến Trúc Đồng Bộ Toàn Diện] Kiểm tra cờ Stale khi mở module
-  // Nếu người dùng bấm Đồng bộ ở header khi đang ở tab khác, module này được đánh dấu stale.
-  // Khi mở ra tại đây, tự động kích hoạt làm mới từ server nếu chưa kịp nạp ngầm
-  if (window._spxModulesStale && window._spxModulesStale[toolKey]) {
-    window._spxModulesStale[toolKey] = false;
-    if (toolKey === 'rescue' && typeof rqLoadOrders === 'function') {
-      setTimeout(function() { rqLoadOrders(true); }, 60);
-    } else if (toolKey === 'violation' && typeof vpLoadData === 'function') {
-      setTimeout(function() { vpLoadData(true, false); }, 60);
-    } else if (toolKey === 'kpifail' && typeof kpifailLoadData === 'function') {
-      setTimeout(function() { kpifailLoadData(true, false); }, 60);
-    } else if (toolKey === 'tondong' && typeof fmsLiveFetchSnapshot === 'function') {
-      setTimeout(function() { fmsLiveFetchSnapshot(true); }, 60);
-    } else if (toolKey === 'pick' && typeof refreshLivePICK === 'function') {
-      setTimeout(function() { refreshLivePICK(); }, 60);
-    } else if (toolKey === 'riderplan' && typeof window.rpReloadFromServer === 'function') {
-      setTimeout(function() { window.rpReloadFromServer(); }, 60);
-    }
-  }
-
     };
 
     if (window._spxLazyModuleKeys && window._spxLazyModuleKeys.indexOf(toolKey) !== -1
@@ -10419,14 +9927,12 @@ function openModule(toolKey) {
         // _spxLoadModule trả về gần như tức thời, không cần lớp loading gây
         // nhấp nháy thừa cho những lần mở lại sau).
         if (!window._spxModulePromises[toolKey]) {
-            var _allViewsLazy = document.querySelectorAll('.module-view, [id^="view-"]');
+            var _allViewsLazy = document.querySelectorAll('.module-view');
             _allViewsLazy.forEach(function(v){ v.classList.add('hidden'); });
             var _targetViewLazy = document.getElementById('view-' + toolKey);
             if (_targetViewLazy) {
                 _targetViewLazy.classList.remove('hidden');
-                _targetViewLazy.innerHTML = (typeof spxRenderSkeletonModuleHtml === 'function')
-                    ? spxRenderSkeletonModuleHtml(toolKey)
-                    : '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;color:#94a3b8;font-size:13px"><i class="fas fa-spinner fa-spin" style="font-size:22px;color:#ee4d2d"></i>Đang tải module...</div>';
+                _targetViewLazy.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;color:#94a3b8;font-size:13px"><i class="fas fa-spinner fa-spin" style="font-size:22px;color:#ee4d2d"></i>Đang tải module...</div>';
             }
         }
         window._spxLoadModule(toolKey).then(_spxContinueOpenModule);
@@ -10450,8 +9956,7 @@ function renderQuickStatsFromData(coreData, lostData, hubSelector) {
     || (document.getElementById('hubSelectorIndex') || {}).value
     || localStorage.getItem('spx_default_hub') || 'ALL';
   const scopeText = hubVal !== 'ALL' ? hubVal : 'Tất cả';
-  const _cardDate = _lastSyncTimestamp ? new Date(_lastSyncTimestamp) : new Date();
-  const ts = spxFmtTimeVN(_cardDate, {hour:'2-digit', minute:'2-digit'});
+  const ts = spxFmtTimeVN(new Date(), {hour:'2-digit', minute:'2-digit'});
 
   // Màu động theo ngưỡng
   const ltColor  = lostToday === 0 ? 'emerald' : lostToday < 5 ? 'amber' : 'rose';
@@ -10625,184 +10130,74 @@ function spxInstallFreshWatch() {
 spxInstallFreshWatch();
 
 function runBackgroundSync(forceServer = false) {
-  if (!window._spxModulesStale) window._spxModulesStale = {};
 
-  // ══════════════════════════════════════════════════════════════════
-  // ĐỒNG BỘ ĐA TẦNG TOÀN DIỆN CHO TOÀN BỘ CÁC MODULE (FULL MULTI-MODULE SYNC)
-  // ══════════════════════════════════════════════════════════════════
-  if (forceServer) {
-    if (typeof showToast === 'function') {
-      showToast('🔄 Đang đồng bộ toàn bộ dữ liệu SPX HUB...', 'info', 'full-sync-start');
+// Item 7: Force refresh — clear GAS CacheService + localStorage để lấy data thật
+if (forceServer) {
+  if (window.SPXIdb) { window.SPXIdb.remove('SPX_Aging_Data').catch(function () {}); } else { try { localStorage.removeItem('SPX_Aging_Data'); } catch(e) {} }
+  if (typeof google !== 'undefined' && google.script) {
+    google.script.run.withFailureHandler(()=>{}).withSuccessHandler(()=>{}).aging_clearCache();
+    var _clrNow = Date.now();
+    if (!window._spxClrAt || (_clrNow - window._spxClrAt) > 5000) {   // log thật: 5 lượt cùng 1 giây — gộp trong 5 giây
+      window._spxClrAt = _clrNow;
+      google.script.run.withFailureHandler(()=>{}).withSuccessHandler(()=>{}).kpifail_clearCache();
     }
-
-    // 1. Xóa sạch cache client (IndexedDB, localStorage, sessionStorage)
-    if (window.SPXIdb) {
-      window.SPXIdb.remove('SPX_Aging_Data').catch(function () {});
-    } else {
-      try { localStorage.removeItem('SPX_Aging_Data'); } catch(e) {}
-    }
-    try {
-      sessionStorage.removeItem('_kpifail_card_cache');
-      sessionStorage.removeItem('spx_rescue_cache');
-      sessionStorage.removeItem('spx_violation_cache');
-      sessionStorage.removeItem('spx_fms_cache');
-      sessionStorage.removeItem('_spx_seen_lt_ids');
-      if (typeof _spxOverviewAICache !== 'undefined') _spxOverviewAICache = null;
-    } catch(eCache) {}
-
-    // 2. Xóa cache server (CacheService)
-    if (typeof google !== 'undefined' && google.script && google.script.run) {
-      google.script.run.withFailureHandler(function(){}).withSuccessHandler(function(){}).aging_clearCache();
-      var _clrNow = Date.now();
-      if (!window._spxClrAt || (_clrNow - window._spxClrAt) > 5000) {
-        window._spxClrAt = _clrNow;
-        google.script.run.withFailureHandler(function(){}).withSuccessHandler(function(){}).kpifail_clearCache();
-      }
-      if (typeof loadKPIFailIndexCard === 'function') {
-        loadKPIFailIndexCard();
-      }
-    }
-
-    // 3. Đặt cờ STALE cho TẤT CẢ các module — bảo đảm tab nào mở sau đều lấy số mới
-    window._spxModulesStale = {
-      index: true,
-      rescue: true,
-      violation: true,
-      quahan: true,
-      kpifail: true,
-      tondong: true,
-      pick: true,
-      riderplan: true
-    };
-  }
-
-  // 4. Ưu tiên số 1 (Tức thì): Làm mới ngay lập tức module người dùng đang xem
-  var curMod = (typeof currentActiveModule !== 'undefined') ? currentActiveModule : 'index';
-  if (forceServer) {
-    if (curMod === 'index') {
-      window._spxModulesStale.index = false;
-      var _overviewBody = document.getElementById('spxDashboardBody');
-      if (_overviewBody && typeof spxRenderRealOverview === 'function') {
-        spxRenderRealOverview(_overviewBody, { force: true });
-      }
-    } else if (curMod === 'rescue') {
-      window._spxModulesStale.rescue = false;
-      if (typeof rqLoadOrders === 'function') rqLoadOrders(true);
-    } else if (curMod === 'violation') {
-      window._spxModulesStale.violation = false;
-      if (typeof vpLoadData === 'function') vpLoadData(true, false);
-    } else if (curMod === 'quahan') {
-      window._spxModulesStale.quahan = false;
-      if (typeof refreshNotesOnly === 'function') refreshNotesOnly();
-      if (typeof _qhLmFullPicRaw !== 'undefined' && _qhLmFullPicRaw && typeof qhLoadLmOverview === 'function') qhLoadLmOverview(true);
-    } else if (curMod === 'kpifail') {
-      window._spxModulesStale.kpifail = false;
-      if (typeof kpifailLoadData === 'function') kpifailLoadData(true, false);
-    } else if (curMod === 'tondong') {
-      window._spxModulesStale.tondong = false;
-      if (typeof fmsLiveFetchSnapshot === 'function') fmsLiveFetchSnapshot(true);
-    } else if (curMod === 'pick') {
-      window._spxModulesStale.pick = false;
-      if (typeof refreshLivePICK === 'function') refreshLivePICK();
-    } else if (curMod === 'riderplan') {
-      window._spxModulesStale.riderplan = false;
-      if (typeof window.rpReloadFromServer === 'function') window.rpReloadFromServer();
-      else if (typeof _silentReloadFC === 'function') _silentReloadFC();
+    if (typeof loadKPIFailIndexCard === 'function') {
+      // Thử restore từ sessionStorage trước — không gọi server nếu cache còn hợp lệ
+      if (!window._kpifailCardRestoreFromSession || !window._kpifailCardRestoreFromSession()) loadKPIFailIndexCard();
     }
   }
+}
 
-  // 5. Xếp hàng nạp ngầm nối tiếp (Staggered Cascade) cho các module KHÁC đã nạp trong DOM
-  // Khoảng cách 400ms - 500ms giữa mỗi call để GAS không bị nghẽn quota đồng thời
-  if (forceServer) {
-    var _staggerDelay = 500;
-
-    // Rescue (Đơn cần cứu)
-    if (curMod !== 'rescue') {
-      setTimeout(function () {
-        if (typeof rqLoadOrders === 'function') {
-          try {
-            rqLoadOrders(true);
-            window._spxModulesStale.rescue = false;
-          } catch(e) {}
-        }
-      }, _staggerDelay);
-      _staggerDelay += 500;
-    }
-
-    // Violation (Vi phạm)
-    if (curMod !== 'violation') {
-      setTimeout(function () {
-        if (typeof vpLoadData === 'function') {
-          try {
-            vpLoadData(true, true); // silent = true: nạp ngầm, không giật UI
-            window._spxModulesStale.violation = false;
-          } catch(e) {}
-        }
-      }, _staggerDelay);
-      _staggerDelay += 500;
-    }
-
-    // KPI Fail
-    if (curMod !== 'kpifail') {
-      setTimeout(function () {
-        if (typeof kpifailLoadData === 'function') {
-          try {
-            kpifailLoadData(true, true); // silent/prefetch = true
-            window._spxModulesStale.kpifail = false;
-          } catch(e) {}
-        }
-      }, _staggerDelay);
-      _staggerDelay += 500;
-    }
-
-    // Tồn đọng FMS
-    if (curMod !== 'tondong') {
-      setTimeout(function () {
-        if (typeof fmsLiveFetchSnapshot === 'function' && typeof dataFMSLive !== 'undefined' && dataFMSLive) {
-          try {
-            fmsLiveFetchSnapshot(false);
-            window._spxModulesStale.tondong = false;
-          } catch(e) {}
-        }
-      }, _staggerDelay);
-      _staggerDelay += 500;
-    }
-
-    // Pick Live
-    if (curMod !== 'pick') {
-      setTimeout(function () {
-        if (typeof refreshLivePICK === 'function' && typeof pickLiveSelectedStations !== 'undefined' && pickLiveSelectedStations && pickLiveSelectedStations.size > 0) {
-          try {
-            refreshLivePICK();
-            window._spxModulesStale.pick = false;
-          } catch(e) {}
-        }
-      }, _staggerDelay);
-      _staggerDelay += 500;
-    }
-
-    // Rider Plan (Forecast)
-    if (curMod !== 'riderplan') {
-      setTimeout(function () {
-        if (typeof _silentReloadFC === 'function') {
-          try {
-            _silentReloadFC();
-            window._spxModulesStale.riderplan = false;
-          } catch(e) {}
-        }
-      }, _staggerDelay);
-      _staggerDelay += 500;
-    }
-
-    // Sau khi toàn bộ các lệnh ngầm đã được dispatch, phát Toast xác nhận thành công
-    setTimeout(function () {
-      _lastSyncTimestamp = Date.now();
-      if (typeof updateLastSyncDisplay === 'function') updateLastSyncDisplay();
-      if (typeof showToast === 'function') {
-        showToast('✓ Toàn bộ module đã được cập nhật dữ liệu mới nhất!', 'success', 'full-sync-done');
-      }
-    }, _staggerDelay + 300);
+// [MỚI — theo yêu cầu "1 nút đồng bộ header cho TẤT CẢ module, không phải mỗi
+// module 1 nút riêng"] Đây là nút đồng bộ DUY NHẤT của toàn app — khi module
+// đang mở có cơ chế tải dữ liệu thật riêng (không đi qua pipeline aging/kpifail
+// ở trên), gọi lại ĐÚNG hàm tải thật của module đó, giống hệt cách
+// spxHeaderHubChange() dispatch theo currentActiveModule. Nút "Làm mới" riêng
+// trong từng module ĐÃ BỊ GỠ khỏi giao diện — đây là đường DUY NHẤT còn lại.
+// [HOÀN THIỆN — việc này trước đó mới chỉ làm xong rescue/violation, còn dở
+// dang] Bổ sung đủ 4 module còn thiếu: quahan/kpifail/tondong/pick. KHÔNG bổ
+// sung riderplan — module đó vốn KHÔNG có nút làm mới thủ công (chỉ autosave
+// tự động), không có hàm nào để gọi ở đây là ĐÚNG chủ ý, không phải thiếu sót.
+// [SỬA LỖI THẬT — phát hiện qua câu hỏi trực tiếp "làm mới có load lại Tổng
+// quan không?"] TRƯỚC ĐÂY hàm này CHỈ cập nhật RUNTIME_CACHE (dữ liệu nền) +
+// gọi renderQuickStatsFromData() (vài số liệu nhỏ) — nếu đang XEM Tổng quan
+// lúc bấm, TOÀN BỘ nội dung hiển thị (thẻ module, khối "AI Phân Tích Ca Vận
+// Hành", bảng so sánh chi tiết — tất cả do spxRenderRealOverview()/
+// spxRenderOverviewSummary() vẽ ra) KHÔNG được vẽ lại — dữ liệu nền mới
+// nhưng màn hình vẫn hiện y hệt cũ, đúng nghĩa "nửa vời". Tổng quan LÀ góc
+// nhìn tổng hợp của TẤT CẢ module — "làm mới toàn trang" phải bao gồm cả nó.
+if (typeof currentActiveModule !== 'undefined') {
+  // [SỬA LỖI THẬT — phát hiện khi truy "Tổng quan tải rất lâu"] Đoạn này viết
+  // cho nút LÀM MỚI thủ công, nhưng không kiểm tra forceServer -> cũng chạy ở
+  // lời gọi LÚC TẢI TRANG (runBackgroundSync(false)). Kết quả: mỗi lần mở trang
+  // có 2 lượt tải Tổng quan CHẠY SONG SONG (1 từ menu + 1 từ đây), cả hai gặp
+  // bộ nhớ đệm trống và cùng tranh tài nguyên máy chủ.
+  if (forceServer && currentActiveModule === 'index' && typeof spxRenderRealOverview === 'function') {
+    // [FIX BỔ SUNG — cùng phát hiện] _spxOverviewAICache (biến toàn cục) sẽ
+    // khiến khối "AI Phân Tích Ca Vận Hành" hiện NGAY kết quả CŨ đã cache
+    // trong phiên, KHÔNG phân tích lại — phải xoá cache này TRƯỚC khi vẽ lại,
+    // nếu không user bấm "làm mới" xong vẫn thấy đúng y hệt phân tích cũ.
+    if (typeof _spxOverviewAICache !== 'undefined') _spxOverviewAICache = null;
+    var _overviewBody = document.getElementById('spxDashboardBody');
+    if (_overviewBody) spxRenderRealOverview(_overviewBody, { force: true });   // làm mới thủ công: máy chủ bỏ qua cache, tính lại từ nguồn
   }
+  if (currentActiveModule === 'rescue' && typeof rqLoadOrders === 'function') rqLoadOrders(true);
+  if (currentActiveModule === 'violation' && typeof vpLoadData === 'function') vpLoadData(true);
+  if (currentActiveModule === 'quahan' && typeof refreshNotesOnly === 'function') refreshNotesOnly();
+  // [MỚI — phát hiện qua rà soát trực tiếp "nút reload có tác dụng ở Quá Hạn
+  // không?"] Trước đây nút này CHỈ làm mới ghi chú — hoàn toàn không đụng tới
+  // panel "Bức tranh toàn cảnh LM (Live)" dù title nút ghi rõ "làm mới đúng dữ
+  // liệu của module đang mở". Chỉ build lại nếu panel ĐÃ từng mở (có dữ liệu
+  // trong bộ nhớ) — tránh ép build nặng cho người chưa từng xem tới nó.
+  if (currentActiveModule === 'quahan' && typeof _qhLmFullPicRaw !== 'undefined' && _qhLmFullPicRaw && typeof qhLoadLmOverview === 'function') qhLoadLmOverview(true);
+  if (currentActiveModule === 'kpifail' && typeof kpifailLoadData === 'function') kpifailLoadData(true);
+  if (currentActiveModule === 'tondong' && typeof fmsLiveFetchSnapshot === 'function') fmsLiveFetchSnapshot(true);
+  if (currentActiveModule === 'pick' && typeof refreshLivePICK === 'function') refreshLivePICK();
+  // [MỚI — bổ sung module thiếu trong nút Đồng bộ] Rider Plan: dùng
+  // _silentReloadFC() — hàm tải lại dữ liệu FC thật ĐÃ CÓ SẴN, tự bỏ qua an
+  // toàn nếu module chưa tải xong (guard _rawLoaded).
+  if (currentActiveModule === 'riderplan' && typeof _silentReloadFC === 'function') _silentReloadFC();
+}
 
 
 const syncIcon = document.getElementById('topSyncIcon');
@@ -10907,26 +10302,20 @@ if (cacheIsStale && typeof setSyncBox === 'function') {
   setSyncBox('loading', 'Đang tải data mới nhất…');
 }
 
-// [PERF + FRESHNESS] TRUE SWR (Stale-While-Revalidate) CHO MỌI ROLE:
-// Render số liệu ngay lập tức (<50ms) cho cả Admin (73k dòng) lẫn Lead/Staff/AOM/SUP (50-2k dòng).
-// Tuyệt đối không block UI hay ẩn số liệu của người dùng khi cache > 3 phút.
-window._serverDataReady = true;
-
-// Vẽ ngay Hero Stats & Dashboard Stats từ cache
-if (typeof window.spxUpdateHeroStats === 'function') {
-  try { window.spxUpdateHeroStats(); } catch(eHs) {}
-}
-if (typeof renderDashboardStats === 'function') {
-  try { renderDashboardStats(); } catch(eDs) {}
-}
-
+// [PERF + FRESHNESS] SWR (Stale-While-Revalidate):
+// - Cache fresh (< 3 phút): render ngay, gọi server ngầm để xác nhận/cập nhật
+// - Cache stale (> 3 phút): render ngay + báo "đang tải mới" + gọi server
+// - Không có cache: skeleton + gọi server
+// Trong mọi trường hợp, UI không bao giờ bị block chờ server.
 if (!cacheIsStale) {
-  if (syncIcon) { syncIcon.classList.remove('fa-sync', 'fa-spin', 'text-sky-500', 'text-amber-500'); syncIcon.classList.add('fa-check-circle', 'text-emerald-500'); }
+  // Cache còn fresh: gọi server ngầm để xác nhận (không cần show loading box)
+  // needsServer giữ = true để server call vẫn chạy bên dưới
+  window._serverDataReady = true;
+  if (syncIcon) { syncIcon.classList.remove('fa-sync', 'fa-spin', 'text-sky-500'); syncIcon.classList.add('fa-check-circle', 'text-emerald-500'); }
   if (typeof setSyncBox === 'function') setSyncBox('hide');
 } else {
-  // Cache cũ hơn 3 phút: vẫn hiện đầy đủ số liệu nhưng icon xoay báo đang đối chiếu số mới từ máy chủ
-  if (syncIcon) { syncIcon.classList.remove('fa-check-circle', 'text-emerald-500'); syncIcon.classList.add('fa-sync', 'fa-spin', 'text-amber-500'); }
-  if (typeof setSyncBox === 'function') setSyncBox('loading', 'Đang cập nhật số liệu mới nhất…');
+  // Cache stale → hiện loading indicator, chờ server
+  window._serverDataReady = false;
 }
 
 }
@@ -11029,8 +10418,6 @@ try {
 if (currentActiveModule === 'quahan' && typeof applyFiltersQH === 'function') {
   if (currentModeQH === 'GIAO') applyFiltersQH(); else if (typeof applyFiltersFM === 'function') applyFiltersFM();
 }
-if (window._spxModulesStale) window._spxModulesStale.quahan = false;
-if (typeof initAutocompleteData === 'function') { try { initAutocompleteData(); } catch(eTc) {} }
 // ── Đồng bộ access từ backend vào Quahan UI ──
 if (res.access && typeof quahanApplyAccessUI === 'function') {
   quahanApplyAccessUI(res.access);
@@ -11106,8 +10493,11 @@ setTimeout(() => {
 // khi wrapped trong setTimeout; dùng idle callback để browser chọn thời điểm rảnh.
 const _saveToLS = () => {
   try {
-    // [OPT - SWR] Cho phép lưu IndexedDB cho cả Admin lẫn AOM/SUP/Lead (IndexedDB dung lượng lớn hàng trăm MB).
-    // Giúp Admin khi F5 mở trang tức thì (<100ms) kèm nhãn cảnh báo thời gian cập nhật theo Phương án B.
+    // [FIX][PERF] Admin luon thay toan bo 391 hub (khong bi loc theo quyen o backend)
+    // -- payload luon rat lon. Server-side CacheService (TTL 300s, aging_getMasterData)
+    // da dong vai tro lop cache cho truong hop nay roi, khong can client cache them lan 2.
+    if (res.access && res.access.role === 'admin') return;
+
     const payload = JSON.stringify({ data: finalData, hubs, notes: res.notes, fmData: res.fmData || [], timestamp: Date.now() });
 
     // [MIGRATE-IDB 2026-07] Chuyen tu localStorage sang IndexedDB (window.SPXIdb).
@@ -11678,47 +11068,43 @@ function spxMarkConfirmed(changed) {
 }
 
 function updateLastSyncDisplay() {
-  const syncBtn  = document.querySelector('button[onclick*="runBackgroundSync"]');
-  const syncIcon = document.getElementById('topSyncIcon');
-  if (!syncIcon) return;
+  const box = document.getElementById('last-sync-box');
+  const txt = document.getElementById('last-sync-text');
+  const ico = document.getElementById('last-sync-icon');
+  if (!box || !txt) return;
+
+  // Reset classes
+  box.classList.remove('spx-confirming', 'spx-confirmed', 'spx-updated');
+  if (ico) ico.className = 'text-[10px] shrink-0 fas ';
 
   if (!_lastSyncTimestamp) {
-    syncIcon.className = 'fas fa-sync text-sky-500';
-    if (syncBtn) syncBtn.title = 'Chưa có mốc đồng bộ — Bấm để đồng bộ ngay';
+    txt.textContent = 'Chưa sync';
+    if (ico) ico.className += 'fa-clock-rotate-left text-slate-400';
     return;
   }
 
-  const d = new Date(_lastSyncTimestamp);
-  const timeStr = typeof spxFmtTimeVN === 'function'
-    ? spxFmtTimeVN(d, {hour:'2-digit', minute:'2-digit', hour12:false})
-    : d.toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'});
+  const diff = Math.floor((Date.now() - _lastSyncTimestamp) / 1000);
+  const timeAgo = diff < 60
+    ? `${diff}s trước`
+    : diff < 3600
+      ? `${Math.floor(diff/60)} phút trước`
+      : `${Math.floor(diff/3600)}h trước`;
 
-  const diffSec = Math.max(0, Math.floor((Date.now() - _lastSyncTimestamp) / 1000));
-  const diffMin = Math.floor(diffSec / 60);
-
-  syncIcon.classList.remove('fa-spin');
-
-  if (_dataFreshness === 'loading' || _dataFreshness === 'pending') {
-    syncIcon.className = 'fas fa-sync fa-spin text-sky-500';
-    if (syncBtn) syncBtn.title = 'Bản lưu lúc ' + timeStr + ' (' + diffMin + 'p trước) · Đang tải số mới nhất...';
-    if (diffMin >= 15 && !window._spxToastStaleNotified) {
-      window._spxToastStaleNotified = true;
-      if (typeof showToast === 'function') {
-        showToast('Dữ liệu lưu lúc ' + timeStr + ' (' + diffMin + ' phút trước) — Bấm nút Đồng bộ để cập nhật mới.', 'info', 'stale-data');
-      }
-    }
-  } else if (_dataFreshness === 'updated' || _dataFreshness === 'confirmed') {
-    syncIcon.className = 'fas fa-check-circle text-emerald-500';
-    if (syncBtn) syncBtn.title = '✓ Số liệu mới nhất lúc ' + timeStr + ' (' + (diffMin < 2 ? 'vừa xong' : diffMin + 'p trước') + ') · Bấm để làm mới';
-  } else if (_dataFreshness === 'warn' || diffMin > 20) {
-    syncIcon.className = 'fas fa-clock-rotate-left text-amber-500';
-    if (syncBtn) syncBtn.title = '⚠ Số liệu lúc ' + timeStr + ' (' + diffMin + 'p trước) · Bấm để đồng bộ mới';
-  } else if (_dataFreshness === 'error') {
-    syncIcon.className = 'fas fa-exclamation-circle text-rose-500';
-    if (syncBtn) syncBtn.title = '⚠ Mất kết nối máy chủ · Dữ liệu lúc ' + timeStr + ' · Bấm để thử lại';
-    if (typeof showToast === 'function') {
-      showToast('Mất kết nối máy chủ. Bấm nút Đồng bộ để thử lại.', 'error', 'sync-err');
-    }
+  if (_dataFreshness === 'pending') {
+    box.classList.add('spx-confirming');
+    txt.textContent = `~${timeAgo} · đang xác nhận…`;
+    if (ico) ico.className += 'fa-circle-notch fa-spin text-amber-500';
+  } else if (_dataFreshness === 'updated') {
+    box.classList.add('spx-updated');
+    txt.textContent = `✓ Vừa cập nhật số mới`;
+    if (ico) ico.className += 'fa-arrow-up-right-dots text-emerald-600';
+  } else if (_dataFreshness === 'confirmed') {
+    box.classList.add('spx-confirmed');
+    txt.textContent = `✓ Xác nhận · ${timeAgo}`;
+    if (ico) ico.className += 'fa-circle-check text-emerald-600';
+  } else {
+    txt.textContent = `Sync · ${timeAgo}`;
+    if (ico) ico.className += 'fa-clock-rotate-left text-slate-400';
   }
 }
 // Hook duy nhất vào renderQuickStatsFromData — gộp: sync timestamp + badges + sparkline
@@ -12452,28 +11838,26 @@ window.spxGetCounts = function(hubOverride) {
 
 })();
 
-// [PERF 2026-10] EAGER FETCH: Kích hoạt tải dữ liệu ngay từ DOMContentLoaded (hoặc chạy ngay)
-// Tiết kiệm 1.5 - 2.5 giây so với việc chờ window.onload (vốn phải chờ toàn bộ ảnh/font/CDN).
-// Bỏ loadIndexQuickStats() ở đây vì runBackgroundSync đã tự động render số thật từ cache (<50ms)
-// hoặc chỉ hiện skeleton nếu máy thực sự chưa từng có cache.
-var _spxStartAppSync = function() {
-  updateThemeUI();
-  runBackgroundSync(false);
+window.addEventListener('load', () => {
+  updateThemeUI(); loadIndexQuickStats(); runBackgroundSync(false);
+  // [FIX] Delay 800ms: chờ spxShowSkeletons() từ runBackgroundSync chạy xong trước
+  // rồi mới gọi KPI Fail — tránh skeleton aging xóa mất số KPI Fail vừa điền.
+  // 800ms đủ cho GAS google.script.run khởi tạo nhưng chưa trả về (thường > 2s).
+  // [PERF FIX] Chỉ gọi loadKPIFailIndexCard nếu sessionStorage không có cache hợp lệ.
+  // Nếu aging cache còn fresh (needsServer=false), KPI card cũng hiện ngay từ session.
+  // Nếu aging phải gọi server, KPI sẽ được trigger từ trong successHandler của aging
+  // (tránh 2 GAS call chạy song song tranh băng thông).
+  // [FIX] Trước đây setTimeout 800ms bị chặn bởi guard "needsServer === true" với
+  // lý do tránh 2 GAS call song song. Tuy nhiên khi aging GAS call timeout/fail,
+  // successHandler không bao giờ chạy → _triggerKPI không được gọi → card KPI Fail
+  // mãi hiện "···" shimmer. Guard này được bỏ; thay vào đó dùng delay 2000ms để
+  // aging GAS call đã được khởi tạo trước, 2 call không tranh đúng cùng 1 frame.
   setTimeout(() => {
     if (typeof window._kpifailCardRestoreFromSession === 'function' && window._kpifailCardRestoreFromSession()) {
-      return;
+      return; // session hit — không cần GAS call
     }
     if (typeof loadKPIFailIndexCard === 'function') loadKPIFailIndexCard();
-  }, 1000);
-};
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', _spxStartAppSync);
-} else {
-  _spxStartAppSync();
-}
-
-window.addEventListener('load', () => {
+  }, 2000);
   // [MIGRATE-IDB 2026-07] Check "chưa có cache -> hiện skeleton" đã gộp vào bên trong
   // runBackgroundSync() (nhánh else if (!forceServer && !cached) của IndexedDB read) —
   // tránh đọc SPX_Aging_Data 2 lần (1 lần ở đây + 1 lần trong runBackgroundSync).
@@ -12587,34 +11971,57 @@ function taoWatermarkBaoMat(email, roleLabel) {
 
 // 6. Tự động chạy khi web vừa tải xong
 
-// [ZERO-LATENCY BOOTSTRAP HANDLER]
-function _spxApplyBootstrapPayload_(boot) {
-    if (!boot) return;
-    try {
-        var email = boot.email || '';
-        window._spxWatermarkEmail = email;
-        window.USER_EMAIL = email;
+// CODE SAU KHI SỬA:
+document.addEventListener("DOMContentLoaded", () => {
+    if (typeof google !== 'undefined' && google.script) {
+        // [PERF FIX] Trước đây 4 lệnh google.script.run (layEmailWatermark,
+        // checkAnalyticsPermission, spx_getModuleAccess, spx_checkLuongAccess)
+        // bắn gần như đồng thời ngay lúc trang load — gây nghẽn trên máy/mạng
+        // yếu. Nay gộp thành 1 lệnh spx_getBootstrap() duy nhất (xem backend.gs),
+        // giữ NGUYÊN toàn bộ side-effect DOM/UI như code cũ, chỉ đổi nguồn dữ liệu.
+        google.script.run.withSuccessHandler(function(bootstrapStr) {
+            var boot;
+            try { boot = typeof bootstrapStr === 'string' ? JSON.parse(bootstrapStr) : bootstrapStr; }
+            catch (eParse) { boot = null; }
+            if (!boot) {
+                console.warn('[spx_getBootstrap] Không parse được kết quả — fallback về luồng cũ.');
+                _spxShowCardSkeleton();
+                spxInitModuleAccess();
+                return;
+            }
 
-        // 1. Watermark
-        var roleLabels = { admin: 'ADMIN', aom: 'AOM', sup: 'SUP', station: 'HUB' };
-        var rLabel = (boot.moduleAccess && roleLabels[boot.moduleAccess.role]) || null;
-        var wEmail = (boot.moduleAccess && boot.moduleAccess.email) || email;
-        if (wEmail && typeof taoWatermarkBaoMat === 'function') {
-            taoWatermarkBaoMat(wEmail, rLabel);
-        }
+            // [MỚI] In thời gian từng bước phân quyền — lọc Console bằng "Bootstrap Perf".
+            try {
+              var _bt = boot._timing || {};
+              console.log('[Bootstrap Perf] Tổng ' + (_bt.tong || '?') + 'ms | quyền module ' + (_bt.quyenModule || '?') +
+                          ' · danh sách trạm ' + (_bt.danhSachTram || '?') + ' · quyền lương ' + (_bt.quyenLuong || '?') +
+                          (_bt.tong === undefined ? ' (lấy từ bộ đệm — rất nhanh)' : '') + ' (ms)');
+            } catch (eBt) {}
+            var email = boot.email || '';
+            // [MỚI] Nạp danh bạ trạm->{AOM,SUP} ngay từ đầu phiên. Nhờ đó phạm vi cấp
+            // SUP/AOM có sẵn kể cả khi người dùng chưa vào module Kiểm soát Giao hàng —
+            // trước đây thiếu nó là nguyên nhân mọi cấp đều thấy số toàn hệ thống.
+            try { if (typeof spxLoadHubOrgDirectory === 'function') setTimeout(spxLoadHubOrgDirectory, 800); } catch (eDir) {}
+            // [MỚI] Bật 3 lớp bảo đảm đồng bộ BI -> Rider Plan (xem spxRpqInit).
+            try { if (typeof spxRpqInit === 'function') spxRpqInit(); } catch (eRpq) {}
+            window._spxWatermarkEmail = email;
 
-        // 2. Quyền trạm Analytics
-        if (boot.analyticsPerm) {
-            var result = boot.analyticsPerm;
-            var analyticsCard = document.getElementById('analytics-function-block');
-            if (!result || !result.allowed || !result.stations || result.stations.length === 0) {
-                if (analyticsCard) {
-                    analyticsCard.style.opacity = '0.35';
-                    analyticsCard.style.pointerEvents = 'none';
-                    analyticsCard.style.cursor = 'not-allowed';
-                    analyticsCard.setAttribute('title', 'Tài khoản của sếp chưa được cấp quyền trạm bưu cục!');
+            // ── Bước 1: watermark chưa có role (giống taoWatermarkBaoMat(email, null) cũ) ──
+            taoWatermarkBaoMat(email, null);
+
+            // ── Bước 2: kết quả checkAnalyticsPermission (giống initAnalyticsBlockPermission cũ) ──
+            window.USER_EMAIL = email;
+            (function applyAnalyticsPerm(result) {
+                const analyticsCard = document.getElementById('analytics-function-block');
+                if (!result || !result.allowed || !result.stations || result.stations.length === 0) {
+                    if (analyticsCard) {
+                        analyticsCard.style.opacity = '0.35';
+                        analyticsCard.style.pointerEvents = 'none';
+                        analyticsCard.style.cursor = 'not-allowed';
+                        analyticsCard.setAttribute('title', 'Tài khoản của sếp chưa được cấp quyền trạm bưu cục!');
+                    }
+                    return;
                 }
-            } else {
                 if (analyticsCard) {
                     analyticsCard.style.opacity = '1';
                     analyticsCard.style.pointerEvents = 'auto';
@@ -12626,76 +12033,61 @@ function _spxApplyBootstrapPayload_(boot) {
                     sessionStorage.setItem('ana_managed_stations', JSON.stringify(result.stations));
                     sessionStorage.setItem('ana_managed_stations_ts', String(Date.now()));
                 } catch (eSess) {}
-            }
-        }
+            })(boot.analyticsPerm);
 
-        // 3. Quyền Module & Trạm
-        if (boot.moduleAccess) {
-            var access = boot.moduleAccess;
-            window.SPX_ACCESS = access;
-            try { var _lg = document.getElementById('spxLegendBox'); if (_lg) _lg.style.display = 'none'; } catch (eLg) {}
+            _spxShowCardSkeleton();
 
-            _spxHideCardSkeleton();
+            // ── Bước 3: kết quả getModuleAccess (giống spxInitModuleAccess cũ) ──
+            (function applyModuleAccess(access) {
+                try {
+                    window.SPX_ACCESS = access;
+                    try { var _lg = document.getElementById('spxLegendBox'); if (_lg) _lg.style.display = (access && access.role === 'admin') ? '' : 'none'; } catch (eLg) {}
+                    // [SỬA LỖI THẬT — truy từ báo cáo "ẩn module nhưng vẫn hiện đủ",
+                    // kiểm chứng bằng Console: backend trả ĐÚNG 12 module 'hidden',
+                    // nhưng window.SPX_MODULE_STATUS ở client vẫn là {}]
+                    // NGUYÊN NHÂN: khi gộp nhiều lời gọi vào 1 lượt spx_getBootstrap
+                    // để tăng tốc, nhánh THÀNH CÔNG (đường chạy bình thường) đã KHÔNG
+                    // nối lại spxInitModuleStatus(). Hàm đó chỉ còn được gọi trong
+                    // spxInitModuleAccess() — mà spxInitModuleAccess() lại CHỈ chạy ở
+                    // nhánh DỰ PHÒNG khi bootstrap THẤT BẠI. Kết quả: bình thường thì
+                    // trạng thái ẩn/khoá KHÔNG BAO GIỜ được nạp, mọi module hiện đủ.
+                    // (Chính comment gốc của hàm ghi "gọi SONG SONG với
+                    // spxInitModuleAccess" — ý định ban đầu đúng, chỉ bị gãy khi gộp.)
+                    try { if (typeof spxInitModuleStatus === 'function') spxInitModuleStatus(); } catch (eMs) {}
+                    try { if (typeof spxStartModuleStatusWatch === 'function') spxStartModuleStatusWatch(); } catch (eMw) {}
+                    _spxHideCardSkeleton();
 
-            if (access.role === 'denied') {
-                _spxUpdateHeaderUserLevel(access);
-                _spxLockModuleCards();
-            } else {
-                _spxShowRoleBadge(access);
-                if (typeof _spxApplyAdminNavPermission === 'function') _spxApplyAdminNavPermission(access);
-                _spxAutoSelectHub(access);
-                if (access.role === 'admin' && typeof spxRefreshHeaderPreviewLevelVisibility === 'function') {
-                    spxRefreshHeaderPreviewLevelVisibility(access);
-                }
-            }
+                    var roleLabels = { admin: 'ADMIN', aom: 'AOM', sup: 'SUP', station: 'HUB' };
+                    var rLabel = roleLabels[access.role] || null;
+                    var wEmail = access.email || email;
+                    if (wEmail && typeof taoWatermarkBaoMat === 'function') {
+                        taoWatermarkBaoMat(wEmail, rLabel);
+                    }
 
-            if (typeof spxUpdateAdminShowHiddenBtn === 'function') spxUpdateAdminShowHiddenBtn();
-            if (typeof spxBuildNav === 'function') spxBuildNav();
-            try { if (typeof spxInitModuleStatus === 'function') spxInitModuleStatus(); } catch (eMs) {}
-            try { if (typeof spxStartModuleStatusWatch === 'function') spxStartModuleStatusWatch(); } catch (eMw) {}
-        }
+                    if (access.role === 'denied') {
+                        _spxUpdateHeaderUserLevel(access);
+                        _spxLockModuleCards();
+                    } else {
+                        _spxShowRoleBadge(access);
+                        if (typeof _spxApplyAdminNavPermission === 'function') _spxApplyAdminNavPermission(access);
+                        _spxAutoSelectHub(access);
+                    }
+                } catch (eAccess) {}
+            })(boot.moduleAccess);
 
-        // 4. Lương
-        window._luongAccess = boot.luongAccess || 'denied';
-        if (boot.hubOrgDir) {
-            window._spxHubOrgDir = boot.hubOrgDir;
-        }
-
-        // Lưu cache local để F5 tiếp theo đạt 0ms
-        try { localStorage.setItem('spx_cached_bootstrap', JSON.stringify(boot)); } catch (eLs) {}
-        try { if (typeof spxLoadHubOrgDirectory === 'function') setTimeout(spxLoadHubOrgDirectory, 800); } catch (eDir) {}
-        try { if (typeof spxRpqInit === 'function') spxRpqInit(); } catch (eRpq) {}
-    } catch(eApply) {
-        console.error('[Bootstrap] Lỗi nạp dữ liệu quyền:', eApply);
-    }
-}
-
-// CODE SAU KHI SỬA — TẢI TỨC THÌ 0MS:
-document.addEventListener("DOMContentLoaded", () => {
-    // 1. Nạp ngay lập tức dữ liệu do Server nhúng sẵn (hoặc Local Cache)
-    var serverBoot = window.__SERVER_BOOTSTRAP__;
-    var cachedBoot = null;
-    try { cachedBoot = JSON.parse(localStorage.getItem('spx_cached_bootstrap') || 'null'); } catch(e) {}
-    var immediateBoot = (serverBoot && serverBoot.moduleAccess && serverBoot.moduleAccess.role) ? serverBoot : cachedBoot;
-
-    if (immediateBoot && immediateBoot.moduleAccess && immediateBoot.moduleAccess.role) {
-        console.log('[Bootstrap 0ms] Đã nạp quyền tức thì từ ' + (serverBoot ? 'Server Injection' : 'Local Cache'));
-        _spxApplyBootstrapPayload_(immediateBoot);
-    } else {
-        _spxShowCardSkeleton();
-    }
-
-    // 2. Chạy ngầm revalidate kiểm tra cập nhật mới nhất (không giật giao diện)
-    if (typeof google !== 'undefined' && google.script) {
-        google.script.run.withSuccessHandler(function(bootstrapStr) {
-            var boot;
-            try { boot = typeof bootstrapStr === 'string' ? JSON.parse(bootstrapStr) : bootstrapStr; }
-            catch (eParse) { boot = null; }
-            if (boot) {
-                _spxApplyBootstrapPayload_(boot);
-            }
+            // ── Bước 4: kết quả spx_checkLuongAccess (giống spxPrefetchLuongAccess cũ) ──
+            window._luongAccess = boot.luongAccess || 'denied';
         }).withFailureHandler(function(err) {
-            console.warn('[spx_getBootstrap silent revalidate] error:', err);
+            // FIX: trước đây không có failure handler — nếu layEmailWatermark() lỗi
+            // (mất mạng, server timeout, exception backend), USER_EMAIL mãi mãi rỗng
+            // và mọi luồng phụ thuộc (Analytics permission, v.v.) treo vô thời hạn mà
+            // không có thông báo gì cho người dùng.
+            console.warn('[spx_getBootstrap] failed:', err);
+            if (typeof showToast === 'function') {
+                showToast(spxUiLabel('⚠️ Lỗi kết nối khi tải thông tin tài khoản. Vui lòng tải lại trang.'), 'error');
+            }
+            _spxShowCardSkeleton();
+            spxInitModuleAccess();
         }).spx_getBootstrap();
     } else {
         // KHI CHẠY OFFLINE TRÊN MÁY TÍNH: Tự động cấp trạm giả lập để sếp test click module
@@ -14127,7 +13519,7 @@ function spxInitModuleAccess() {
       try {
         var access = typeof resStr === 'string' ? JSON.parse(resStr) : resStr;
         window.SPX_ACCESS = access;
-        try { var _lg2 = document.getElementById('spxLegendBox'); if (_lg2) _lg2.style.display = 'none'; } catch (eLg2) {}
+        try { var _lg2 = document.getElementById('spxLegendBox'); if (_lg2) _lg2.style.display = (access && access.role === 'admin') ? '' : 'none'; } catch (eLg2) {}
         // [MỚI — "Quản lý Module" (Admin)] Tải song song, không chặn phần còn
         // lại của flow này nếu chậm/lỗi (spxInitModuleStatus tự fail-open).
         spxInitModuleStatus();
@@ -14312,11 +13704,7 @@ function _spxAutoSelectHub(access) {
       wrapper.style.opacity = '0.85';
       wrapper.setAttribute('title', 'Bạn chỉ có quyền xem trạm: ' + targetHub);
     }
-    var confirmBtn = document.getElementById('spxHeaderHubConfirmBtn');
-    if (confirmBtn) confirmBtn.style.display = 'none';
   } else if (access.role === 'station') {
-    var confirmBtn2 = document.getElementById('spxHeaderHubConfirmBtn');
-    if (confirmBtn2) confirmBtn2.style.display = '';
     var wrapper2 = document.getElementById('spx-hub-wrapper');
     if (wrapper2) {
       wrapper2.style.pointerEvents = '';
@@ -14619,17 +14007,6 @@ var _sidebarStates = {};
 // [PERF/UX FIX 2026-07] true nếu đang ở viewport mobile (khớp breakpoint CSS 767px ở trên)
 function _spxIsMobileViewport() { return window.innerWidth <= 767; }
 
-
-// [GLOBAL SHARED HELPER] spxFitScrollContainer dùng chung cho Quá Hạn, FMS, Pick
-window.spxFitScrollContainer = function(id) {
-  try {
-    var c = document.getElementById(id);
-    if (!c) return;
-    // Tự động căn chỉnh chiều cao scroll theo viewport
-    c.style.maxHeight = 'calc(100vh - 180px)';
-  } catch(e) {}
-};
-
 function toggleSidebar(id) {
   var aside = document.getElementById('aside-' + id);
   if (!aside) return;
@@ -14661,8 +14038,8 @@ function closeAllMobileSidebars() {
   // phiên: "Bỏ hẳn sidebar, chuyển nút Làm mới ghi chú lên thanh công cụ
   // chính") — document.getElementById('aside-quahan') luôn trả về null, có
   // guard "if (aside && ...)" nên không lỗi, nhưng hoàn toàn vô tác dụng.
-  // [UI/UX 2.0] Đã bỏ sidebar trên cả Quá Hạn, FMS (tondong) và Pick.
-  [].forEach(function(id) {
+  // Giữ nguyên 'tondong'/'pick' — 2 module này VẪN có <aside> thật.
+  ['tondong', 'pick'].forEach(function(id) {
     var aside = document.getElementById('aside-' + id);
     if (aside && !aside.classList.contains('collapsed')) {
       aside.classList.add('collapsed');
@@ -17100,40 +16477,68 @@ function toggleAlertDrawerSize() {
    ============================================================ */
 (function () {
   var LAZY_MODULES = {
-    quahan:    'JS_Quahan',
-    // 'pick' (JS_Pick) và 'tondong' (JS_FMS) được nhúng TĨNH trực tiếp trong index.html qua <?!= include(...) ?>
-    // để mở NGAY TỨC THÌ 0ms không phải chờ mạng, không lỗi trắng màn hình, bảo toàn 100% dữ liệu & controls.
-    luong:     'JS_Luong',
-    tailieu:   'JS_Tailieu',
+    quahan:    'JS_Quahan', // [MỚI — chuyển từ ghép tĩnh sang lazy-load, theo yêu cầu "tải trang đầu nhanh nhất cho mọi module"]
+    pick:      'JS_Pick',   // [MỚI — chuyển từ ghép tĩnh sang lazy-load, cùng đợt với quahan]
+    tondong:   'JS_FMS',    // [MỚI — chuyển từ ghép tĩnh sang lazy-load, cùng đợt với quahan/pick]
+    luong:     'JS_Luong',  // [MỚI — chuyển từ ghép tĩnh sang lazy-load, module CUỐI trong 4 module tĩnh ban đầu]
+    tailieu:   'JS_TaiLieu',
     tracuu:    'JS_Tracuu',
     riderplan: 'JS_Rider_plan',
     kpifail:   'JS_KPIFail',
     analytics: 'Analytics_Block',
     rescue:    'JS_DonCauCuu',
     violation: 'JS_ViPham',
+    // [SỬA — phát hiện lỗi thiết kế nghiêm trọng khi tự rà soát: cơ chế lazy-
+    // load này chỉ hỗ trợ ĐÚNG 1 container #view-{toolKey} cho mỗi toolKey —
+    // dùng 2 toolKey khác nhau trỏ cùng 1 file sẽ khiến nội dung bị chèn 2 LẦN
+    // vào 2 container riêng, gây trùng ID + trùng định nghĩa hàm trên toàn
+    // trang. Sửa: CHỈ 1 toolKey duy nhất (adminzone) — "Duyệt quyền truy cập"
+    // và "Phân quyền User" giờ là 2 TAB của CÙNG 1 module (giống Pick Manual/
+    // Live), không phải 2 module riêng.]
     adminzone: 'JS_AdminZone'
   };
-  var LOAD_ORDER = ['quahan', 'luong', 'tailieu', 'tracuu', 'riderplan', 'kpifail', 'rescue', 'violation', 'analytics'];
-  var STAGGER_DELAY_MS = { quahan: 200, luong: 500, tailieu: 700, tracuu: 1200, riderplan: 2200, kpifail: 3200, rescue: 3700, violation: 4500, analytics: 5500 };
+  // Thứ tự tải nền: nhẹ trước, nặng nhất (Analytics_Block) để cuối cùng — CỐ Ý
+  // KHÔNG đưa rescue/violation vào đây (module ít dùng hơn, chỉ tải khi user
+  // THẬT SỰ bấm vào, tránh tăng tải nền không cần thiết cho mọi user).
+  // [MỚI] "quahan"/"pick"/"tondong"/"luong" đặt ĐẦU TIÊN — 4 module TRƯỚC ĐÂY
+  // ghép tĩnh (luôn tải ngay từ đầu bất kể user có dùng hay không), giờ ưu
+  // tiên tải nền sớm nhất để gần như luôn sẵn sàng ngay khi user bấm vào, dù
+  // vẫn KHÔNG chặn lần vẽ trang đầu tiên (chạy nền, không đồng bộ) — đây
+  // chính là thay đổi cốt lõi giúp "tải trang đầu nhanh nhất cho mọi module".
+  var LOAD_ORDER = ['quahan', 'pick', 'tondong', 'luong', 'tailieu', 'tracuu', 'riderplan', 'kpifail', 'analytics'];
+  var STAGGER_DELAY_MS = { quahan: 200, pick: 350, tondong: 500, luong: 650, tailieu: 850, tracuu: 1300, riderplan: 2300, kpifail: 3300, analytics: 4800 };
 
+  // [FIX LỖI THẬT — phát hiện qua điều tra "Đơn cầu cứu/Vi phạm trắng"] TRƯỚC
+  // ĐÂY nhầm lấy từ LOAD_ORDER (chỉ 5 module tải NỀN, CỐ Ý không có
+  // rescue/violation) làm danh sách "module nào cần gọi _spxLoadModule()" —
+  // khiến openModule('rescue')/('violation') kiểm tra thấy KHÔNG có trong danh
+  // sách này, bỏ qua hẳn bước tải nội dung thật, dù gọi thẳng backend vẫn đúng
+  // 100% (đã xác nhận qua Console: 9446 ký tự). Sửa: dùng ĐÚNG Object.keys()
+  // của LAZY_MODULES — danh sách ĐẦY ĐỦ 7 module thật sự lazy-load, không phải
+  // danh sách con chỉ dùng cho tải nền.
   window._spxLazyModuleKeys = Object.keys(LAZY_MODULES);
   window._spxModulePromises = window._spxModulePromises || {};
 
+  // Script chèn qua innerHTML không tự chạy (giới hạn bảo mật trình duyệt) —
+  // phải tách ra và tạo lại <script> mới rồi append thủ công để nó thực thi.
+  // [FIX] Set async=false cho TẤT CẢ script (kể cả script inline không có src) —
+  // không chỉ script có src. Lý do: script inline không cần tải mạng nên sẽ chạy
+  // NGAY LẬP TỨC lúc được chèn vào DOM, có thể chạy TRƯỚC khi các script CDN
+  // đứng trước nó (leaflet, chart.js...) tải xong — dù các script CDN đó đã được
+  // ép đúng thứ tự VỚI NHAU. Set async=false trên toàn bộ đưa hết vào chung 1
+  // hàng đợi "thực thi tuần tự" của trình duyệt, khôi phục đúng thứ tự y hệt
+  // lúc trình duyệt tự parse HTML tuần tự (hành vi gốc trước khi lazy-load).
   function _spxExecuteScripts(container) {
     var scripts = container.querySelectorAll('script');
     scripts.forEach(function (oldScript) {
-      try {
-        var newScript = document.createElement('script');
-        for (var i = 0; i < oldScript.attributes.length; i++) {
-          var attr = oldScript.attributes[i];
-          newScript.setAttribute(attr.name, attr.value);
-        }
-        newScript.async = false;
-        newScript.textContent = oldScript.textContent;
-        oldScript.parentNode.replaceChild(newScript, oldScript);
-      } catch (err) {
-        console.error('[SPX Lazy Loader] Script execution error:', err);
+      var newScript = document.createElement('script');
+      for (var i = 0; i < oldScript.attributes.length; i++) {
+        var attr = oldScript.attributes[i];
+        newScript.setAttribute(attr.name, attr.value);
       }
+      newScript.async = false;
+      newScript.textContent = oldScript.textContent;
+      oldScript.parentNode.replaceChild(newScript, oldScript);
     });
   }
 
@@ -17150,33 +16555,26 @@ function toggleAlertDrawerSize() {
       }
       (window.spxModuleRunner ? window.spxModuleRunner() : google.script.run)
         .withSuccessHandler(function (html) {
-          try {
-            var container = document.getElementById('view-' + toolKey);
-            if (!container) { resolve(); return; }
-            container.innerHTML = html;
-            _spxExecuteScripts(container);
-            if (typeof currentActiveModule !== 'undefined' && currentActiveModule !== toolKey) {
-              container.classList.add('hidden');
-            }
+          var container = document.getElementById('view-' + toolKey);
+          if (!container) { resolve(); return; }
+          container.innerHTML = html;
+          _spxExecuteScripts(container);
 
-            // Nối tiếp cơ chế prefetch DATA đã có sẵn cho KPI Fail (giữ nguyên
-            // logic guard y hệt _prefetchKPIModule ở phần trên, chỉ gọi lại ở
-            // đây phòng trường hợp timer gốc chạy trước khi script kịp tải).
-            if (toolKey === 'kpifail') {
-              try {
-                if (!(window.SPX_ACCESS && window.SPX_ACCESS.role === 'denied') &&
-                    typeof kpifailLoadData === 'function' &&
-                    typeof KPIFAIL_STATE !== 'undefined' &&
-                    !KPIFAIL_STATE.loaded && !KPIFAIL_STATE.loading) {
-                  kpifailLoadData(false, true);
-                }
-              } catch (e) { /* im lặng, không ảnh hưởng luồng chính */ }
-            }
-          } catch (eLoad) {
-            console.error('[SPX Lazy Loader] Error executing module ' + toolKey, eLoad);
-          } finally {
-            resolve();
+          // Nối tiếp cơ chế prefetch DATA đã có sẵn cho KPI Fail (giữ nguyên
+          // logic guard y hệt _prefetchKPIModule ở phần trên, chỉ gọi lại ở
+          // đây phòng trường hợp timer gốc chạy trước khi script kịp tải).
+          if (toolKey === 'kpifail') {
+            try {
+              if (!(window.SPX_ACCESS && window.SPX_ACCESS.role === 'denied') &&
+                  typeof kpifailLoadData === 'function' &&
+                  typeof KPIFAIL_STATE !== 'undefined' &&
+                  !KPIFAIL_STATE.loaded && !KPIFAIL_STATE.loading) {
+                kpifailLoadData(false, true);
+              }
+            } catch (e) { /* im lặng, không ảnh hưởng luồng chính */ }
           }
+
+          resolve();
         })
         .withFailureHandler(function (err) {
           console.error('[LazyModule] Lỗi tải module ' + moduleFile, err);

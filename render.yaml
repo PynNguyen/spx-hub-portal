@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: spx-hub-portal
+    env: node
+    region: singapore
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TZ
+        value: Asia/Ho_Chi_Minh

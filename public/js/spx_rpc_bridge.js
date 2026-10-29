@@ -2,14 +2,25 @@
  * ============================================================
  * SPX HUB TRANSPARENT RPC BRIDGE
  * Cầu nối trong suốt thay thế hoàn toàn google.script.run
- * Giữ nguyên 100% mã nguồn giao diện HTML của toàn bộ dự án.
+ * Giữ nguyên 100% mã nguồn giao diện HTML gốc của dự án.
  * ============================================================
  */
 
 (function () {
   'use strict';
 
-  console.log('⚡ [SPX Bridge] Initializing Local Multi-User RPC Bridge...');
+  console.log('⚡ [SPX Bridge] Initializing Multi-User RPC Bridge...');
+
+  // Xoá sạch IndexedDB cache cũ một lần duy nhất nếu phiên bản trước bị dính UI lỗi
+  try {
+    if (typeof indexedDB !== 'undefined') {
+      if (localStorage.getItem('spx_clean_v2_synced') !== 'true') {
+        indexedDB.deleteDatabase('spx_modcache_v1');
+        localStorage.setItem('spx_clean_v2_synced', 'true');
+        console.log('🧹 [SPX Bridge] Flushed previous UI cache successfully.');
+      }
+    }
+  } catch (e) {}
 
   var currentUserEmail = localStorage.getItem('spx_user_email') || 'xuan.nguyenthanh01@spxexpress.com';
   var currentUserName = localStorage.getItem('spx_user_name') || 'Admin Xuân - Krông Pắc 02';
@@ -21,35 +32,41 @@
     userName: currentUserName
   };
 
-  function createRpcRunner() {
-    var _successCb = null;
-    var _failureCb = null;
-    var _userObject = null;
-    var proxyInstance = null;
+  /**
+   * Tạo một RPC Runner bất biến (immutable) để hỗ trợ gọi chuỗi bất đồng bộ:
+   * google.script.run.withSuccessHandler(fn).withFailureHandler(fn).serverMethod(...args)
+   */
+  function createRpcRunner(state) {
+    var s = (state && state.s) || null;
+    var f = (state && state.f) || null;
+    var u = (state && state.u) || null;
 
     var runner = {
       withSuccessHandler: function (fn) {
-        _successCb = fn;
-        return proxyInstance;
+        return createRpcRunner({ s: fn, f: f, u: u });
       },
       withFailureHandler: function (fn) {
-        _failureCb = fn;
-        return proxyInstance;
+        return createRpcRunner({ s: s, f: fn, u: u });
       },
       withUserObject: function (obj) {
-        _userObject = obj;
-        return proxyInstance;
+        return createRpcRunner({ s: s, f: f, u: obj });
       }
     };
 
-    proxyInstance = new Proxy(runner, {
+    return new Proxy(runner, {
       get: function (target, prop) {
         if (prop in target) {
           return target[prop];
         }
 
-        return function (...args) {
+        if (typeof prop !== 'string' || prop === 'then') {
+          return undefined;
+        }
+
+        return function () {
+          var args = Array.prototype.slice.call(arguments);
           var startTime = performance.now();
+
           fetch('/api/rpc/' + encodeURIComponent(prop), {
             method: 'POST',
             headers: {
@@ -66,37 +83,35 @@
             })
             .then(function (data) {
               var duration = (performance.now() - startTime).toFixed(1);
-              console.log(`[RPC ⚡] ${prop} finished in ${duration}ms`, data);
               if (data && data.error) {
-                if (_failureCb) {
-                  _failureCb(new Error(data.error), _userObject);
+                if (f) {
+                  f(new Error(data.error), u);
                 } else {
-                  console.error(`[RPC ERROR] ${prop}:`, data.error);
+                  console.error('[RPC ERROR] ' + prop + ':', data.error);
                 }
               } else {
-                if (_successCb) {
+                if (s) {
                   try {
-                    _successCb(data.result, _userObject);
+                    s(data ? data.result : null, u);
                   } catch (cbErr) {
-                    console.error(`[RPC Callback Error in ${prop}]:`, cbErr);
+                    console.error('[RPC Callback Error in ' + prop + ']:', cbErr);
                   }
                 }
               }
             })
             .catch(function (err) {
               var duration = (performance.now() - startTime).toFixed(1);
-              console.error(`[RPC FAIL ❌] ${prop} failed after ${duration}ms:`, err);
-              if (_failureCb) {
-                _failureCb(err, _userObject);
+              console.error('[RPC FAIL] ' + prop + ' failed after ' + duration + 'ms:', err);
+              if (f) {
+                f(err, u);
               }
             });
         };
       }
     });
-
-    return proxyInstance;
   }
 
+  // Khởi tạo đối tượng window.google.script.run
   window.google = window.google || {};
   window.google.script = window.google.script || {};
 
@@ -119,7 +134,9 @@
       if (cb) {
         var params = {};
         var searchParams = new URLSearchParams(window.location.search);
-        searchParams.forEach(function (val, key) { params[key] = val; });
+        searchParams.forEach(function (val, key) {
+          params[key] = val;
+        });
         cb({
           hash: window.location.hash.replace(/^#/, ''),
           parameter: params,
@@ -129,5 +146,5 @@
     }
   };
 
-  console.log('✅ [SPX Bridge] google.script.run is fully proxied to Node.js backend!');
+  console.log('✅ [SPX Bridge] google.script.run is fully ready!');
 })();

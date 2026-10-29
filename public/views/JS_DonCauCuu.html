@@ -1,222 +1,77 @@
-<style>
-/* SPX DON CAU CUU — MODERN EXECUTIVE UI/UX STYLES */
-.dcc-card {
-  background: var(--qh-cmp-card-bg, #ffffff);
-  border: 1px solid var(--qh-cmp-border, #e2e8f0);
-  border-radius: 16px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.dark .dcc-card {
-  background: #131c2e;
-  border-color: #1e293b;
-}
-
-.dcc-kpi-card {
-  position: relative;
-  overflow: hidden;
-  border-radius: 10px;
-  padding: 6px 10px;
-  cursor: pointer;
-  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1.5px solid transparent;
-  min-height: 38px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-.dcc-kpi-card:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.06);
-}
-.dcc-kpi-card.active {
-  box-shadow: 0 2px 10px -1px rgba(0, 0, 0, 0.1);
-}
-
-.dcc-pill-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 9999px;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.dcc-pulse-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  display: inline-block;
-  animation: dccPulse 1.8s infinite;
-}
-@keyframes dccPulse {
-  0% { transform: scale(0.95); opacity: 0.9; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-  70% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
-  100% { transform: scale(0.95); opacity: 0.9; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-}
-
-.dcc-progress-track {
-  height: 6px;
-  background: rgba(148, 163, 184, 0.2);
-  border-radius: 9999px;
-  overflow: hidden;
-}
-.dcc-progress-bar {
-  height: 100%;
-  border-radius: 9999px;
-  transition: width 0.4s ease;
-}
-
-.dcc-table tr:hover {
-  background-color: rgba(248, 250, 252, 0.8);
-}
-.dark .dcc-table tr:hover {
-  background-color: rgba(30, 41, 59, 0.4);
-}
-
-.dcc-custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-.dcc-custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.dcc-custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-.dark .dcc-custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #334155;
-}
-/* SKELETON SHIMMER & REFINED LOADING SYSTEM */
-@keyframes dccShimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-.dcc-shimmer {
-  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-  background-size: 200% 100%;
-  animation: dccShimmer 1.8s ease-in-out infinite;
-  border-radius: 8px;
-}
-.dark .dcc-shimmer {
-  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
-  background-size: 200% 100%;
-}
-
-.dcc-loading-panel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 44px 20px;
-  gap: 12px;
-  text-align: center;
-  width: 100%;
-}
-
-.dcc-loading-spinner {
-  width: 38px;
-  height: 38px;
-  border: 3.5px solid rgba(238, 77, 45, 0.18);
-  border-top-color: #ee4d2d;
-  border-radius: 50%;
-  animation: dccSpin 0.85s linear infinite;
-  display: block;
-  margin: 0 auto;
-}
-.dark .dcc-loading-spinner {
-  border-color: rgba(238, 77, 45, 0.25);
-  border-top-color: #ee4d2d;
-}
-
-@keyframes dccSpin {
-  to { transform: rotate(360deg); }
-}
-
-.dcc-loading-title {
-  font-size: 13px;
-  font-weight: 800;
-  color: #1e293b;
-  margin: 0;
-  line-height: 1.4;
-}
-.dark .dcc-loading-title {
-  color: #f1f5f9;
-}
-
-.dcc-loading-subtitle {
-  font-size: 11px;
-  color: #64748b;
-  font-weight: 500;
-  margin: 0;
-  line-height: 1.4;
-}
-.dark .dcc-loading-subtitle {
-  color: #94a3b8;
-}
-
-.dcc-empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 44px 20px;
-  gap: 10px;
-  text-align: center;
-  width: 100%;
-}
-
-</style>
-
 <script>
-var DCC_STYLES_CSS = "\n/* SPX DON CAU CUU — MODERN EXECUTIVE UI/UX STYLES */\n.dcc-card {\n  background: var(--qh-cmp-card-bg, #ffffff);\n  border: 1px solid var(--qh-cmp-border, #e2e8f0);\n  border-radius: 16px;\n  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);\n}\n.dark .dcc-card {\n  background: #131c2e;\n  border-color: #1e293b;\n}\n\n.dcc-kpi-card {\n  position: relative;\n  overflow: hidden;\n  border-radius: 10px;\n  padding: 6px 10px;\n  cursor: pointer;\n  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);\n  border: 1.5px solid transparent;\n  min-height: 38px;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 8px;\n}\n.dcc-kpi-card:hover {\n  transform: translateY(-1px);\n  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.06);\n}\n.dcc-kpi-card.active {\n  box-shadow: 0 2px 10px -1px rgba(0, 0, 0, 0.1);\n}\n\n.dcc-pill-badge {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  padding: 4px 10px;\n  border-radius: 9999px;\n  font-size: 11px;\n  font-weight: 700;\n}\n\n.dcc-pulse-dot {\n  width: 8px;\n  height: 8px;\n  border-radius: 50%;\n  display: inline-block;\n  animation: dccPulse 1.8s infinite;\n}\n@keyframes dccPulse {\n  0% { transform: scale(0.95); opacity: 0.9; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }\n  70% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }\n  100% { transform: scale(0.95); opacity: 0.9; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }\n}\n\n.dcc-progress-track {\n  height: 6px;\n  background: rgba(148, 163, 184, 0.2);\n  border-radius: 9999px;\n  overflow: hidden;\n}\n.dcc-progress-bar {\n  height: 100%;\n  border-radius: 9999px;\n  transition: width 0.4s ease;\n}\n\n.dcc-table tr:hover {\n  background-color: rgba(248, 250, 252, 0.8);\n}\n.dark .dcc-table tr:hover {\n  background-color: rgba(30, 41, 59, 0.4);\n}\n\n.dcc-custom-scrollbar::-webkit-scrollbar {\n  width: 5px;\n  height: 5px;\n}\n.dcc-custom-scrollbar::-webkit-scrollbar-track {\n  background: transparent;\n}\n.dcc-custom-scrollbar::-webkit-scrollbar-thumb {\n  background: #cbd5e1;\n  border-radius: 4px;\n}\n.dark .dcc-custom-scrollbar::-webkit-scrollbar-thumb {\n  background: #334155;\n}\n/* SKELETON SHIMMER & REFINED LOADING SYSTEM */\n@keyframes dccShimmer {\n  0% { background-position: -200% 0; }\n  100% { background-position: 200% 0; }\n}\n\n.dcc-shimmer {\n  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);\n  background-size: 200% 100%;\n  animation: dccShimmer 1.8s ease-in-out infinite;\n  border-radius: 8px;\n}\n.dark .dcc-shimmer {\n  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);\n  background-size: 200% 100%;\n}\n\n.dcc-loading-panel {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  padding: 44px 20px;\n  gap: 12px;\n  text-align: center;\n  width: 100%;\n}\n\n.dcc-loading-spinner {\n  width: 38px;\n  height: 38px;\n  border: 3.5px solid rgba(238, 77, 45, 0.18);\n  border-top-color: #ee4d2d;\n  border-radius: 50%;\n  animation: dccSpin 0.85s linear infinite;\n  display: block;\n  margin: 0 auto;\n}\n.dark .dcc-loading-spinner {\n  border-color: rgba(238, 77, 45, 0.25);\n  border-top-color: #ee4d2d;\n}\n\n@keyframes dccSpin {\n  to { transform: rotate(360deg); }\n}\n\n.dcc-loading-title {\n  font-size: 13px;\n  font-weight: 800;\n  color: #1e293b;\n  margin: 0;\n  line-height: 1.4;\n}\n.dark .dcc-loading-title {\n  color: #f1f5f9;\n}\n\n.dcc-loading-subtitle {\n  font-size: 11px;\n  color: #64748b;\n  font-weight: 500;\n  margin: 0;\n  line-height: 1.4;\n}\n.dark .dcc-loading-subtitle {\n  color: #94a3b8;\n}\n\n.dcc-empty-state {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  padding: 44px 20px;\n  gap: 10px;\n  text-align: center;\n  width: 100%;\n}\n\n";
-function _rqEnsureStyles() {
-  var id = 'spx-dcc-styles-head';
-  if (!document.getElementById(id)) {
-    var styleEl = document.createElement('style');
-    styleEl.id = id;
-    styleEl.textContent = DCC_STYLES_CSS;
-    document.head.appendChild(styleEl);
-  }
-}
-
-// [MỚI — chuẩn hoá ngôn ngữ EN/VI] Uỷ quyền spxUiLabel() dùng chung (index.html)
+// [MỚI — chuẩn hoá ngôn ngữ EN/VI] Uỷ quyền spxUiLabel() dùng chung
+// (index.html) — CÙNG PATTERN với vpT/fmsT/qhT ở các module khác.
 function dccT(viText){ return (typeof spxUiLabel === 'function') ? spxUiLabel(viText) : viText; }
-
 // =========================================================================
-// MODULE ĐƠN CẦN CẦU CỨU — MODERN EXECUTIVE REDESIGN
-// LOGIC DỮ LIỆU GIỮ NGUYÊN 100%, bảo toàn getOrders()/setResolvedStatus/setResolvedStatusBulk
+// MODULE ĐƠN CẦN CẦU CỨU — REDESIGN THEO BẢN GỐC (index_đơn_cần_cầu_cứu.html,
+// 2706 dòng) — LOGIC DỮ LIỆU GIỮ NGUYÊN 100%, gọi đúng getOrders()/
+// setResolvedStatus(Bulk) thật. Khôi phục lại 2 phần cốt lõi của bản gốc:
+//   1. Panel "Sức khỏe từng trạm" (chỉ hiện khi header đang ở "Tất cả").
+//   2. Khu cảnh báo riêng (risk alert) — nổi bật đơn trễ hạn nhất.
+// [QUY TẮC BẮT BUỘC — đã sửa lỗi vi phạm] Hub Selector trên HEADER là nơi
+// DUY NHẤT để chọn trạm trong toàn bộ app — module KHÔNG được có bất kỳ ô
+// tìm/chọn trạm riêng nào (đúng bài học đã áp dụng cho BI: gỡ 5 nơi tự bật
+// lại nút "Chuyển trạm" riêng). Module này CHỈ ĐỌC lại đúng trạm header đang
+// chọn (spxHeaderSelectedHub, cùng biến/quy ước Quá Hạn·FMS·BI·Rider Plan
+// đang dùng) khi tải, và CHỈ đổi khi spxHeaderHubChange() gọi rqSelectStation()
+// — không có đường nào khác để đổi trạm từ trong module.
+// BỎ HẲN tính năng đăng ký nhận mail (theo yêu cầu) — payload.mail từ backend
+// bị NGÓ LƠ hoàn toàn ở đây.
+// Mức khẩn cấp tính từ export_date+23:59:59 so với hiện tại:
+//   Đỏ ≤12h hoặc quá hạn | Cam 12-24h | Xanh >24h  (khớp đúng công thức thật
+//   trong computeUrgency() của bản gốc).
 // =========================================================================
-var RQ_allOrders = [];        // TOÀN BỘ đơn thuộc quyền
-var RQ_access = null;         // {role, email, stations: [...]}
-var RQ_selectedStation = '';  // '' = Tất cả trạm | tên trạm cụ thể
-var RQ_activeLevel = 'ALL';   // 'ALL' | 'red' | 'orange' | 'green'
-var RQ_hideResolved = true;   // mặc định ẩn đơn đã xử lý
-var RQ_isLoading = false;
-var RQ_searchText = '';       // [MỚI] Tìm kiếm tức thì theo mã vận đơn, trạm, tài xế
+var RQ_allOrders = [];        // TOÀN BỘ đơn thuộc quyền (bao gồm cả đã xử lý — cần cho panel sức khỏe)
+var RQ_access = null;         // {role, email, stations: [...]} — từ res.access thật
+var RQ_selectedStation = '';  // '' = Tất cả trạm | tên trạm cụ thể — LUÔN khớp đúng Hub header, không tự đổi trong module
+var RQ_activeLevel = 'ALL';
+var RQ_hideResolved = true;   // mặc định ẩn đơn đã xử lý khỏi bảng (khớp hành vi bản cũ)
+var RQ_isLoading = false;     // [FIX ỔN ĐỊNH] chặn bấm "Làm mới" liên tục gây gọi API trùng lặp cùng lúc
+// [MỚI — theo yêu cầu trực tiếp "phân hoá view theo level"] null = không giới
+// hạn thêm gì (Admin thật, hoặc ROM — quản lý toàn bộ). Mảng = giới hạn theo
+// đúng phạm vi AOM/SUP đang "Xem thử" (RQ_selectedStation vẫn xử lý ĐÚNG
+// Lead/Staff sẵn có từ trước qua header hub — không cần đổi gì thêm cho 2
+// cấp đó, module này đã LUÔN đọc header hub từ đầu).
 var RQ_previewAllowedStations = null;
+// [FIX HIỆU NĂNG] Bản tra cứu O(1) đi kèm — tránh indexOf() lặp trên từng dòng.
 var RQ_previewAllowedSet = null;
+// [MỚI] Nhãn hiển thị phạm vi đang "Xem thử" (VD "AOM Nguyễn Văn A") — null khi
+// không giới hạn gì thêm (Admin/ROM thật) — dùng để hiện banner + đổi tiêu đề,
+// tránh mơ hồ "Tất cả trạm" khi thực ra đang bị thu hẹp theo tổ chức.
 var RQ_previewEntityLabel = null;
+// [MỚI] Cấp cao mặc định ẩn thẻ số + bảng đơn chi tiết — mở khi cần tra cứu.
 var RQ_showDetail = false;
 
+// [MỚI] Kiểm tra 1 đơn có nằm trong phạm vi đang xem hay không — gộp CẢ 2
+// điều kiện (header hub 1-trạm CHO Lead/Staff, và phạm vi tổ chức nhiều-trạm
+// CHO AOM/SUP) vào ĐÚNG 1 chỗ, thay vì lặp lại điều kiện rải rác nhiều nơi.
 function _rqMatchesScope(stationName) {
-  if (!stationName) return false;
-  if (RQ_selectedStation) {
-    var normFn = typeof cleanHubString === 'function' ? cleanHubString : function(s){ return (s||'').toString().trim().toLowerCase(); };
-    if (normFn(stationName) !== normFn(RQ_selectedStation)) return false;
-  }
+  if (RQ_selectedStation && stationName !== RQ_selectedStation) return false;
   if (RQ_previewAllowedSet && RQ_previewAllowedSet[stationName] !== 1) return false;
   return true;
 }
 
+/**
+ * rqApplyPreviewLevel(level)
+ * [MỚI — hoàn thành "phân hoá view theo level" cho Đơn cần cầu cứu, đúng
+ * pattern đã kiểm chứng ở Rider Plan] ROM/Admin: bỏ giới hạn thêm (mặc định
+ * đã là toàn bộ, đúng nguyên tắc "ROM quản lý TOÀN BỘ AOM hiện tại"). AOM/SUP:
+ * thu hẹp theo đúng danh sách trạm thuộc tổ chức đó (spxGetHubsInOrgScope() —
+ * đã có sẵn, dùng chung với Rider Plan/Tổng quan, không viết lại logic tra
+ * cứu tổ chức). Lead/Staff: KHÔNG cần xử lý gì thêm ở đây — module này đã
+ * LUÔN đọc đúng header hub (_rqReadHeaderHub()) từ trước khi có tính năng
+ * "Xem thử", nên đã tự động đúng phạm vi ngay khi Admin chọn 1 Hub cụ thể ở
+ * header, không cần thêm code riêng cho 2 cấp này.
+ */
 function rqApplyPreviewLevel(level) {
-  if (typeof RQ_allOrders === 'undefined' || !RQ_allOrders.length) return;
+  if (typeof RQ_allOrders === 'undefined' || !RQ_allOrders.length) return; // chưa tải xong — bỏ qua, applyFiltersQH-style tự áp dụng lại sau khi tải xong nếu cần
   var isRealAdmin = !!(window.SPX_ACCESS && window.SPX_ACCESS.role === 'admin');
   var directEntity = (typeof window.SPX_PREVIEW_ENTITY === 'string' && window.SPX_PREVIEW_ENTITY) ? window.SPX_PREVIEW_ENTITY : '';
 
+  // [SỬA — theo yêu cầu "mọi cấp phải thấy đúng phạm vi của mình"] Trước đây ROM
+  // bị xếp chung với Admin (bỏ mọi giới hạn) vì giả định "ROM quản toàn bộ AOM".
+  // Giả định đó đúng khi ROM chưa có cấu hình; nay ROM có phạm vi thật (quản một
+  // nhóm AOM) nên phải lọc như AOM/SUP, nếu không ROM sẽ thấy số toàn hệ thống.
   if (!isRealAdmin || !level || level === 'admin') {
     if (RQ_previewAllowedStations !== null || RQ_previewEntityLabel !== null) {
       RQ_previewAllowedStations = null; RQ_previewAllowedSet = null; RQ_previewEntityLabel = null;
@@ -225,16 +80,8 @@ function rqApplyPreviewLevel(level) {
     return;
   }
 
-  if (level === 'lead' || level === 'staff') {
-    RQ_previewAllowedStations = null;
-    RQ_previewAllowedSet = null;
-    RQ_previewEntityLabel = null;
-    RQ_selectedStation = _rqReadHeaderHub();
-    rqRenderMain();
-    return;
-  }
-
   if ((level === 'aom' || level === 'sup' || level === 'rom') && directEntity && typeof spxGetHubsInOrgScope === 'function') {
+    // [DỌN TRÙNG LẶP] Dùng chung spxResolvePreviewScope() (index.html).
     var sc = (typeof spxResolvePreviewScope === 'function')
       ? spxResolvePreviewScope(level, directEntity, RQ_allOrders, function(o){ return o.station_name; }) : null;
     if (!sc) return;
@@ -245,8 +92,18 @@ function rqApplyPreviewLevel(level) {
   }
 }
 
-function _rqEsc(s) { return (typeof spxEscHtml === 'function') ? spxEscHtml(s) : String(s == null ? '' : s); }
+function _rqEsc(s) {
+  // [DỌN TRÙNG LẶP] Uỷ quyền lại spxEscHtml() dùng chung trong index.html.
+  return spxEscHtml(s);
+}
+// [SECURITY FIX — rà soát bảo mật toàn diện] Bản cũ escape SAI THỨ TỰ:
+// HTML-escape (_rqEsc) trước, rồi mới thay dấu nháy đơn — vô tác dụng vì lúc
+// đó dấu ' đã thành &#39;, không còn gì để thay; và trình duyệt giải mã HTML
+// entity TRƯỚC KHI biên dịch onclick="...'...'" thành JS, nên &#39; vẫn quay
+// lại thành ' thật, vẫn thoát được chuỗi. Đổi sang đúng hàm dùng chung
+// spxEscJsAttr() (xử lý đúng thứ tự — JS trước, HTML sau).
 function _rqEscAttr(s) { return (typeof spxEscJsAttr === 'function') ? spxEscJsAttr(s) : String(s == null ? '' : s); }
+// [MỚI] Wrapper i18n module-scoped — cùng pattern qhT()/kfT()/vpT().
 function rqT(viText){ return (typeof spxUiLabel === 'function') ? spxUiLabel(viText) : viText; }
 
 function _rqComputeUrgency(exportDateStr){
@@ -258,144 +115,55 @@ function _rqComputeUrgency(exportDateStr){
 function _rqFormatHours(hours){
   return hours < 0 ? (rqT('Quá hạn') + ' ' + Math.abs(hours).toFixed(1) + 'h') : (rqT('Còn') + ' ' + hours.toFixed(1) + 'h');
 }
+
+// [MỚI] Đọc đúng trạm HEADER đang chọn ngay lúc này — cùng thứ tự ưu tiên
+// biến thật đã dùng xuyên suốt app (spxHeaderSelectedHub -> localStorage
+// 'spx_default_hub' -> 'ALL'), KHÔNG có ô chọn trạm riêng nào trong module.
 function _rqReadHeaderHub(){
+  // [DỌN TRÙNG LẶP] Uỷ quyền spxReadHeaderHub() dùng chung (index.html).
   return (typeof spxReadHeaderHub === 'function') ? spxReadHeaderHub() : '';
 }
 
-// ── Khung Tĩnh Redesign ───────────────────────────────────────────────────
+// ── Khung tĩnh ────────────────────────────────────────────────────────────
 function rqInit(){
-  _rqEnsureStyles();
   RQ_selectedStation = _rqReadHeaderHub();
   var main = document.getElementById('view-rescue');
-  if (!main) return;
   main.innerHTML = ''
-    + '<main class="flex-1 min-w-0 flex flex-col h-full w-full bg-slate-50 dark:bg-[#0b1121] relative overflow-y-auto dcc-custom-scrollbar" data-scroll-root="true">'
-    // Top Control Bar
-    + '  <div class="px-5 py-3.5 bg-white/80 dark:bg-[#111927]/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between gap-3 shrink-0 flex-wrap sticky top-0 z-20 shadow-xs">'
-    + '    <div class="flex items-center gap-2.5">'
-    + '      <div class="w-8 h-8 rounded-xl bg-orange-500/10 dark:bg-orange-500/20 text-[#ee4d2d] flex items-center justify-center font-bold text-sm">'
-    + '        <i class="fas fa-life-ring"></i>'
+    + '<main class="flex-1 min-w-0 flex flex-col h-full w-full bg-white dark:bg-[#0b1121] relative overflow-y-auto">'
+    + '    <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 shrink-0 flex-wrap">'
+    + '      <div class="flex items-center gap-2 mr-auto">'
+    + '        <i class="fas fa-warehouse text-[#ee4d2d] text-xs"></i>'
+    + '        <span class="text-xs font-black text-slate-700 dark:text-slate-200" id="rq-scope-title" data-i18n-ui="Tất cả trạm">Tất cả trạm</span>'
     + '      </div>'
-    + '      <div>'
-    + '        <div class="flex items-center gap-2">'
-    + '          <span class="text-sm font-black text-slate-800 dark:text-slate-100" id="rq-scope-title">' + (RQ_selectedStation ? _rqEsc(RQ_selectedStation) : rqT('Tất cả trạm')) + '</span>'
-    + '          <span id="rq-active-badge" class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50">CẦU CỨU 48H</span>'
-    + '        </div>'
-    + '        <div class="text-[11px] text-slate-400 dark:text-slate-500 font-medium" id="rq-scope-subtitle">Đang tải trạng thái...</div>'
-    + '      </div>'
+    + '      <label class="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 cursor-pointer select-none"><input type="checkbox" id="rq-hide-resolved-chk" checked onchange="rqToggleHideResolved(this.checked)"> <span data-i18n-ui="Ẩn đơn đã xử lý">Ẩn đơn đã xử lý</span></label>'
+    + '      <button onclick="rqBulkResolve()" class="shrink-0 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-500 hover:text-white text-slate-600 dark:text-slate-300 px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all"><i class="fas fa-check-double mr-1"></i> <span data-i18n-ui="Đánh dấu đã xử lý">Đánh dấu đã xử lý</span></button>'
     + '    </div>'
-    // Right Controls
-    + '    <div class="flex items-center gap-3 flex-wrap ml-auto">'
-    + '      <div class="relative">'
-    + '        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>'
-    + '        <input type="text" id="rq-search-input" oninput="rqOnSearch(this.value)" placeholder="' + rqT('Tìm mã đơn, trạm, rider...') + '" class="pl-8 pr-3 py-1.5 bg-slate-100 dark:bg-slate-800 border-none rounded-xl text-xs text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-[#ee4d2d]/30 w-44 md:w-56 transition-all outline-none">'
-    + '      </div>'
-    + '      <label class="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer select-none bg-slate-100/70 dark:bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-200/60 transition-colors">'
-    + '        <input type="checkbox" id="rq-hide-resolved-chk" checked onchange="rqToggleHideResolved(this.checked)" class="rounded text-[#ee4d2d] focus:ring-[#ee4d2d] w-3.5 h-3.5 cursor-pointer">'
-    + '        <span>' + rqT('Ẩn đơn đã xử lý') + '</span>'
-    + '      </label>'
-    + '      <button onclick="rqBulkResolve()" id="rq-bulk-btn" class="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-black shadow-xs transition-all cursor-pointer">'
-    + '        <i class="fas fa-check-double text-[11px]"></i> <span>' + rqT('Đánh dấu đã xử lý') + '</span>'
-    + '      </button>'
-    + '      <button onclick="rqLoadOrders(true)" title="' + rqT('Làm mới dữ liệu') + '" class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors">'
-    + '        <i class="fas fa-rotate text-xs" id="rq-refresh-icon"></i>'
-    + '      </button>'
+    + '    <div class="px-4 pt-3 shrink-0" id="rq-scope-banner"></div>'
+    + '    <div class="px-4 pt-3 shrink-0" id="rq-bigpicture"></div>'
+    + '    <div class="px-4 pb-1 shrink-0" id="rq-detail-toggle"></div>'
+    + '    <div class="p-4 grid grid-cols-4 gap-3 shrink-0" id="rq-level-cards">'
     + '    </div>'
-    + '  </div>'
-    // Body Area
-    + '  <div class="p-4 md:p-5 space-y-3 max-w-7xl w-full mx-auto">'
-    + '    <div id="rq-scope-banner"></div>'
-    + '    <div id="rq-level-cards" class="grid grid-cols-4 gap-2"></div>'
-    + '    <div id="rq-risk-alert"></div>'
-    + '    <div id="rq-bigpicture"></div>'
-    + '    <div id="rq-health-panel"></div>'
-    + '    <div class="flex items-center justify-between pt-1 pb-1" id="rq-detail-toggle-bar">'
-    + '      <div class="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">'
-    + '        <i class="fas fa-list-check text-slate-400"></i> <span id="rq-table-heading">' + rqT('Danh sách đơn cần cứu') + '</span>'
-    + '      </div>'
-    + '      <div id="rq-detail-toggle"></div>'
-    + '    </div>'
-    + '    <div id="rq-table-wrap" class="dcc-card overflow-hidden shadow-xs"></div>'
-    + '  </div>'
-    + '</main>';
-  var scrollRoot = main.querySelector('[data-scroll-root="true"]') || main;
-  if (scrollRoot) {
-    scrollRoot.dataset.spxScrollBound = '1';
-    scrollRoot.addEventListener('scroll', function() {
-      if (typeof _spxHandleScrollRootEvent === 'function') _spxHandleScrollRootEvent(scrollRoot);
-    }, { passive: true });
-  }
+    + '    <div class="px-4 shrink-0" id="rq-risk-alert"></div>'
+    + '    <div class="px-4 shrink-0" id="rq-health-panel"></div>'
+    + '    <div class="flex-1 px-4 pb-4" id="rq-table-wrap"></div>'
+    + '  </main>';
   rqLoadOrders(false);
 }
 
-function rqOnSearch(val){
-  RQ_searchText = (val || '').toLowerCase().trim();
-  rqRenderTable();
-}
-
 // ── Tải dữ liệu ───────────────────────────────────────────────────────────
-
-function rqRenderLoadingSkeletons(){
-  var levelGrid = document.getElementById('rq-level-cards');
-  if (levelGrid) {
-    var cardsHtml = '';
-    for (var i = 0; i < 4; i++) {
-      cardsHtml += ''
-        + '<div class="dcc-card p-2 px-2.5 flex items-center justify-between min-h-[38px]">'
-        + '  <div class="flex items-center gap-2">'
-        + '    <div class="dcc-shimmer" style="height:22px;width:22px;border-radius:6px;"></div>'
-        + '    <div class="space-y-1">'
-        + '      <div class="dcc-shimmer" style="height:8px;width:50px;"></div>'
-        + '      <div class="dcc-shimmer" style="height:7px;width:35px;"></div>'
-        + '    </div>'
-        + '  </div>'
-        + '  <div class="dcc-shimmer" style="height:16px;width:24px;border-radius:4px;"></div>'
-        + '</div>';
-    }
-    levelGrid.innerHTML = cardsHtml;
-  }
-
-  var bigPic = document.getElementById('rq-bigpicture');
-  if (bigPic) {
-    bigPic.innerHTML = ''
-      + '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5 mb-4">'
-      + '  <div class="dcc-card p-4 space-y-2"><div class="dcc-shimmer" style="height:14px;width:60%;"></div><div class="dcc-shimmer" style="height:22px;width:40%;"></div></div>'
-      + '  <div class="dcc-card p-4 space-y-2"><div class="dcc-shimmer" style="height:14px;width:60%;"></div><div class="dcc-shimmer" style="height:22px;width:40%;"></div></div>'
-      + '  <div class="dcc-card p-4 space-y-2"><div class="dcc-shimmer" style="height:14px;width:60%;"></div><div class="dcc-shimmer" style="height:22px;width:40%;"></div></div>'
-      + '  <div class="dcc-card p-4 space-y-2"><div class="dcc-shimmer" style="height:14px;width:60%;"></div><div class="dcc-shimmer" style="height:22px;width:40%;"></div></div>'
-      + '</div>';
-  }
-
-  var wrap = document.getElementById('rq-table-wrap');
-  if (wrap) {
-    wrap.innerHTML = ''
-      + '<div class="dcc-loading-panel">'
-      + '  <div class="dcc-loading-spinner"></div>'
-      + '  <div class="dcc-loading-title">' + rqT('Đang đồng bộ dữ liệu cứu đơn...') + '</div>'
-      + '  <div class="dcc-loading-subtitle">' + rqT('Hệ thống đang tải danh sách đơn cần cứu từ máy chủ SPX...') + '</div>'
-      + '</div>'
-      + '<div class="p-4 border-t border-slate-200 dark:border-slate-800 space-y-3">'
-      + '  <div class="dcc-shimmer" style="height:16px;width:100%;"></div>'
-      + '  <div class="dcc-shimmer" style="height:16px;width:100%;"></div>'
-      + '  <div class="dcc-shimmer" style="height:16px;width:100%;"></div>'
-      + '  <div class="dcc-shimmer" style="height:16px;width:80%;"></div>'
-      + '</div>';
-  }
-}
-
 function rqLoadOrders(force){
-  if (RQ_isLoading) return;
+  if (RQ_isLoading) return; // [FIX ỔN ĐỊNH] đang tải rồi thì bỏ qua lượt bấm mới, tránh gọi API trùng
   RQ_isLoading = true;
-  var spin = document.getElementById('rq-refresh-icon');
-  if (spin) spin.classList.add('fa-spin');
-  var subTitle = document.getElementById('rq-scope-subtitle');
-  if (subTitle) subTitle.textContent = rqT('Đang đồng bộ dữ liệu cứu đơn...');
-  rqRenderLoadingSkeletons();
-
+  var wrap = document.getElementById('rq-table-wrap');
+  if (wrap) wrap.innerHTML = '<div class="p-8 text-center text-slate-400 text-sm"><i class="fas fa-spinner fa-spin mr-2"></i>' + rqT('Đang tải dữ liệu thật...') + '</div>';
   google.script.run
     .withSuccessHandler(function(res){
       RQ_isLoading = false;
-      if (spin) spin.classList.remove('fa-spin');
+      // [Đối chiếu đúng cấu trúc thật] getOrders() trả payload.rows + payload.access
+      // (access.stations = danh sách trạm được phân quyền THẬT, kể cả trạm 0 đơn)
+      // + payload.resolved (mảng tracking_no đã đánh dấu xử lý). KHÔNG loại bỏ đơn
+      // đã xử lý khỏi RQ_allOrders nữa (khác bản cũ) — panel "Sức khỏe từng trạm"
+      // cần biết cả đơn đã xử lý để tính đúng %, chỉ ẨN khỏi BẢNG theo tuỳ chọn.
       var resolvedSet = new Set(res && res.resolved ? res.resolved : []);
       RQ_access = (res && res.access) ? res.access : { stations: [], role: '', email: '' };
       RQ_allOrders = ((res && res.rows) ? res.rows : []).map(function(o){
@@ -403,28 +171,28 @@ function rqLoadOrders(force){
         o._resolved = resolvedSet.has(o.tracking_no);
         return o;
       });
+      // Trạm header đang chọn không nằm trong quyền hạn thật (vd tài khoản đổi
+      // quyền) -> quay về "Tất cả trạm" thay vì hiện bảng rỗng gây hiểu lầm.
+      if (RQ_selectedStation && RQ_access.stations.indexOf(RQ_selectedStation) === -1) RQ_selectedStation = '';
       rqRenderLevelTabs();
       rqRenderMain();
     })
     .withFailureHandler(function(err){
       RQ_isLoading = false;
-      if (spin) spin.classList.remove('fa-spin');
-      var wrap = document.getElementById('rq-table-wrap');
-      if (wrap) {
-        wrap.innerHTML = '<div class="dcc-loading-panel text-rose-500 dark:text-rose-400">' +
-          '<i class="fas fa-circle-exclamation text-2xl text-rose-500 mb-1"></i>' +
-          '<div class="dcc-loading-title text-rose-600 dark:text-rose-400">' + rqT('Lỗi nạp dữ liệu') + ': ' + _rqEsc(err.message || String(err)) + '</div>' +
-          '<button onclick="rqLoadOrders(true)" class="mt-2 px-3 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-100 cursor-pointer">' + rqT('Thử lại') + '</button>' +
-          '</div>';
-      }
+      if (wrap) wrap.innerHTML = '<div class="p-8 text-center text-rose-500 dark:text-rose-400 text-sm">' + rqT('Lỗi tải dữ liệu') + ': ' + _rqEsc(err.message || String(err)) + '</div>';
     })
-    .getOrders(!!force);
+    .getOrders();
 }
 
+// [MỚI] DUY NHẤT điểm vào để đổi trạm — chỉ được gọi từ spxHeaderHubChange()
+// khi người dùng đổi Hub trên HEADER (không có nút/ô nào khác trong module gọi
+// hàm này). Cùng quy ước selectSt() của Rider Plan: name='' hoặc 'ALL' =>
+// "Tất cả trạm".
 function rqSelectStation(name){
   RQ_selectedStation = (name === 'ALL') ? '' : (name || '');
   rqRenderMain();
 }
+
 
 function _rqStationSeverity(stats){
   if (!stats || stats.total === 0) return 'idle';
@@ -433,7 +201,7 @@ function _rqStationSeverity(stats){
   return 'green';
 }
 
-// ── 4 Card Chỉ Số Metrics Redesign ─────────────────────────────────────────
+// ── Mức khẩn cấp ──────────────────────────────────────────────────────────
 function rqRenderLevelTabs(){
   var scoped = RQ_allOrders.filter(function(o){ return _rqMatchesScope(o.station_name); });
   var active = scoped.filter(function(o){ return !o._resolved; });
@@ -441,96 +209,32 @@ function rqRenderLevelTabs(){
   active.forEach(function(o){ counts[o._urgency.level]++; });
   var totalCount = RQ_hideResolved ? active.length : scoped.length;
 
+  // [SỬA — theo yêu cầu trực tiếp "kết hợp số tĩnh ở header thành có tác dụng
+  // lọc, loại bỏ phần dư thừa"] Trước đây có 2 nơi hiển thị CÙNG 4 con số này:
+  // sidebar (nút bấm lọc được) và đây (chỉ hiển thị tĩnh) — giờ gộp thành
+  // ĐÚNG 1 nơi duy nhất, vừa hiển thị vừa lọc được, không còn trùng lặp.
   var cards = [
-    { key:'ALL', label:rqT('TẤT CẢ'), count:totalCount, sub:rqT('Trong phạm vi'), icon:'fa-layer-group', color:'slate', bgLight:'bg-slate-50/90', borderLight:'border-slate-200/90', textLight:'text-slate-800', darkBg:'dark:bg-slate-900/40', darkBorder:'dark:border-slate-800', accentHex:'#64748b' },
-    { key:'red', label:rqT('ĐỎ — KHẨN CẤP'), count:counts.red, sub:rqT('Quá hạn / ≤12h'), icon:'fa-fire-flame-curved', color:'rose', bgLight:'bg-rose-50/70', borderLight:'border-rose-200/90', textLight:'text-rose-600', darkBg:'dark:bg-rose-950/20', darkBorder:'dark:border-rose-900/40', accentHex:'#f43f5e', hasPulse: counts.red > 0 },
-    { key:'orange', label:rqT('CAM — CẦN CHÚ Ý'), count:counts.orange, sub:rqT('Còn 12h - 24h'), icon:'fa-stopwatch', color:'amber', bgLight:'bg-amber-50/70', borderLight:'border-amber-200/90', textLight:'text-amber-600', darkBg:'dark:bg-amber-950/20', darkBorder:'dark:border-amber-900/40', accentHex:'#f59e0b' },
-    { key:'green', label:rqT('XANH — AN TOÀN'), count:counts.green, sub:rqT('Còn >24h SLA'), icon:'fa-shield-heart', color:'emerald', bgLight:'bg-emerald-50/70', borderLight:'border-emerald-200/90', textLight:'text-emerald-600', darkBg:'dark:bg-emerald-950/20', darkBorder:'dark:border-emerald-900/40', accentHex:'#10b981' }
+    ['ALL', rqT('Tất cả'), totalCount, 'slate'],
+    ['red', rqT('Đỏ — khẩn cấp'), counts.red, 'rose'],
+    ['orange', 'Cam — 12-24h', counts.orange, 'orange'],
+    ['green', rqT('Xanh — an toàn'), counts.green, 'emerald']
   ];
-
-  var container = document.getElementById('rq-level-cards');
-  if (!container) return;
-  container.innerHTML = cards.map(function(c){
-    var isActive = RQ_activeLevel === c.key;
-    var activeClass = isActive ? (' ring-2 ring-offset-1 ring-[' + c.accentHex + '] shadow-md') : ' opacity-90 hover:opacity-100 hover:border-slate-300 dark:hover:border-slate-700';
-    return '<div onclick="rqSetLevel(\'' + c.key + '\')" class="dcc-kpi-card ' + c.bgLight + ' ' + c.darkBg + ' ' + c.borderLight + ' ' + c.darkBorder + activeClass + '" style="' + (isActive ? ('border-color:' + c.accentHex + ' !important;') : '') + '" title="' + (isActive && c.key !== 'ALL' ? rqT('Đang lọc — Bấm lần nữa để bỏ lọc') : rqT('Bấm để lọc theo nhóm này')) + '">'
-      + '  <div class="flex items-center gap-2 min-w-0 flex-1">'
-      + '    <div class="w-6 h-6 rounded-md flex items-center justify-center shrink-0 ' + (isActive ? 'bg-white dark:bg-slate-800 shadow-xs' : 'bg-black/5 dark:bg-white/5') + '" style="color:' + c.accentHex + '">'
-      + '      <i class="fas ' + c.icon + ' text-[10px]"></i>'
-      + '    </div>'
-      + '    <div class="min-w-0 leading-tight">'
-      + '      <div class="text-[10px] font-black uppercase tracking-tight text-slate-700 dark:text-slate-200 truncate flex items-center gap-1">'
-      + (c.hasPulse ? '<span class="dcc-pulse-dot bg-rose-500 mr-0.5" style="width:6px;height:6px;"></span>' : '')
-      + _rqEsc(c.label)
-      + (isActive && c.key !== 'ALL' ? ' <span class="px-1.5 py-0.2 rounded-full text-[8px] font-black bg-rose-500 text-white shrink-0">LỌC</span>' : '')
-      + '      </div>'
-      + '      <div class="text-[9px] text-slate-400 dark:text-slate-500 font-medium truncate">' + _rqEsc(c.sub) + '</div>'
-      + '    </div>'
-      + '  </div>'
-      + '  <div class="text-right shrink-0 pl-1">'
-      + '    <div class="text-base font-black ' + c.textLight + ' dark:text-slate-100 font-mono tracking-tight leading-none">' + c.count.toLocaleString('vi-VN') + '</div>'
-      + '  </div>'
-      + '</div>';
+  var colorHex = { slate: '#64748b', rose: '#e11d48', orange: '#f97316', emerald: '#10b981' };
+  document.getElementById('rq-level-cards').innerHTML = cards.map(function(c){
+    var isActive = RQ_activeLevel === c[0];
+    // [FIX — tránh phụ thuộc class Tailwind động (ring-*/border-* theo màu) có
+    // thể không tồn tại trong build tĩnh] Dùng inline style cố định cho trạng
+    // thái active, an toàn tuyệt đối bất kể build có class đó hay không.
+    var activeStyle = isActive ? ' style="border-width:2px;border-color:' + colorHex[c[3]] + ';box-shadow:0 2px 8px rgba(0,0,0,0.08)"' : '';
+    return '<div onclick="rqSetLevel(\'' + c[0] + '\')"' + activeStyle + ' class="cursor-pointer transition-all hover:shadow-md rounded-xl p-3 bg-' + c[3] + '-50 dark:bg-' + c[3] + '-900/15 border border-' + c[3] + '-100 dark:border-' + c[3] + '-900/30">'
+      + '<div class="text-[10px] font-black uppercase text-' + c[3] + '-500">' + c[1] + '</div>'
+      + '<div class="text-xl font-black text-' + c[3] + '-600' + (c[3]==='slate' ? ' dark:text-slate-200' : '') + '">' + c[2] + '</div></div>';
   }).join('');
-
-  // Update subtitle in header
-  var subEl = document.getElementById('rq-scope-subtitle');
-  if (subEl) {
-    subEl.textContent = totalCount + ' ' + rqT('đơn cứu') + (counts.red > 0 ? (' · ' + counts.red + ' ' + rqT('đơn khẩn cấp')) : (' · ' + rqT('vận hành ổn định')));
-  }
 }
-
-function rqSetLevel(level){
-  RQ_activeLevel = (RQ_activeLevel === level && level !== 'ALL') ? 'ALL' : level;
-  RQ_showDetail = true;
-  rqRenderLevelTabs();
-  rqRenderMain();
-  rqScrollToTable();
-}
+function rqSetLevel(level){ RQ_activeLevel = level; rqRenderLevelTabs(); rqRenderMain(); }
 function rqToggleHideResolved(checked){ RQ_hideResolved = checked; rqRenderLevelTabs(); rqRenderMain(); }
-// ── Tương tác sâu (Interactive Drill-Down Handlers) ──────────────────────
-function rqDrillDownStation(stationName){
-  if (!stationName) return;
-  RQ_searchText = stationName.toLowerCase().trim();
-  var searchInput = document.getElementById('rq-search-input');
-  if (searchInput) searchInput.value = stationName;
-  RQ_showDetail = true;
-  rqRenderTable();
-  if (typeof showToast === 'function') showToast('🔍 ' + rqT('Đang lọc các đơn cứu hộ của trạm:') + ' ' + stationName, 'info');
-  rqScrollToTable();
-}
 
-function rqDrillDownDriver(driverName){
-  if (!driverName || driverName === 'Chưa gán') return;
-  RQ_searchText = driverName.toLowerCase().trim();
-  var searchInput = document.getElementById('rq-search-input');
-  if (searchInput) searchInput.value = driverName;
-  RQ_showDetail = true;
-  rqRenderTable();
-  if (typeof showToast === 'function') showToast('🔍 ' + rqT('Đang lọc các đơn của rider:') + ' ' + driverName, 'info');
-  rqScrollToTable();
-}
-
-function rqDrillDownDate(dateStr){
-  if (!dateStr) return;
-  RQ_searchText = dateStr.toLowerCase().trim();
-  var searchInput = document.getElementById('rq-search-input');
-  if (searchInput) searchInput.value = dateStr;
-  RQ_showDetail = true;
-  rqRenderTable();
-  if (typeof showToast === 'function') showToast('🔍 ' + rqT('Đang lọc đơn theo ngày:') + ' ' + dateStr, 'info');
-  rqScrollToTable();
-}
-
-function rqScrollToTable(){
-  setTimeout(function(){
-    var target = document.getElementById('rq-detail-toggle-bar') || document.getElementById('rq-table-wrap');
-    if (target && target.scrollIntoView) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 100);
-}
-
-
-// ── Sức khỏe từng trạm Redesign ───────────────────────────────────────────
+// ── Sức khỏe từng trạm (chỉ hiện khi xem "Tất cả trạm") ────────────────────
 function _rqScopedStationList(){
   var all = (RQ_access && RQ_access.stations ? RQ_access.stations : []);
   return RQ_previewAllowedSet ? all.filter(function(s){ return RQ_previewAllowedSet[s] === 1; }) : all;
@@ -552,27 +256,14 @@ function rqComputeStationHealth(){
 function rqRenderHealthPanel(){
   var panel = document.getElementById('rq-health-panel');
   if (!panel) return;
-  if (RQ_selectedStation) { panel.innerHTML = ''; return; }
+  if (RQ_selectedStation) { panel.innerHTML = ''; return; } // chỉ hiện khi "Tất cả trạm"
   var stats = rqComputeStationHealth();
   var stations = _rqScopedStationList();
-
-  if (RQ_activeLevel === 'green') {
-    stations = stations.filter(function(s){ return stats[s] && stats[s].green > 0; });
-    stations.sort(function(a, b){ return stats[b].green - stats[a].green || (stats[b].total - stats[a].total); });
-  } else if (RQ_activeLevel === 'red') {
-    stations = stations.filter(function(s){ return stats[s] && stats[s].red > 0; });
-    stations.sort(function(a, b){ return stats[b].red - stats[a].red || (stats[b].total - stats[a].total); });
-  } else if (RQ_activeLevel === 'orange') {
-    stations = stations.filter(function(s){ return stats[s] && stats[s].orange > 0; });
-    stations.sort(function(a, b){ return stats[b].orange - stats[a].orange || (stats[b].total - stats[a].total); });
-  } else {
-    var order = { red:0, orange:1, green:2, idle:3 };
-    stations.sort(function(a, b){
-      var sa = order[_rqStationSeverity(stats[a])], sb = order[_rqStationSeverity(stats[b])];
-      return sa !== sb ? sa - sb : (stats[b].total - stats[a].total);
-    });
-  }
-
+  var order = { red:0, orange:1, green:2, idle:3 };
+  stations.sort(function(a, b){
+    var sa = order[_rqStationSeverity(stats[a])], sb = order[_rqStationSeverity(stats[b])];
+    return sa !== sb ? sa - sb : (stats[b].total - stats[a].total);
+  });
   var urgent = 0, doneAll = 0, idle = 0;
   stations.forEach(function(s){
     var st = stats[s];
@@ -580,71 +271,34 @@ function rqRenderHealthPanel(){
     else if (st.red > 0 || st.orange > 0) urgent++;
     else if (st.resolved === st.total) doneAll++;
   });
-
   var rowsHtml = stations.slice(0, 30).map(function(s){
     var st = stats[s];
     var pct = st.total ? Math.round(st.resolved / st.total * 100) : 0;
     var sev = _rqStationSeverity(st);
     var sevLabel = { red:rqT('Khẩn cấp'), orange:rqT('Cần chú ý'), green:rqT('Ổn định'), idle:rqT('Chưa có đơn') }[sev];
-    var sevClass = {
-      red:'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/40',
-      orange:'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/40',
-      green:'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/40',
-      idle:'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
-    }[sev];
-    var barColor = sev === 'red' ? 'bg-rose-500' : (sev === 'orange' ? 'bg-amber-500' : 'bg-emerald-500');
-
-    return '<tr class="border-b border-slate-100 dark:border-slate-800/60 hover:bg-orange-50/40 dark:hover:bg-orange-950/20 transition-colors cursor-pointer group" onclick="rqDrillDownStation(\'' + _rqEscAttr(s) + '\')" title="' + rqT('Bấm để lọc xem danh sách đơn của trạm') + ' ' + _rqEscAttr(s) + '">'
-      + '  <td class="p-3 font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-2">'
-      + '    <i class="fas fa-warehouse text-slate-400 text-[10px]"></i>'
-      + '    <span>' + _rqEsc(s) + '</span>'
-      + '  </td>'
-      + '  <td class="p-3 text-center"><span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ' + sevClass + '">' + sevLabel + '</span></td>'
-      + '  <td class="p-3 text-center text-xs font-black ' + (RQ_activeLevel === 'red' ? 'bg-rose-50/70 dark:bg-rose-950/30 text-rose-600 font-bold' : (st.red > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-300 dark:text-slate-600')) + '">' + st.red + '</td>'
-      + '  <td class="p-3 text-center text-xs font-black ' + (RQ_activeLevel === 'orange' ? 'bg-amber-50/70 dark:bg-amber-950/30 text-amber-600 font-bold' : (st.orange > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-300 dark:text-slate-600')) + '">' + st.orange + '</td>'
-      + '  <td class="p-3 text-center text-xs font-black ' + (RQ_activeLevel === 'green' ? 'bg-emerald-50/70 dark:bg-emerald-950/30 text-emerald-600 font-bold' : (st.green > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-300 dark:text-slate-600')) + '">' + st.green + '</td>'
-      + '  <td class="p-3">'
-      + '    <div class="flex items-center gap-2">'
-      + '      <div class="flex-1 dcc-progress-track">'
-      + '        <div class="dcc-progress-bar ' + barColor + '" style="width:' + pct + '%"></div>'
-      + '      </div>'
-      + '      <span class="text-[11px] font-bold text-slate-500 shrink-0 w-14 text-right">' + st.resolved + '/' + st.total + ' (' + pct + '%)</span>'
-      + '    </div>'
-      + '  </td>'
-      + '</tr>';
+    var sevClass = { red:'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400', orange:'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', green:'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400', idle:'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400' }[sev];
+    return '<tr class="border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/30">' +
+      '<td class="p-2.5 font-bold text-slate-700 dark:text-slate-200 text-xs">' + _rqEsc(s) + '</td>' +
+      '<td class="p-2.5 text-center"><span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase ' + sevClass + '">' + sevLabel + '</span></td>' +
+      '<td class="p-2.5 text-center text-xs font-bold text-rose-600 dark:text-rose-400">' + st.red + '</td>' +
+      '<td class="p-2.5 text-center text-xs font-bold text-orange-600 dark:text-orange-400">' + st.orange + '</td>' +
+      '<td class="p-2.5 text-center text-xs font-bold text-emerald-600 dark:text-emerald-400">' + st.green + '</td>' +
+      '<td class="p-2.5 text-center text-xs text-slate-500">' + st.resolved + '/' + st.total + ' (' + pct + '%)</td>' +
+      '</tr>';
   }).join('');
-
-  var lvlSuffix = RQ_activeLevel === 'green' ? (' · ' + rqT('Đang lọc trạm có đơn Xanh'))
-    : (RQ_activeLevel === 'red' ? (' · ' + rqT('Đang lọc trạm có đơn Đỏ'))
-    : (RQ_activeLevel === 'orange' ? (' · ' + rqT('Đang lọc trạm có đơn Cam')) : ''));
-  var scopeTitle = (RQ_previewEntityLabel ? (rqT('Bảng so sánh trạm') + ' — ' + RQ_previewEntityLabel) : rqT('Sức khỏe các trạm thuộc phạm vi')) + lvlSuffix;
-  panel.innerHTML = '<div class="dcc-card overflow-hidden shadow-xs mb-2">'
-    + '  <div class="px-4 py-3 bg-slate-50/80 dark:bg-slate-800/40 border-b border-slate-200/60 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">'
-    + '    <div class="flex items-center gap-2">'
-    + '      <i class="fas fa-heart-pulse text-[#ee4d2d]"></i>'
-    + '      <span class="text-xs font-black text-slate-800 dark:text-slate-100">' + _rqEsc(scopeTitle) + '</span>'
-    + '    </div>'
-    + '    <div class="flex items-center gap-3 text-[11px] font-bold">'
-    + '      <span class="text-rose-600 dark:text-rose-400 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span> ' + urgent + ' ' + rqT('trạm khẩn cấp') + '</span>'
-    + '      <span class="text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> ' + doneAll + ' ' + rqT('hoàn tất 100%') + '</span>'
-    + '      <span class="text-slate-400 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-400 inline-block"></span> ' + idle + ' ' + rqT('trạm không có đơn') + '</span>'
-    + '    </div>'
-    + '  </div>'
-    + '  <div class="overflow-x-auto"><table class="w-full text-sm dcc-table">'
-    + '    <thead><tr class="text-left text-[10px] uppercase font-black text-slate-400 dark:text-slate-500 bg-white dark:bg-[#131c2e] border-b border-slate-100 dark:border-slate-800">'
-    + '      <th class="p-3">' + rqT('Trạm') + '</th><th class="p-3 text-center">' + rqT('Mức độ') + '</th>'
-    + '      <th class="p-3 text-center ' + (RQ_activeLevel === 'red' ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-600 font-bold' : '') + '">' + rqT('Đỏ') + '</th>'
-    + '      <th class="p-3 text-center ' + (RQ_activeLevel === 'orange' ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-600 font-bold' : '') + '">' + rqT('Cam') + '</th>'
-    + '      <th class="p-3 text-center ' + (RQ_activeLevel === 'green' ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 font-bold' : '') + '">' + rqT('Xanh') + '</th>'
-    + '      <th class="p-3">' + rqT('Tiến độ xử lý') + '</th>'
-    + '    </tr></thead>'
-    + '    <tbody>' + (rowsHtml || ('<tr><td colspan="6" class="p-6 text-center text-xs text-slate-400">' + rqT('Không có trạm nào trong phạm vi phù hợp bộ lọc này.') + '</td></tr>')) + '</tbody>'
-    + '  </table></div>'
-    + (stations.length > 30 ? ('<div class="px-4 py-2 text-[11px] text-slate-400 text-center border-t border-slate-100 dark:border-slate-800">' + rqT('Đang hiện 30 trạm ưu tiên cao nhất trong tổng số') + ' ' + stations.length + ' ' + rqT('trạm') + '</div>') : '')
-    + '</div>';
+  var moreNote = stations.length > 30 ? '<div class="px-3 py-2 text-[10px] text-slate-400 text-center">' + rqT('Hiện') + ' 30/' + stations.length + ' ' + rqT('trạm khẩn cấp/nhiều đơn nhất.') + '</div>' : '';
+  var scopeTitle = RQ_previewEntityLabel ? (rqT('So sánh trạm') + ' — ' + RQ_previewEntityLabel) : rqT('Sức khỏe từng trạm');
+  panel.innerHTML = '<div class="rounded-xl border border-slate-100 dark:border-slate-800 mb-4 overflow-hidden">' +
+    '<div class="px-4 py-3 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">' +
+    '<span class="text-xs font-black text-slate-700 dark:text-slate-200"><i class="fas fa-heart-pulse text-[#ee4d2d] mr-1.5"></i>' + _rqEsc(scopeTitle) + '</span>' +
+    '<span class="text-[10px] font-bold text-slate-500 flex items-center gap-3"><span>🔴 ' + urgent + ' ' + rqT('trạm cần chú ý') + '</span><span>✅ ' + doneAll + ' ' + rqT('trạm xong 100%') + '</span><span>⚪ ' + idle + ' ' + rqT('trạm chưa có đơn') + '</span></span>' +
+    '</div>' +
+    '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-left text-[9px] uppercase font-black text-slate-400 bg-white dark:bg-[#0b1121]"><th class="p-2.5">Trạm</th><th class="p-2.5 text-center">Mức</th><th class="p-2.5 text-center">Đỏ</th><th class="p-2.5 text-center">Cam</th><th class="p-2.5 text-center">Xanh</th><th class="p-2.5 text-center">Đã xử lý</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' +
+    moreNote +
+    '</div>';
 }
 
-// ── Khu cảnh báo riêng (risk alert) Redesign ────────────────────────────────
+// ── Khu cảnh báo riêng (risk alert) ─────────────────────────────────────────
 function rqRenderRiskAlert(){
   var alertEl = document.getElementById('rq-risk-alert');
   if (!alertEl) return;
@@ -652,48 +306,30 @@ function rqRenderRiskAlert(){
   var reds = scoped.filter(function(o){ return !o._resolved && o._urgency.level === 'red'; })
     .sort(function(a, b){ return a._urgency.hours - b._urgency.hours; });
   if (!reds.length) { alertEl.innerHTML = ''; return; }
-  var top = reds.slice(0, 4);
-
-  alertEl.innerHTML = '<div class="rounded-2xl bg-gradient-to-r from-rose-500/10 via-rose-500/5 to-transparent border border-rose-200 dark:border-rose-900/50 p-4 flex items-center justify-between gap-4 flex-wrap shadow-xs">'
-    + '  <div class="flex items-start gap-3 min-w-0 flex-1">'
-    + '    <div class="w-9 h-9 rounded-xl bg-rose-500 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">'
-    + '      <i class="fas fa-triangle-exclamation text-sm animate-bounce"></i>'
-    + '    </div>'
-    + '    <div class="min-w-0 flex-1">'
-    + '      <div class="flex items-center gap-2 mb-1.5">'
-    + '        <span class="text-xs font-black uppercase text-rose-600 dark:text-rose-400 tracking-wide">' + reds.length + ' ' + rqT('đơn khẩn cấp cần can thiệp ngay') + '</span>'
-    + '        <span class="dcc-pulse-dot bg-rose-500"></span>'
-    + '      </div>'
-    + '      <div class="flex flex-wrap gap-2">'
-    + top.map(function(o){
-        return '<span class="inline-flex items-center gap-1.5 bg-white dark:bg-slate-800/90 border border-rose-200/80 dark:border-rose-800/60 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-700 dark:text-slate-200 shadow-xs cursor-pointer hover:border-rose-400 transition-colors" onclick="rqCopyTrackingNo(\'' + _rqEscAttr(o.tracking_no) + '\')" title="' + rqT('Bấm để copy mã') + '">'
-          + '  <span class="font-mono text-rose-600 dark:text-rose-400 font-black">' + _rqEsc(o.tracking_no) + '</span>'
-          + '  <span class="text-slate-300 dark:text-slate-600">|</span>'
-          + '  <span class="text-slate-500 text-[11px]">' + _rqEsc(o.station_name) + '</span>'
-          + '  <span class="px-1.5 py-0.2 bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-300 rounded text-[10px] font-black">' + _rqFormatHours(o._urgency.hours) + '</span>'
-          + '</span>';
-      }).join('')
-    + (reds.length > 4 ? ('<span class="text-xs font-bold text-rose-500 dark:text-rose-400 self-center">+' + (reds.length - 4) + ' ' + rqT('đơn khác') + '</span>') : '')
-    + '      </div>'
-    + '    </div>'
-    + '  </div>'
-    + '  <button onclick="rqSetLevel(\'red\')" class="shrink-0 bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-xl text-xs font-black shadow-xs hover:shadow-md transition-all flex items-center gap-1.5 cursor-pointer">'
-    + '    <i class="fas fa-arrow-down"></i> <span>' + rqT('Lọc đơn đỏ ngay') + '</span>'
-    + '  </button>'
-    + '</div>';
+  var top = reds.slice(0, 3);
+  alertEl.innerHTML = '<div class="rounded-xl bg-rose-50 dark:bg-rose-900/15 border border-rose-100 dark:border-rose-900/30 p-4 mb-4 flex items-start gap-3">' +
+    '<i class="fas fa-triangle-exclamation text-rose-500 dark:text-rose-400 text-lg mt-0.5"></i>' +
+    '<div class="flex-1 min-w-0">' +
+    '<div class="text-xs font-black text-rose-700 dark:text-rose-400 uppercase mb-1">' + reds.length + ' ' + rqT('đơn khẩn cấp cần xử lý ngay') + (RQ_selectedStation ? ' ' + rqT('tại') + ' ' + _rqEsc(RQ_selectedStation) : '') + '</div>' +
+    '<div class="flex flex-wrap gap-2">' + top.map(function(o){
+      return '<span class="inline-flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-800/50 rounded-lg px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:text-slate-300"><span class="font-mono text-rose-600 dark:text-rose-400">' + _rqEsc(o.tracking_no) + '</span><span class="text-slate-400">·</span>' + _rqEsc(o.station_name) + '<span class="text-slate-400">·</span>' + _rqFormatHours(o._urgency.hours) + '</span>';
+    }).join('') + (reds.length > 3 ? '<span class="text-[10px] font-bold text-rose-500 dark:text-rose-400 self-center">+' + (reds.length - 3) + ' ' + rqT('đơn khác') + '</span>' : '') + '</div>' +
+    '</div>' +
+    '<button onclick="rqSetLevel(\'red\')" class="shrink-0 bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-lg text-[10px] font-black uppercase transition-all">Xử lý ngay</button>' +
+    '</div>';
 }
 
-// ── Toàn Cảnh Rủi Ro & Timeline Redesign ───────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// [MỚI — phân hoá view theo cấp, đúng yêu cầu "cấp cao cần thấy vùng mình
+// quản lý đang thế nào, không cần detail từng đơn"]
+// Module này chạy theo HẠN CHÓT (export_date + 23:59:59) nên góc nhìn cấp cao
+// phải xoay quanh RỦI RO VỠ HẠN, không phải danh sách đơn.
 function rqRenderBigPicture(){
   var el = document.getElementById('rq-bigpicture');
   if (!el) return;
-  if (RQ_selectedStation) { el.innerHTML = ''; return; }
+  if (RQ_selectedStation) { el.innerHTML = ''; return; } // Lead/Staff -> nhường chỗ danh sách đơn
 
-  var rows = RQ_allOrders.filter(function(o){
-    if (!_rqMatchesScope(o.station_name)) return false;
-    if (RQ_activeLevel !== 'ALL' && (o._resolved || o._urgency.level !== RQ_activeLevel)) return false;
-    return true;
-  });
+  var rows = RQ_allOrders.filter(function(o){ return _rqMatchesScope(o.station_name); });
   if (!rows.length) { el.innerHTML = ''; return; }
 
   var active = rows.filter(function(o){ return !o._resolved; });
@@ -714,134 +350,68 @@ function rqRenderBigPicture(){
   });
   var stationCount = Object.keys(byStation).length;
 
-  // 1. Executive Verdict Box
+  // ── 1. KẾT LUẬN 1 DÒNG ──
   var riskTotal = overdue.length + under12.length;
   var vCrit = overdue.length > 0;
-  var vc = (RQ_activeLevel === 'green') ? '#10b981' : (vCrit ? '#ef4444' : (riskTotal > 0 ? '#f59e0b' : '#10b981'));
-  var vbg = (RQ_activeLevel === 'green') ? 'bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40' : (vCrit ? 'bg-rose-50/70 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40' : (riskTotal > 0 ? 'bg-amber-50/70 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40' : 'bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40'));
-  var vIcon = (RQ_activeLevel === 'green') ? 'fa-shield-heart' : (vCrit ? 'fa-triangle-exclamation' : (riskTotal > 0 ? 'fa-circle-exclamation' : 'fa-circle-check'));
-  var vText = '';
-  if (RQ_activeLevel === 'green') {
-    vText = '<span class="text-emerald-600 dark:text-emerald-400 font-black">' + rows.length + ' ' + rqT('đơn An toàn (>24h SLA)') + '</span> — ' + rqT('Vận hành ổn định');
-  } else if (RQ_activeLevel === 'orange') {
-    vText = '<span class="text-amber-600 dark:text-amber-400 font-black">' + rows.length + ' ' + rqT('đơn Cần chú ý (12h - 24h)') + '</span> — ' + rqT('Cần giao trong ca');
-  } else if (RQ_activeLevel === 'red') {
-    vText = '<span class="text-rose-600 dark:text-rose-400 font-black">' + rows.length + ' ' + rqT('đơn Khẩn cấp (≤12h / Quá hạn)') + '</span> — ' + rqT('Cần hành động ngay');
-  } else {
-    vText = riskTotal > 0
-      ? (overdue.length > 0 ? ('<span class="text-rose-600 font-black">' + overdue.length + ' ' + rqT('đơn ĐÃ QUÁ HẠN') + '</span>' + (under12.length ? (' · ' + under12.length + ' ' + rqT('đơn còn dưới 12h')) : '')) : ('<span class="text-amber-600 font-black">' + under12.length + ' ' + rqT('đơn còn dưới 12h') + '</span>'))
-      : rqT('Tuyệt vời! Không có đơn nào sắp vỡ hạn trong phạm vi này');
-  }
+  var vc = vCrit ? 'var(--spx-sev-critical,#ef4444)' : (riskTotal > 0 ? 'var(--spx-sev-warning,#f59e0b)' : 'var(--spx-sev-ok,#22c55e)');
+  var vbg = vCrit ? 'rgba(239,68,68,.08)' : (riskTotal > 0 ? 'rgba(245,158,11,.08)' : 'rgba(34,197,94,.08)');
+  var vIcon = vCrit ? 'fa-circle-exclamation' : (riskTotal > 0 ? 'fa-triangle-exclamation' : 'fa-circle-check');
+  var vText = riskTotal > 0
+    ? (overdue.length > 0 ? '<b>' + overdue.length + '</b> ' + rqT('đơn ĐÃ QUÁ HẠN') + (under12.length ? ' · <b>' + under12.length + '</b> ' + rqT('đơn còn dưới 12h') : '') : '<b>' + under12.length + '</b> ' + rqT('đơn còn dưới 12h'))
+    : rqT('Không có đơn nào sắp vỡ hạn trong phạm vi này');
   var riskStations = Object.keys(byStation).filter(function(s){ return byStation[s].risk > 0; });
-  var vSub = (RQ_activeLevel === 'green')
-    ? (stationCount + ' ' + rqT('trạm trong phạm vi có đơn an toàn') + ' · ' + rqT('Xem danh sách chi tiết bên dưới'))
-    : (riskTotal > 0
-      ? (riskStations.length + '/' + stationCount + ' ' + rqT('trạm đang có đơn rủi ro') + ' · ' + rqT('Đã xử lý') + ' ' + resPct + '% (' + resolvedN + '/' + rows.length + ' ' + rqT('đơn') + ')')
-      : (rqT('Đã xử lý') + ' ' + resPct + '% (' + resolvedN + '/' + rows.length + ') · ' + stationCount + ' ' + rqT('trạm trong phạm vi hoạt động tốt')));
+  var vSub = riskTotal > 0
+    ? '<b>' + riskStations.length + '/' + stationCount + ' ' + rqT('trạm') + '</b> ' + rqT('đang có đơn rủi ro') + ' · ' + rqT('đã xử lý') + ' ' + resPct + '% (' + resolvedN + '/' + rows.length + ')'
+    : rqT('Đã xử lý') + ' ' + resPct + '% (' + resolvedN + '/' + rows.length + ') · ' + stationCount + ' ' + rqT('trạm trong phạm vi');
+  var verdictHtml = '<div style="padding:12px 14px;background:' + vbg + ';border:1px solid ' + vc + '40;border-left:4px solid ' + vc + ';border-radius:10px;margin-bottom:12px">' +
+    '<div style="font-size:13px;font-weight:800;color:' + vc + '"><i class="fas ' + vIcon + ' mr-1.5"></i>' + vText + '</div>' +
+    '<div style="font-size:11px;color:var(--qh-cmp-text-muted,#64748b);margin-top:3px">' + vSub + '</div></div>';
 
-  var verdictHtml = '<div class="dcc-card p-4 ' + vbg + ' mb-3 ' + (riskTotal > 0 ? 'cursor-pointer hover:shadow-md transition-all group' : '') + '" ' + (riskTotal > 0 ? 'onclick="rqSetLevel(\'red\'); rqScrollToTable();" title="' + rqT('Bấm để lọc xem ngay các đơn khẩn cấp') + '"' : '') + '>'
-    + '  <div class="flex items-center justify-between gap-3 flex-wrap">'
-    + '    <div class="flex items-center gap-3">'
-    + '      <div class="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm bg-white dark:bg-slate-800 shadow-xs" style="color:' + vc + '">'
-    + '        <i class="fas ' + vIcon + '"></i>'
-    + '      </div>'
-    + '      <div>'
-    + '        <div class="text-sm font-black text-slate-800 dark:text-slate-100">' + vText + '</div>'
-    + '        <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">' + vSub + '</div>'
-    + '      </div>'
-    + '    </div>'
-    + '    <div class="flex items-center gap-2.5 min-w-[160px]">'
-    + '      <div class="flex-1 dcc-progress-track">'
-    + '        <div class="dcc-progress-bar bg-emerald-500" style="width:' + resPct + '%"></div>'
-    + '      </div>'
-    + '      <span class="text-xs font-black text-slate-600 dark:text-slate-300">' + resPct + '%</span>'
-    + '    </div>'
-    + '  </div>'
-    + '</div>';
-
-  // 2. Phân Bố Theo Ngày Hạn (Timeline Bar Chart)
-  var dates = Object.keys(byDate).sort().slice(-10);
+  // ── 2. PHÂN BỐ THEO NGÀY HẠN (thấy được đợt nào dồn cục) ──
+  var dates = Object.keys(byDate).sort().slice(-14);
   var trendHtml = '';
-  if (dates.length >= 2) {
+  if (dates.length >= 3) {
     var dMax = Math.max.apply(null, dates.map(function(d){ return byDate[d]; }));
     var todayStr = new Date().toISOString().slice(0,10);
     var bars = dates.map(function(d){
-      var n = byDate[d], h = Math.max(8, Math.round(n/dMax*52));
+      var n = byDate[d], h = Math.max(4, Math.round(n/dMax*46));
       var past = d < todayStr;
-      var barBg = past ? 'bg-rose-500' : 'bg-slate-300 dark:bg-slate-600';
-      return '<div class="flex-1 flex flex-col justify-end items-center gap-1.5 group cursor-pointer" onclick="rqDrillDownDate(\'' + d + '\')" title="' + d + ': ' + n + ' ' + rqT('đơn — Bấm để lọc theo ngày') + '">'
-        + '  <span class="text-[9px] font-bold text-slate-500 dark:text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">' + n + '</span>'
-        + '  <div class="w-full max-w-[26px] ' + h + ' ' + barBg + ' rounded-t-md transition-all group-hover:scale-y-105" style="height:' + h + 'px"></div>'
-        + '  <span class="text-[9px] font-bold ' + (past ? 'text-rose-500' : 'text-slate-400') + '">' + d.slice(8,10) + '/' + d.slice(5,7) + '</span>'
-        + '</div>';
+      return '<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px" title="' + d + ': ' + n + ' ' + rqT('đơn') + '">' +
+        '<div style="width:100%;max-width:22px;height:' + h + 'px;border-radius:3px 3px 0 0;background:' + (past ? 'var(--spx-sev-critical,#ef4444)' : 'rgba(148,163,184,.55)') + '"></div>' +
+        '<span style="font-size:8px;color:var(--qh-cmp-text-muted,#94a3b8)">' + d.slice(8,10) + '/' + d.slice(5,7) + '</span></div>';
     }).join('');
-
-    trendHtml = '<div class="dcc-card p-4">'
-      + '  <div class="flex items-center justify-between mb-3">'
-      + '    <div class="flex items-center gap-2">'
-      + '      <i class="fas fa-chart-column text-[#ee4d2d] text-xs"></i>'
-      + '      <span class="text-xs font-black text-slate-800 dark:text-slate-200">' + rqT('Phân bố đơn theo ngày hạn') + '</span>'
-      + '    </div>'
-      + '    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/30 text-rose-500 border border-rose-200 dark:border-rose-900/40">' + rqT('Đỏ = Đã quá hạn') + '</span>'
-      + '  </div>'
-      + '  <div class="flex items-end gap-2.5 h-[80px] pt-2 px-2 border-b border-slate-100 dark:border-slate-800">' + bars + '</div>'
-      + '</div>';
+    trendHtml = '<div class="rounded-xl border border-slate-100 dark:border-slate-800 overflow-hidden mb-3">' +
+      '<div class="px-3 py-2 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800">' +
+        '<span class="text-[11px] font-black text-slate-700 dark:text-slate-200"><i class="fas fa-chart-column text-[#ee4d2d] mr-1.5"></i>' + rqT('Phân bố theo ngày hạn') + '</span>' +
+        '<span class="text-[9px] text-slate-400 font-medium ml-2">' + rqT('Đỏ = đã qua hạn') + '</span></div>' +
+      '<div style="display:flex;align-items:flex-end;gap:2px;height:66px;padding:8px 10px 4px">' + bars + '</div></div>';
   }
 
-  // 3. Tài Xế Tồn Đọng Nhiều Nhất
-  var drv = Object.keys(byDriver).sort(function(a,b){ return byDriver[b]-byDriver[a]; }).filter(function(d){ return byDriver[d] >= 1; }).slice(0, 4);
+  // ── 3. TÀI XẾ TỒN ĐỌNG NHIỀU NHẤT (chỉ tính đơn chưa xử lý) ──
+  var drv = Object.keys(byDriver).sort(function(a,b){ return byDriver[b]-byDriver[a]; }).filter(function(d){ return byDriver[d] >= 2; }).slice(0,5);
   var drvHtml = drv.length ? drv.map(function(d){
-    var count = byDriver[d];
-    var initials = d.split(' ').map(function(w){ return w[0]; }).slice(-2).join('').toUpperCase();
-    return '<div class="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-orange-50 dark:hover:bg-orange-950/20 transition-colors cursor-pointer group" onclick="rqDrillDownDriver(\'' + _rqEscAttr(d) + '\')" title="' + rqT('Bấm để lọc đơn của rider') + ' ' + _rqEscAttr(d) + '">'
-      + '  <div class="flex items-center gap-2.5 min-w-0 pr-2">'
-      + '    <div class="w-6 h-6 rounded-full bg-[#ee4d2d]/10 text-[#ee4d2d] font-black text-[9px] flex items-center justify-center shrink-0">' + _rqEsc(initials) + '</div>'
-      + '    <span class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">' + _rqEsc(d) + '</span>'
-      + '  </div>'
-      + '  <span class="px-2 py-0.5 rounded-md text-[10px] font-black ' + (count >= 2 ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400') + '">' + count + ' ' + rqT('đơn') + '</span>'
-      + '</div>';
-  }).join('') : '<div class="text-xs text-slate-400 py-3 text-center">' + rqT('Không có tài xế nào tồn đọng.') + '</div>';
+    return '<div class="flex justify-between items-center text-[11px] py-1"><span class="text-slate-600 dark:text-slate-300 truncate pr-2">' + _rqEsc(d) + '</span>' +
+      '<span class="font-black text-rose-600 dark:text-rose-400 shrink-0">' + byDriver[d] + ' ' + rqT('đơn') + '</span></div>';
+  }).join('') : '<div class="text-[11px] text-slate-400 py-1">' + rqT('Không có tài xế nào tồn ≥2 đơn — phân tán đều.') + '</div>';
 
-  var driverCardHtml = '<div class="dcc-card p-4">'
-    + '  <div class="flex items-center justify-between mb-3">'
-    + '    <div class="flex items-center gap-2">'
-    + '      <i class="fas fa-motorcycle text-slate-400 text-xs"></i>'
-    + '      <span class="text-xs font-black text-slate-800 dark:text-slate-200">' + rqT('Rider tồn đọng cần hỗ trợ') + '</span>'
-    + '    </div>'
-    + '    <span class="text-[10px] text-slate-400 font-bold">' + rqT('Chưa xử lý') + '</span>'
-    + '  </div>'
-    + '  <div class="space-y-1.5">' + drvHtml + '</div>'
-    + '</div>';
-
-  // 4. Việc Cần Làm Ngay
+  // ── 4. VIỆC CẦN LÀM ──
   var act = [];
   var worstSt = Object.keys(byStation).sort(function(a,b){ return byStation[b].risk - byStation[a].risk; })[0];
   if (worstSt && byStation[worstSt].risk > 0) {
-    act.push('Ưu tiên trạm <b>' + _rqEsc(worstSt) + '</b>: đang có ' + byStation[worstSt].risk + ' ' + rqT('đơn rủi ro cao nhất phạm vi.'));
+    act.push(rqT('Ưu tiên trạm') + ' <b>' + _rqEsc(worstSt) + '</b> — ' + byStation[worstSt].risk + ' ' + rqT('đơn rủi ro cao nhất phạm vi.'));
   }
-  if (overdue.length > 0) act.push('<b>' + overdue.length + ' ' + rqT('đơn đã quá hạn') + '</b>: ' + rqT('cần xử lý và cập nhật trạng thái ngay lập tức.'));
-  if (drv.length >= 2) act.push('Theo sát các rider có từ 2 đơn tồn đọng để giải phóng kiện hàng.');
+  if (overdue.length > 0) act.push('<b>' + overdue.length + ' ' + rqT('đơn đã quá hạn') + '</b> — ' + rqT('cần xử lý và cập nhật trạng thái ngay, không chờ thêm.'));
+  if (drv.length >= 3) act.push('<b>' + drv.length + ' ' + rqT('tài xế') + '</b> ' + rqT('tồn ≥2 đơn — nhắc trực tiếp hiệu quả hơn phổ biến diện rộng.'));
+  if (resPct < 50 && rows.length >= 10) act.push(rqT('Tỉ lệ xử lý mới') + ' <b>' + resPct + '%</b> — ' + rqT('thấp, cần đốc thúc tiến độ toàn phạm vi.'));
+  var actHtml = act.length ? '<div class="module-note raw-note" style="margin-bottom:12px"><div class="text-[10px] font-black uppercase mb-1.5"><i class="fas fa-bolt mr-1"></i>' + rqT('Việc nên làm ngay') + '</div>' +
+    act.map(function(a){ return '<div class="text-[11px] py-0.5">• ' + a + '</div>'; }).join('') + '</div>' : '';
 
-  var actionHtml = act.length ? '<div class="dcc-card p-4 bg-amber-50/40 dark:bg-amber-950/15 border-amber-200/70 dark:border-amber-900/30">'
-    + '  <div class="flex items-center gap-2 text-xs font-black text-amber-700 dark:text-amber-400 mb-2.5">'
-    + '    <i class="fas fa-bolt"></i> <span>' + rqT('VIỆC NÊN LÀM NGAY') + '</span>'
-    + '  </div>'
-    + '  <div class="space-y-1.5">'
-    + act.map(function(a){
-        return '<div class="text-xs text-slate-700 dark:text-slate-300 flex items-start gap-2"><i class="fas fa-check text-amber-500 text-[10px] mt-1 shrink-0"></i><span>' + a + '</span></div>';
-      }).join('')
-    + '  </div>'
-    + '</div>' : '';
-
-  el.innerHTML = verdictHtml
-    + '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 mb-3">'
-    + '  <div class="lg:col-span-1">' + actionHtml + '</div>'
-    + '  <div class="lg:col-span-1">' + trendHtml + '</div>'
-    + '  <div class="lg:col-span-1">' + driverCardHtml + '</div>'
-    + '</div>';
+  el.innerHTML = verdictHtml + trendHtml +
+    '<div class="rounded-xl border border-slate-100 dark:border-slate-800 p-3 mb-3"><div class="text-[10px] font-black uppercase text-slate-400 mb-2"><i class="fas fa-user-clock mr-1"></i>' + rqT('Tài xế tồn đọng nhiều nhất') + '</div>' + drvHtml + '</div>' +
+    actHtml;
 }
 
-// ── Điều Phối Render Chính ───────────────────────────────────────────────
+// ── Điều phối render chính ───────────────────────────────────────────────
 function rqRenderMain(){
   var titleEl = document.getElementById('rq-scope-title');
   if (titleEl) {
@@ -849,169 +419,78 @@ function rqRenderMain(){
     else if (RQ_previewEntityLabel) titleEl.textContent = (RQ_previewAllowedStations ? RQ_previewAllowedStations.length : 0) + ' ' + rqT('trạm') + ' — ' + RQ_previewEntityLabel;
     else titleEl.textContent = rqT('Tất cả trạm');
   }
-
   var bannerEl = document.getElementById('rq-scope-banner');
   if (bannerEl) {
     bannerEl.innerHTML = (RQ_previewEntityLabel && !RQ_selectedStation)
-      ? '<div class="py-2 px-3.5 bg-gradient-to-r from-blue-50 to-indigo-50/50 dark:from-blue-950/30 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-900/50 rounded-xl flex items-center justify-between text-xs text-blue-700 dark:text-blue-300">'
-        + '  <div class="flex items-center gap-2">'
-        + '    <i class="fas fa-shield-halved text-blue-500 text-xs"></i>'
-        + '    <span>' + rqT('Đang mô phỏng chính xác góc nhìn của') + ' <b>' + _rqEsc(RQ_previewEntityLabel) + '</b></span>'
-        + '  </div>'
-        + '  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300">' + (RQ_previewAllowedStations ? RQ_previewAllowedStations.length : 0) + ' ' + rqT('trạm quản lý') + '</span>'
-        + '</div>'
+      ? '<div style="padding:8px 12px;background:rgba(14,165,233,.10);border:1px solid rgba(14,165,233,.35);border-radius:8px;font-size:11.5px;color:var(--spx-sev-info,#0ea5e9)"><i class="fas fa-eye"></i> Đang xem đúng góc nhìn của <b>' + _rqEsc(RQ_previewEntityLabel) + '</b> — ' + rqT('bảng dưới chỉ so sánh các trạm thuộc phạm vi này.') + '</div>'
       : '';
   }
-
   rqRenderBigPicture();
-
   var highLevel = !RQ_selectedStation;
-  if (RQ_activeLevel !== 'ALL') {
-    RQ_showDetail = true;
-  }
   var tg = document.getElementById('rq-detail-toggle');
-  if (tg) {
-    tg.innerHTML = highLevel
-      ? '<button onclick="rqToggleDetail()" class="text-xs font-black text-slate-500 hover:text-[#ee4d2d] transition-colors flex items-center gap-1.5 cursor-pointer">'
-        + '<i class="fas fa-chevron-' + (RQ_showDetail ? 'up' : 'down') + ' text-[10px]"></i>'
-        + '<span>' + (RQ_showDetail ? rqT('Thu gọn danh sách') : rqT('Xem đầy đủ từng đơn')) + '</span>'
-        + '</button>'
-      : '';
-  }
-
-  var toggleBar = document.getElementById('rq-detail-toggle-bar');
-  var tableWrap = document.getElementById('rq-table-wrap');
-  if (toggleBar) toggleBar.style.display = (highLevel && !RQ_showDetail) ? 'none' : 'flex';
-  if (tableWrap) tableWrap.style.display = (highLevel && !RQ_showDetail) ? 'none' : 'block';
-
-  rqRenderHealthPanel();
+  if (tg) tg.innerHTML = highLevel
+    ? '<button onclick="rqToggleDetail()" class="text-[11px] font-bold text-slate-500 hover:text-[#ee4d2d] transition-colors"><i class="fas fa-chevron-' + (RQ_showDetail?'up':'down') + ' mr-1 text-[9px]"></i>' + (RQ_showDetail ? rqT('Ẩn số liệu chi tiết') : rqT('Xem số liệu chi tiết từng đơn')) + '</button>'
+    : '';
+  ['rq-level-cards','rq-risk-alert','rq-table-wrap'].forEach(function(id){
+    var e = document.getElementById(id);
+    if (e) e.style.display = (highLevel && !RQ_showDetail) ? 'none' : '';
+  });
+  rqRenderHealthPanel(); // bảng so sánh trạm — LUÔN hiện, đây là nội dung chính của cấp cao
   if (!highLevel || RQ_showDetail) {
     rqRenderLevelTabs();
     rqRenderRiskAlert();
     rqRenderTable();
   }
 }
-
 function rqToggleDetail(){ RQ_showDetail = !RQ_showDetail; rqRenderMain(); }
 
-// ── Bảng Chi Tiết Redesign ────────────────────────────────────────────────
+// ── Bảng chi tiết ─────────────────────────────────────────────────────────
 function rqRenderTable(){
   var rows = RQ_allOrders.filter(function(o){
     if (!_rqMatchesScope(o.station_name)) return false;
     if (RQ_hideResolved && o._resolved) return false;
     if (RQ_activeLevel !== 'ALL' && (o._resolved || o._urgency.level !== RQ_activeLevel)) return false;
-    if (RQ_searchText) {
-      var q = RQ_searchText;
-      var hit = (o.tracking_no && o.tracking_no.toLowerCase().includes(q)) ||
-                (o.station_name && o.station_name.toLowerCase().includes(q)) ||
-                (o.driver_name && o.driver_name.toLowerCase().includes(q)) ||
-                (o.driver_id && String(o.driver_id).toLowerCase().includes(q));
-      if (!hit) return false;
-    }
     return true;
   }).sort(function(a, b){ return a._urgency.hours - b._urgency.hours; });
 
-  var headingEl = document.getElementById('rq-table-heading');
-  if (headingEl) {
-    var lvlTxt = RQ_activeLevel === 'green' ? (' <span class="text-emerald-600 dark:text-emerald-400 font-bold">(' + rows.length + ' ' + rqT('đơn An toàn >24h') + ')</span>')
-      : (RQ_activeLevel === 'red' ? (' <span class="text-rose-600 dark:text-rose-400 font-bold">(' + rows.length + ' ' + rqT('đơn Khẩn cấp ≤12h') + ')</span>')
-      : (RQ_activeLevel === 'orange' ? (' <span class="text-amber-600 dark:text-amber-400 font-bold">(' + rows.length + ' ' + rqT('đơn Cần chú ý 12-24h') + ')</span>') : ''));
-    var clearBtn = (RQ_activeLevel !== 'ALL') ? (' <button onclick="rqSetLevel(\'ALL\')" class="ml-2 px-2 py-0.5 rounded-md bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 text-[10px] font-bold hover:bg-rose-100 cursor-pointer">✕ ' + rqT('Bỏ lọc KPI') + '</button>') : '';
-    headingEl.innerHTML = rqT('Danh sách đơn cần cứu') + lvlTxt + clearBtn;
-  }
-
   var wrap = document.getElementById('rq-table-wrap');
-  if (!wrap) return;
-
-  if (!rows.length) {
-    wrap.innerHTML = '<div class="p-12 text-center text-slate-400">'
-      + '<div class="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-500 flex items-center justify-center text-xl mx-auto mb-3"><i class="fas fa-check"></i></div>'
-      + '<div class="text-sm font-bold text-slate-700 dark:text-slate-200">' + (RQ_selectedStation ? (_rqEsc(RQ_selectedStation) + ' ' + rqT('vận hành ổn định! Không có đơn cứu trong bộ lọc.')) : rqT('Không tìm thấy đơn nào trong bộ lọc hiện tại.')) + '</div>'
-      + '<div class="text-xs text-slate-400 mt-1">' + rqT('Mọi đơn hàng đã được giải phóng hoặc nằm ngoài phạm vi này.') + '</div>'
-      + '</div>';
-    return;
-  }
-
+  if (!rows.length) { wrap.innerHTML = '<div class="p-8 text-center text-slate-400 text-sm">' + rqT('Không có đơn nào trong bộ lọc hiện tại.') + '</div>'; return; }
+  // [GIỮ NGUYÊN — đã xác nhận thật] Giới hạn 300 dòng render, cùng ngưỡng Quá
+  // Hạn đang dùng (Math.min(sorted.length, 300)) — tránh giật/lag khi dữ liệu
+  // thật có hàng nghìn đơn.
   var totalRows = rows.length;
   var capped = rows.slice(0, 300);
-
-  var levelBadge = {
-    red: 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200/60',
-    orange: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/60',
-    green: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/60'
-  };
-  var levelLabel = { red:rqT('Đỏ (Khẩn cấp)'), orange:rqT('Cam (12-24h)'), green:rqT('Xanh (An toàn)') };
-
-  wrap.innerHTML = (totalRows > 300 ? ('<div class="px-4 py-2 bg-amber-50 dark:bg-amber-950/20 text-[11px] font-bold text-amber-700 dark:text-amber-400 border-b border-amber-200/60">⚠️ ' + rqT('Hiển thị 300 đơn rủi ro cao nhất trong') + ' ' + totalRows + ' ' + rqT('đơn.') + '</div>') : '')
-    + '<div class="overflow-x-auto"><table class="w-full text-sm dcc-table">'
-    + '  <thead class="sticky top-0 bg-slate-50/90 dark:bg-[#151e2f] border-b border-slate-200 dark:border-slate-800 z-10">'
-    + '    <tr class="text-left text-[10px] uppercase font-black text-slate-400 dark:text-slate-500">'
-    + '      <th class="p-3 w-10 text-center"><input type="checkbox" onchange="rqToggleSelectAll(this.checked)" class="rounded text-[#ee4d2d] focus:ring-[#ee4d2d] cursor-pointer"></th>'
-    + '      <th class="p-3">' + rqT('MÃ VẬN ĐƠN') + '</th>'
-    + '      <th class="p-3">' + rqT('TRẠM / VÙNG') + '</th>'
-    + '      <th class="p-3">' + rqT('RIDER PHỤ TRÁCH') + '</th>'
-    + '      <th class="p-3">' + rqT('THỜI HẠN XỬ LÝ') + '</th>'
-    + '      <th class="p-3 text-center">' + rqT('MỨC ĐỘ') + '</th>'
-    + '      <th class="p-3 text-right">' + rqT('THAO TÁC') + '</th>'
-    + '    </tr>'
-    + '  </thead>'
-    + '  <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">'
-    + capped.map(function(o){
-        var u = o._urgency;
-        var isUrgent = u.hours <= 12;
-        return '<tr class="transition-colors ' + (o._resolved ? 'opacity-40 bg-slate-50/40 dark:bg-slate-900/20' : '') + '">'
-          + '  <td class="p-3 text-center"><input type="checkbox" class="rq-check rounded text-[#ee4d2d] focus:ring-[#ee4d2d] cursor-pointer" data-tn="' + _rqEscAttr(o.tracking_no) + '" ' + (o._resolved ? 'disabled' : '') + '></td>'
-          + '  <td class="p-3">'
-          + '    <div class="flex items-center gap-2 group cursor-pointer" onclick="rqCopyTrackingNo(\'' + _rqEscAttr(o.tracking_no) + '\')" title="' + rqT('Bấm để copy mã vận đơn') + '">'
-          + '      <span class="font-mono font-black text-slate-800 dark:text-slate-100 group-hover:text-[#ee4d2d] transition-colors">' + _rqEsc(o.tracking_no) + '</span>'
-          + '      <i class="fas fa-copy text-[10px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity"></i>'
-          + '    </div>'
-          + '  </td>'
-          + '  <td class="p-3">'
-          + '    <div class="font-bold text-slate-700 dark:text-slate-200 text-xs">' + _rqEsc(o.station_name) + '</div>'
-          + '    <div class="text-[10px] text-slate-400">' + _rqEsc(o.region || '') + '</div>'
-          + '  </td>'
-          + '  <td class="p-3">'
-          + '    <div class="font-bold text-slate-700 dark:text-slate-200 text-xs">' + _rqEsc(o.driver_name || 'Chưa gán') + '</div>'
-          + '    <div class="text-[10px] text-slate-400 font-mono">' + _rqEsc(o.driver_id || '') + '</div>'
-          + '  </td>'
-          + '  <td class="p-3">'
-          + '    <div class="text-xs font-bold ' + (u.hours < 0 ? 'text-rose-600 dark:text-rose-400 font-black' : 'text-slate-600 dark:text-slate-300') + '">' + _rqFormatHours(u.hours) + '</div>'
-          + '    <div class="text-[10px] text-slate-400">' + _rqEsc(o.export_date) + '</div>'
-          + '  </td>'
-          + '  <td class="p-3 text-center">'
-          + (o._resolved ? '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">' + rqT('ĐÃ XỬ LÝ') + '</span>' : ('<span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ' + levelBadge[u.level] + '">' + levelLabel[u.level] + '</span>'))
-          + '  </td>'
-          + '  <td class="p-3 text-right">'
-          + (o._resolved ? '<span class="text-slate-400 text-xs font-bold"><i class="fas fa-check text-emerald-500 mr-1"></i>Xong</span>' : ('<button onclick="rqResolveOne(\'' + _rqEscAttr(o.tracking_no) + '\')" class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 hover:bg-emerald-600 text-emerald-600 hover:text-white rounded-lg text-xs font-bold transition-all border border-emerald-200 dark:border-emerald-800 cursor-pointer"><i class="fas fa-check text-[10px]"></i><span>' + rqT('Xong') + '</span></button>'))
-          + '  </td>'
-          + '</tr>';
-      }).join('')
-    + '  </tbody>'
-    + '</table></div>';
-}
-
-function rqToggleSelectAll(checked){
-  document.querySelectorAll('.rq-check:not(:disabled)').forEach(function(c){ c.checked = checked; });
+  var noteHtml = totalRows > 300
+    ? '<div class="px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-800/40 text-[11px] font-bold text-amber-700 dark:text-amber-400 rounded-t-xl">⚠️ Đang hiện 300/' + totalRows + ' ' + rqT('đơn (giới hạn để tránh giật/lag) — dùng bộ lọc mức độ bên trái hoặc chọn 1 Hub cụ thể trên header để thu hẹp danh sách.') + '</div>'
+    : '';
+  var levelBadge = { red:'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400', orange:'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', green:'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' };
+  var levelLabel = { red:'Đỏ', orange:'Cam', green:'Xanh' };
+  wrap.innerHTML = noteHtml + '<div class="rounded-xl border border-slate-100 dark:border-slate-800 overflow-hidden"><table class="w-full text-sm"><thead class="sticky top-0 bg-slate-50 dark:bg-[#151e2f] border-b border-slate-200 dark:border-slate-800">' +
+    '<tr class="text-left text-[10px] uppercase font-black text-slate-500"><th class="p-3 w-8"></th><th class="p-3">Tracking No</th><th class="p-3">Region</th><th class="p-3">Station</th><th class="p-3">Driver</th><th class="p-3">Export Date</th><th class="p-3">' + rqT('Mức độ') + '</th><th class="p-3">' + rqT('Hành động') + '</th></tr></thead><tbody>' +
+    capped.map(function(o){
+      var u = o._urgency;
+      return '<tr class="border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/30 ' + (o._resolved ? 'opacity-50' : '') + '">' +
+        '<td class="p-3"><input type="checkbox" class="rq-check" data-tn="' + _rqEscAttr(o.tracking_no) + '" ' + (o._resolved ? 'disabled' : '') + '></td>' +
+        '<td class="p-3 font-mono font-bold text-slate-700 dark:text-slate-200 cursor-pointer hover:text-rose-500 transition-colors group" onclick="event.stopPropagation(); rqCopyTrackingNo(\'' + _rqEscAttr(o.tracking_no) + '\')" title="' + rqT('Click để copy Tracking No') + '">' + _rqEsc(o.tracking_no) + '<i class="fas fa-copy ml-1.5 opacity-0 group-hover:opacity-60 text-[10px] transition-opacity"></i></td>' +
+        '<td class="p-3 text-slate-500">' + _rqEsc(o.region) + '</td>' +
+        '<td class="p-3 text-slate-500">' + _rqEsc(o.station_name) + '</td>' +
+        '<td class="p-3 text-slate-500">' + _rqEsc(o.driver_name) + ' <span class="text-[10px] text-slate-400">(' + _rqEsc(o.driver_id) + ')</span></td>' +
+        '<td class="p-3 text-slate-500">' + _rqEsc(o.export_date) + '<div class="text-[10px] ' + (u.hours<0?'text-rose-500':'text-slate-400') + '">' + _rqFormatHours(u.hours) + '</div></td>' +
+        '<td class="p-3">' + (o._resolved ? '<span class="px-2 py-1 rounded-md text-[10px] font-black uppercase bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">' + rqT('Đã xử lý') + '</span>' : '<span class="px-2 py-1 rounded-md text-[10px] font-black uppercase ' + levelBadge[u.level] + '">' + levelLabel[u.level] + '</span>') + '</td>' +
+        '<td class="p-3">' + (o._resolved ? '<span class="text-slate-300 text-xs">—</span>' : '<button onclick="rqResolveOne(\'' + _rqEscAttr(o.tracking_no) + '\')" class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 text-xs font-bold"><i class="fas fa-check mr-1"></i>' + rqT('Đã xử lý') + '</button>') + '</td>' +
+        '</tr>';
+    }).join('') + '</tbody></table></div>';
 }
 
 function rqResolveOne(trackingNo){
-  // Optimistic UI update
-  var target = RQ_allOrders.find(function(o){ return o.tracking_no === trackingNo; });
-  if (target) { target._resolved = true; rqRenderTable(); }
-  google.script.run
-    .withSuccessHandler(function(){ rqLoadOrders(true); })
-    .withFailureHandler(function(e){
-      if (typeof showToast==='function') showToast(rqT('Lỗi') + ': '+e.message,'error');
-      rqLoadOrders(true);
-    })
-    .setResolvedStatus(trackingNo, true);
+  google.script.run.withSuccessHandler(function(){ rqLoadOrders(true); }).withFailureHandler(function(e){ if (typeof showToast==='function') showToast(rqT('Lỗi') + ': '+e.message,'error'); }).setResolvedStatus(trackingNo, true);
 }
 
+// [MỚI — theo yêu cầu trực tiếp "1 số module thiếu copy mã nhanh"] Đúng pattern
+// đã dùng ở Pick/KPI Fail/FMS — copy qua clipboard API, fallback textarea nếu
+// trình duyệt không hỗ trợ, báo toast xác nhận.
 function rqCopyTrackingNo(trackingNo) {
-  var done = function() {
-    if (typeof showToast === 'function') showToast('✓ ' + rqT('Đã copy') + ': ' + trackingNo, 'success');
-  };
+  var done = function() { if (typeof showToast === 'function') showToast('✓ ' + rqT('Đã copy') + ': ' + trackingNo, 'success'); };
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(trackingNo).then(done).catch(function() { _rqCopyFallback(trackingNo, done); });
   } else {
@@ -1019,31 +498,13 @@ function rqCopyTrackingNo(trackingNo) {
   }
 }
 function _rqCopyFallback(text, cb) {
+  // [DỌN TRÙNG LẶP] Uỷ quyền spxCopyFallback() dùng chung (index.html).
   if (typeof spxCopyFallback === 'function') spxCopyFallback(text, cb);
 }
-
 function rqBulkResolve(){
   var items = Array.from(document.querySelectorAll('.rq-check:checked')).map(function(c){ return c.dataset.tn; });
-  if (!items.length) {
-    if (typeof showToast==='function') showToast(rqT('Vui lòng tích chọn ít nhất 1 đơn cần xử lý'), 'error');
-    return;
-  }
-  // Optimistic UI update
-  var set = new Set(items);
-  RQ_allOrders.forEach(function(o){ if (set.has(o.tracking_no)) o._resolved = true; });
-  rqRenderTable();
-
-  google.script.run
-    .withSuccessHandler(function(){
-      if (typeof showToast === 'function') showToast('✓ ' + rqT('Đã đánh dấu xong') + ' ' + items.length + ' ' + rqT('đơn'), 'success');
-      rqLoadOrders(true);
-    })
-    .withFailureHandler(function(e){
-      if (typeof showToast==='function') showToast(rqT('Lỗi') + ': '+e.message,'error');
-      rqLoadOrders(true);
-    })
-    .setResolvedStatusBulk(items, true);
+  if (!items.length) { if (typeof showToast==='function') showToast(rqT('Chưa chọn đơn nào'),'error'); return; }
+  google.script.run.withSuccessHandler(function(){ rqLoadOrders(true); }).withFailureHandler(function(e){ if (typeof showToast==='function') showToast(rqT('Lỗi') + ': '+e.message,'error'); }).setResolvedStatusBulk(items, true);
 }
-
 rqInit();
 </script>

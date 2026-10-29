@@ -1,3 +1,11 @@
+/**
+ * ============================================================
+ * SPX HUB RPC DISPATCHER
+ * Tiếp nhận và xử lý toàn bộ các hàm gọi từ google.script.run
+ * Kết nối dữ liệu trực tiếp với Centralized Workspace Database.
+ * ============================================================
+ */
+
 const fs = require('fs');
 const path = require('path');
 const db = require('./database');
@@ -5,33 +13,50 @@ const triggerManager = require('./trigger_manager');
 
 const VIEWS_DIR = path.join(__dirname, '..', 'public', 'views');
 
+// Danh sách trạm mặc định tại khu vực Đắk Lắk & Tây Nguyên
 const DEFAULT_STATIONS = [
-  'Krông Pắc 02', 'Buôn Ma Thuột', 'Ea Kar', 'Cư Kuin', 'Lắk',
-  'Ea H\'leo', 'Krông Bông', 'Krông Năng', 'Krông Búk', 'Buôn Đôn',
-  'Cư M\'gar', 'M\'Đrắk'
+  'Krông Pắc 02',
+  'Buôn Ma Thuột',
+  'Ea Kar',
+  'Cư Kuin',
+  'Lắk',
+  'Ea H\'leo',
+  'Krông Bông',
+  'Krông Năng',
+  'Krông Búk',
+  'Buôn Đôn',
+  'Cư M\'gar',
+  'M\'Đrắk'
 ];
 
 class RpcDispatcher {
   async dispatch(functionName, args = [], userEmail = 'xuan.nguyenthanh01@spxexpress.com') {
-    console.log(`📡 [RPC Call] "${functionName}", User: "${userEmail}", Args:`, args.length);
+    console.log(`📡 [RPC Call] Function: "${functionName}", User: "${userEmail}", Args:`, args.length);
+
     try {
       if (typeof this[functionName] === 'function') {
         return await this[functionName](...args, userEmail);
       }
+
+      // Xử lý các tiền tố hoặc mapping hàm phổ biến
       if (functionName.startsWith('getModuleHtml') || functionName === 'include') {
         return this.getModuleHtml(args[0]);
       }
-      console.warn(`⚠️ [RPC Unknown] "${functionName}" fallback.`);
+
+      console.warn(`⚠️ [RPC Unknown] Function "${functionName}" is not explicitly registered. Returning safe fallback.`);
       if (/get.*(List|All|Rows|Cases|Orders|Wards|Hubs|Array|Items)/i.test(functionName) || functionName.endsWith('s')) {
         return [];
       }
-      return { success: true, message: `Function ${functionName} handled by fallback.` };
+      return { success: true, message: `Function ${functionName} handled by default fallback.` };
     } catch (err) {
       console.error(`❌ [RPC Dispatch Error] ${functionName}:`, err);
       return { success: false, error: err.message };
     }
   }
 
+  // ============================================================
+  // 1. SYSTEM INITIALIZATION & PERMISSION
+  // ============================================================
   checkUserAccess(userEmail = 'xuan.nguyenthanh01@spxexpress.com') {
     return {
       allowed: true,
@@ -47,67 +72,206 @@ class RpcDispatcher {
     };
   }
 
-  getCurrentUserAccess(userEmail) { return this.checkUserAccess(userEmail); }
-  checkAnalyticsPermission(userEmail) { return { allowed: true, email: userEmail, role: 'ADMIN_1', stations: ['ALL', ...DEFAULT_STATIONS] }; }
-  spx_listAllUserAccess() { return { success: true, users: db.data.userPermissions || {}, adminRoles: db.data.adminRoles || {}, stations: DEFAULT_STATIONS }; }
+  getCurrentUserAccess(userEmail) {
+    return this.checkUserAccess(userEmail);
+  }
+
+  checkAnalyticsPermission(userEmail) {
+    return {
+      allowed: true,
+      email: userEmail,
+      role: 'ADMIN_1',
+      stations: ['ALL', ...DEFAULT_STATIONS]
+    };
+  }
+
+  spx_listAllUserAccess() {
+    return {
+      success: true,
+      users: db.data.userPermissions || {},
+      adminRoles: db.data.adminRoles || {},
+      stations: DEFAULT_STATIONS
+    };
+  }
 
   getModuleAccess() {
     return {
-      role: 'admin', level: 1, email: 'xuan.nguyenthanh01@spxexpress.com', hubs: ['ALL', ...DEFAULT_STATIONS],
-      defaultHub: 'Krông Pắc 02', isRootAdmin: true,
-      modules: { tondong: true, pick: true, quahan: true, doncaucuu: true, kpifail: true, vipham: true, rider_plan: true, luong: true, tracuu: true, tailieu: true, adminzone: true, analytics: true }
+      role: 'admin',
+      level: 1,
+      email: 'xuan.nguyenthanh01@spxexpress.com',
+      hubs: ['ALL', ...DEFAULT_STATIONS],
+      defaultHub: 'Krông Pắc 02',
+      isRootAdmin: true,
+      modules: {
+        tondong: true,
+        pick: true,
+        quahan: true,
+        doncaucuu: true,
+        kpifail: true,
+        vipham: true,
+        rider_plan: true,
+        luong: true,
+        tracuu: true,
+        tailieu: true,
+        adminzone: true,
+        analytics: true
+      }
     };
   }
 
   spx_getBootstrap(userEmail = 'xuan.nguyenthanh01@spxexpress.com') {
     return JSON.stringify({
       email: userEmail,
-      moduleAccess: { role: 'admin', level: 1, email: userEmail, hubs: ['ALL', ...DEFAULT_STATIONS], defaultHub: 'Krông Pắc 02', isRootAdmin: true },
-      analyticsPerm: { allowed: true, stations: ['ALL', ...DEFAULT_STATIONS] },
+      moduleAccess: {
+        role: 'admin',
+        level: 1,
+        email: userEmail,
+        hubs: ['ALL', ...DEFAULT_STATIONS],
+        defaultHub: 'Krông Pắc 02',
+        isRootAdmin: true
+      },
+      analyticsPerm: {
+        allowed: true,
+        stations: ['ALL', ...DEFAULT_STATIONS]
+      },
       luongAccess: 'granted',
-      hubOrgDir: { byHub: {}, supNames: ['Sup Tây Nguyên', 'Sup Đắk Lắk'], aomNames: ['AOM Tây Nguyên'] },
+      hubOrgDir: {
+        byHub: {},
+        supNames: ['Sup Tây Nguyên', 'Sup Đắk Lắk'],
+        aomNames: ['AOM Tây Nguyên']
+      },
       _timing: { tong: 5 }
     });
   }
 
-  spx_getHubOrgDirectory() { return JSON.stringify({ byHub: {}, supNames: ['Sup Tây Nguyên', 'Sup Đắk Lắk'], aomNames: ['AOM Tây Nguyên'] }); }
-  spx_getWebAppUrl() { return 'https://spx-hub-portal.onrender.com'; }
-  spx_checkLuongAccess() { return 'granted'; }
-  spx_trackLuongUsage() { return { success: true }; }
-  spx_trackModuleOpen() { return { success: true }; }
+  spx_getHubOrgDirectory() {
+    return JSON.stringify({
+      byHub: {},
+      supNames: ['Sup Tây Nguyên', 'Sup Đắk Lắk'],
+      aomNames: ['AOM Tây Nguyên']
+    });
+  }
 
+  spx_getWebAppUrl() {
+    return 'https://spx-hub-portal.onrender.com';
+  }
+
+  spx_checkLuongAccess() {
+    return 'granted';
+  }
+
+  spx_trackLuongUsage() {
+    return { success: true };
+  }
+
+  spx_trackModuleOpen() {
+    return { success: true };
+  }
+
+  // ============================================================
+  // HEARTBEAT & SYSTEM STATUS (Khởi động hệ thống & Thăm dò ngầm)
+  // ============================================================
   spx_getSystemAnnouncement() {
     return JSON.stringify({
       success: true,
-      state: { banner: { active: false, content: '' }, maintenance: { active: false } },
-      text: '🚀 Hệ thống SPX Hub Cloud 24/7 đang hoạt động ổn định.',
+      state: {
+        banner: { active: false, content: '' },
+        maintenance: { active: false }
+      },
+      text: '🚀 Hệ thống SPX Hub Cloud Run 24/7 đang hoạt động ổn định.',
       version: '1.0.0'
     });
   }
 
-  spx_getModuleStatusPublic() { return JSON.stringify({ success: true, statuses: {} }); }
-  spx_getModuleVersions() {
+  spx_getModuleStatusPublic() {
     return JSON.stringify({
       success: true,
-      versions: { tondong: 'v1.0', pick: 'v1.0', quahan: 'v1.0', doncaucuu: 'v1.0', kpifail: 'v1.0', vipham: 'v1.0', rider_plan: 'v1.0', luong: 'v1.0', tracuu: 'v1.0', tailieu: 'v1.0', adminzone: 'v1.0', analytics: 'v1.0' }
+      statuses: {}
     });
   }
 
-  aging_getDataVersion() { return '1'; }
-  kpifail_getDataVersion() { return '1'; }
-  aging_clearCache() { return { success: true }; }
-  kpifail_clearCache() { return { success: true }; }
-  aging_getNotesOnly() { return { success: true, notes: {} }; }
-  kpifail_getNotes() { return JSON.stringify({ success: true, notes: {} }); }
+    spx_getModuleVersions() {
+    return JSON.stringify({
+      success: true,
+      versions: {
+        tondong: 'v2026_clean_orig',
+        fms: 'v2026_clean_orig',
+        JS_FMS: 'v2026_clean_orig',
+        pick: 'v2026_clean_orig',
+        JS_Pick: 'v2026_clean_orig',
+        quahan: 'v2026_clean_orig',
+        JS_Quahan: 'v2026_clean_orig',
+        doncaucuu: 'v2026_clean_orig',
+        rescue: 'v2026_clean_orig',
+        JS_DonCauCuu: 'v2026_clean_orig',
+        kpifail: 'v2026_clean_orig',
+        JS_KPIFail: 'v2026_clean_orig',
+        vipham: 'v2026_clean_orig',
+        violation: 'v2026_clean_orig',
+        JS_ViPham: 'v2026_clean_orig',
+        rider_plan: 'v2026_clean_orig',
+        riderplan: 'v2026_clean_orig',
+        JS_Rider_plan: 'v2026_clean_orig',
+        luong: 'v2026_clean_orig',
+        JS_Luong: 'v2026_clean_orig',
+        tracuu: 'v2026_clean_orig',
+        JS_Tracuu: 'v2026_clean_orig',
+        tailieu: 'v2026_clean_orig',
+        JS_TaiLieu: 'v2026_clean_orig',
+        JS_Tailieu: 'v2026_clean_orig',
+        adminzone: 'v2026_clean_orig',
+        JS_AdminZone: 'v2026_clean_orig',
+        analytics: 'v2026_clean_orig',
+        analytics_block: 'v2026_clean_orig',
+        Analytics_Block: 'v2026_clean_orig'
+      }
+    });
+  }
 
-  fms_live_getSyncMeta() { return JSON.stringify({ success: true, syncTime: new Date().toISOString(), status: 'SYNCED' }); }
-  ana_getStationDataStamp(stationName) { const key = (stationName || '').trim(); const st = db.data.stations[key]; return (st && st.updatedAt) || '1'; }
+  aging_getDataVersion() {
+    return '1';
+  }
+
+  kpifail_getDataVersion() {
+    return '1';
+  }
+
+  aging_clearCache() {
+    return { success: true };
+  }
+
+  kpifail_clearCache() {
+    return { success: true };
+  }
+
+  aging_getNotesOnly() {
+    return { success: true, notes: {} };
+  }
+
+  kpifail_getNotes() {
+    return JSON.stringify({ success: true, notes: {} });
+  }
+
+  fms_live_getSyncMeta() {
+    return JSON.stringify({
+      success: true,
+      syncTime: new Date().toISOString(),
+      status: 'SYNCED'
+    });
+  }
+
+  ana_getStationDataStamp(stationName) {
+    const key = (stationName || '').trim();
+    const st = db.data.stations[key];
+    return (st && st.updatedAt) || '1';
+  }
 
   spx_getHeartbeat(ctxJson) {
     let ctx = {};
     try { ctx = typeof ctxJson === 'string' ? JSON.parse(ctxJson) : (ctxJson || {}); } catch (e) { ctx = {}; }
     const want = Array.isArray(ctx.parts) ? ctx.parts : ['ann', 'mod', 'aging', 'kpi', 'fms'];
     const parts = {};
+
     want.forEach(p => {
       switch (p) {
         case 'ann': parts.ann = this.spx_getSystemAnnouncement(); break;
@@ -120,106 +284,261 @@ class RpcDispatcher {
         default: break;
       }
     });
-    return JSON.stringify({ success: true, ts: Date.now(), parts: parts });
+
+    return JSON.stringify({
+      success: true,
+      ts: Date.now(),
+      parts: parts
+    });
   }
 
-  getFeeMatrix() { return { success: true, rates: { standardPickup: 3500, bulkyPickup: 7000, slaOnTimeBonus: 500 } }; }
+  getFeeMatrix() {
+    return {
+      success: true,
+      rates: {
+        standardPickup: 3500,
+        bulkyPickup: 7000,
+        slaOnTimeBonus: 500
+      }
+    };
+  }
 
-  getModuleHtml(moduleKey) {
+  // ============================================================
+  // 2. DYNAMIC MODULE LOADING (Lazy Loading Views)
+  // ============================================================
+    getModuleHtml(moduleKey) {
     if (!moduleKey) return '';
-    let fileName = moduleKey;
-    const keyLower = moduleKey.toLowerCase();
-    if (keyLower === 'tondong' || keyLower === 'fms' || keyLower === 'js_fms') fileName = 'JS_FMS.html';
-    else if (keyLower === 'pick' || keyLower === 'js_pick') fileName = 'JS_Pick.html';
-    else if (keyLower === 'quahan' || keyLower === 'js_quahan') fileName = 'JS_Quahan.html';
-    else if (keyLower === 'doncaucuu' || keyLower === 'js_doncaucuu') fileName = 'JS_DonCauCuu.html';
-    else if (keyLower === 'kpifail' || keyLower === 'js_kpifail') fileName = 'JS_KPIFail.html';
-    else if (keyLower === 'vipham' || keyLower === 'js_vipham') fileName = 'JS_ViPham.html';
-    else if (keyLower === 'rider_plan' || keyLower === 'js_rider_plan') fileName = 'JS_Rider_plan.html';
-    else if (keyLower === 'luong' || keyLower === 'js_luong') fileName = 'JS_Luong.html';
-    else if (keyLower === 'tracuu' || keyLower === 'js_tracuu') fileName = 'JS_Tracuu.html';
-    else if (keyLower === 'tailieu' || keyLower === 'js_tailieu') fileName = 'JS_Tailieu.html';
-    else if (keyLower === 'adminzone' || keyLower === 'js_adminzone') fileName = 'JS_AdminZone.html';
-    else if (keyLower === 'analytics_block' || keyLower === 'analytics') fileName = 'Analytics_Block.html';
-    else if (keyLower === 'tailwindbuild') fileName = 'TailwindBuild.html';
-    else if (!fileName.endsWith('.html')) fileName += '.html';
+    const keyLower = String(moduleKey).trim().toLowerCase().replace(/\.html$/, '');
 
-    const filePath = path.join(VIEWS_DIR, fileName);
-    if (fs.existsSync(filePath)) return fs.readFileSync(filePath, 'utf8');
+    const map = {
+      'tondong': 'JS_FMS.html',
+      'fms': 'JS_FMS.html',
+      'js_fms': 'JS_FMS.html',
+      'pick': 'JS_Pick.html',
+      'js_pick': 'JS_Pick.html',
+      'quahan': 'JS_Quahan.html',
+      'js_quahan': 'JS_Quahan.html',
+      'doncaucuu': 'JS_DonCauCuu.html',
+      'js_doncaucuu': 'JS_DonCauCuu.html',
+      'rescue': 'JS_DonCauCuu.html',
+      'kpifail': 'JS_KPIFail.html',
+      'js_kpifail': 'JS_KPIFail.html',
+      'vipham': 'JS_ViPham.html',
+      'js_vipham': 'JS_ViPham.html',
+      'violation': 'JS_ViPham.html',
+      'rider_plan': 'JS_Rider_plan.html',
+      'js_rider_plan': 'JS_Rider_plan.html',
+      'riderplan': 'JS_Rider_plan.html',
+      'luong': 'JS_Luong.html',
+      'js_luong': 'JS_Luong.html',
+      'tracuu': 'JS_Tracuu.html',
+      'js_tracuu': 'JS_Tracuu.html',
+      'tailieu': 'JS_Tailieu.html',
+      'js_tailieu': 'JS_Tailieu.html',
+      'adminzone': 'JS_AdminZone.html',
+      'js_adminzone': 'JS_AdminZone.html',
+      'analytics_block': 'Analytics_Block.html',
+      'analytics': 'Analytics_Block.html',
+      'tailwindbuild': 'TailwindBuild.html'
+    };
+
+    let targetFile = map[keyLower];
+    if (!targetFile) {
+      const files = fs.readdirSync(VIEWS_DIR);
+      targetFile = files.find(f => f.toLowerCase() === keyLower + '.html' || f.toLowerCase() === keyLower);
+    }
+    if (!targetFile) {
+      targetFile = moduleKey.endsWith('.html') ? moduleKey : (moduleKey + '.html');
+    }
+
+    const targetPath = path.join(VIEWS_DIR, targetFile);
+    if (fs.existsSync(targetPath)) {
+      return fs.readFileSync(targetPath, 'utf8');
+    }
+
+    console.warn(`File view not found: ${targetPath}`);
     return `<div class="p-8 text-center text-red-500 font-bold">Không tìm thấy module: ${moduleKey}</div>`;
   }
 
+  // ============================================================
+  // 3. WORKSPACE SAVE / LOAD / DELETE TRIGGERS (FMS Tồn Đọng & Trạm)
+  // ============================================================
   saveStationData(stationName, mergedOrdersJson, inboundLock, clientEpoch, userEmail) {
     let orders = [];
-    try { orders = typeof mergedOrdersJson === 'string' ? JSON.parse(mergedOrdersJson) : (mergedOrdersJson || []); } catch (e) { orders = []; }
-    return db.saveStationData(stationName, orders, inboundLock, clientEpoch, userEmail);
+    try {
+      orders = typeof mergedOrdersJson === 'string' ? JSON.parse(mergedOrdersJson) : (mergedOrdersJson || []);
+    } catch (e) {
+      orders = [];
+    }
+
+    const res = db.saveStationData(stationName, orders, inboundLock, clientEpoch, userEmail);
+    return res;
   }
-  getStationData(stationName) { return db.getStationData(stationName); }
+
+  getStationData(stationName) {
+    return db.getStationData(stationName);
+  }
+
   getStationDataBundle(stationName) {
     const data = db.getStationData(stationName);
-    return { success: true, stationName, data: data.orders || [], inboundLock: data.inboundLock, epoch: data.epoch, updatedAt: data.updatedAt, serverTime: new Date().toISOString() };
+    return {
+      success: true,
+      stationName,
+      data: data.orders || [],
+      inboundLock: data.inboundLock,
+      epoch: data.epoch,
+      updatedAt: data.updatedAt,
+      serverTime: new Date().toISOString()
+    };
   }
+
   saveSupplementData(stationName, supplementJson, clientEpoch, userEmail) {
     let supp = {};
-    try { supp = typeof supplementJson === 'string' ? JSON.parse(supplementJson) : (supplementJson || {}); } catch (e) {}
+    try {
+      supp = typeof supplementJson === 'string' ? JSON.parse(supplementJson) : (supplementJson || {});
+    } catch (e) {}
+
     const key = (stationName || '').trim();
-    db.data.supplements[key] = { supplement: supp, epoch: Date.now(), updatedAt: new Date().toISOString(), updatedBy: userEmail };
+    db.data.supplements[key] = {
+      supplement: supp,
+      epoch: Date.now(),
+      updatedAt: new Date().toISOString(),
+      updatedBy: userEmail
+    };
     db.isDirty = true;
-    return { success: true, msg: 'Đã lưu dữ liệu bổ sung.' };
+    return { success: true, msg: 'Đã lưu dữ liệu bổ sung thành công.' };
   }
+
   getSupplementData(stationName) {
     const key = (stationName || '').trim();
     const item = db.data.supplements[key] || { supplement: {}, epoch: 0 };
     return { success: true, supplement: item.supplement, epoch: item.epoch };
   }
+
   saveInboundLockToCloud(stationName, inboundValue) {
     const key = (stationName || '').trim();
-    if (db.data.stations[key]) { db.data.stations[key].inboundLock = !!inboundValue; db.isDirty = true; }
+    if (db.data.stations[key]) {
+      db.data.stations[key].inboundLock = !!inboundValue;
+      db.isDirty = true;
+    }
     return { success: true, inboundLock: !!inboundValue };
   }
-  getInboundLock(stationName) { const key = (stationName || '').trim(); return (db.data.stations[key] && db.data.stations[key].inboundLock) || false; }
-  clearStationData(stationName, userEmail) { return db.clearStationData(stationName, userEmail); }
-  ana_pushTonState() { return { success: true }; }
-  getTrendDrivers() { return []; }
-  getTrendStation() { return {}; }
-  getTrendDriverList() { return []; }
-  logAIFeedback() { return { success: true }; }
 
-  saveDriverPlan(payload, userEmail) { return { success: true, msg: 'Đã lưu kế hoạch tài xế' }; }
-  saveRiderPlan(payload, userEmail) { return db.saveRiderPlan(payload, userEmail); }
-  loadRiderPlan(month) { return db.loadRiderPlan(month); }
+  getInboundLock(stationName) {
+    const key = (stationName || '').trim();
+    const st = db.data.stations[key];
+    return (st && st.inboundLock) || false;
+  }
+
+  clearStationData(stationName, userEmail) {
+    return db.clearStationData(stationName, userEmail);
+  }
+
+  ana_pushTonState() {
+    return { success: true };
+  }
+
+  getTrendDrivers() {
+    return [];
+  }
+
+  getTrendStation() {
+    return {};
+  }
+
+  getTrendDriverList() {
+    return [];
+  }
+
+  logAIFeedback() {
+    return { success: true };
+  }
+
+  // ============================================================
+  // 4. RIDER PLAN & FORECAST (Save / Load)
+  // ============================================================
+  saveDriverPlan(payload, userEmail) {
+    return { success: true, msg: 'Đã lưu kế hoạch tài xế' };
+  }
+
+  saveRiderPlan(payload, userEmail) {
+    return db.saveRiderPlan(payload, userEmail);
+  }
+
+  loadRiderPlan(month) {
+    return db.loadRiderPlan(month);
+  }
+
   loadAllData(month, overrideHub) {
     const m = month || new Date().toISOString().slice(0, 7);
     const plan = db.loadRiderPlan(m);
-    return { success: true, month: m, hub: overrideHub || 'Krông Pắc 02', planData: (plan.data && plan.data.plan) || [], forecastData: [] };
+    return {
+      success: true,
+      month: m,
+      hub: overrideHub || 'Krông Pắc 02',
+      planData: (plan.data && plan.data.plan) || [],
+      forecastData: []
+    };
   }
 
+  // ============================================================
+  // 5. RESCUE ORDERS & VIOLATIONS (Đơn Cứu Cứu & Vi Phạm)
+  // ============================================================
   getOrders(forceRefresh) {
     const rescueList = db.data.rescueOrders || [];
     return {
       success: true,
       rows: rescueList,
-      resolved: Object.keys(db.data.resolvedOrders || {}),
+      resolved: Object.keys(db.data.resolvedOrders || {}), // Array!
       count: rescueList.length,
-      access: { role: 'admin', email: 'xuan.nguyenthanh01@spxexpress.com', displayName: 'Admin Xuân', stations: ['ALL', ...DEFAULT_STATIONS] }
+      access: {
+        role: 'admin',
+        email: 'xuan.nguyenthanh01@spxexpress.com',
+        displayName: 'Admin Xuân',
+        stations: ['ALL', ...DEFAULT_STATIONS]
+      }
     };
   }
-  getResolvedOrders() { return { success: true, resolved: Object.keys(db.data.resolvedOrders || {}) }; }
+
+  getResolvedOrders() {
+    return {
+      success: true,
+      resolved: Object.keys(db.data.resolvedOrders || {})
+    };
+  }
+
   setResolvedStatus(trackingNo, resolved, userEmail) {
     if (!trackingNo) return { success: false, msg: 'Thiếu mã đơn' };
-    db.data.resolvedOrders[trackingNo] = { resolved: !!resolved, resolvedAt: new Date().toISOString(), resolvedBy: userEmail };
+    db.data.resolvedOrders[trackingNo] = {
+      resolved: !!resolved,
+      resolvedAt: new Date().toISOString(),
+      resolvedBy: userEmail
+    };
     db.isDirty = true;
     return { success: true, trackingNo, resolved: !!resolved };
   }
+
   setResolvedStatusBulk(items, resolved, userEmail) {
     (items || []).forEach(no => {
-      if (no) db.data.resolvedOrders[no] = { resolved: !!resolved, resolvedAt: new Date().toISOString(), resolvedBy: userEmail };
+      if (no) {
+        db.data.resolvedOrders[no] = {
+          resolved: !!resolved,
+          resolvedAt: new Date().toISOString(),
+          resolvedBy: userEmail
+        };
+      }
     });
     db.isDirty = true;
     return { success: true, count: (items || []).length };
   }
-  getComplaintData(forceRefresh) { return db.data.violations || []; }
 
+  getComplaintData(forceRefresh) {
+    return db.data.violations || [];
+  }
+
+  // ============================================================
+  // 6. TRA CỨU & TÀI LIỆU & KPI FAIL
+  // ============================================================
   tracuu_getAllWards() {
     return [
       { ward: 'Thị trấn Phước An', station: 'Krông Pắc 02', zoneId: 'Zone 1' },
@@ -240,46 +559,149 @@ class RpcDispatcher {
   }
 
   tracuu_getAllHubs() {
-    return DEFAULT_STATIONS.map((name, idx) => ({ name: name, code: 'HUB' + String(idx + 1).padStart(3, '0') }));
+    return DEFAULT_STATIONS.map((name, idx) => ({
+      name: name,
+      code: 'HUB' + String(idx + 1).padStart(3, '0')
+    }));
   }
 
   wiki_getDocumentData_v2(forceRefresh) {
-    return { success: true, version: 'v2-row-wide-real-links', documents: db.data.wikiDocs || [], categories: ['Quy Trình Giao Nhận', 'Chính Sách KPI', 'Hướng Dẫn Ứng Dụng', 'Liên Hệ Khẩn Cấp'], items: db.data.wikiDocs || [] };
+    return {
+      success: true,
+      version: 'v2-row-wide-real-links',
+      documents: db.data.wikiDocs || [],
+      categories: ['Quy Trình Giao Nhận', 'Chính Sách KPI', 'Hướng Dẫn Ứng Dụng', 'Liên Hệ Khẩn Cấp'],
+      items: db.data.wikiDocs || []
+    };
   }
 
   flm_getKpiBundle() {
     return JSON.stringify({
-      success: true, builtAt: new Date().toISOString(), asOf: new Date().toISOString(),
+      success: true,
+      builtAt: new Date().toISOString(),
+      asOf: new Date().toISOString(),
       targets: { fms: 98.5, pick: 99.0, ontime: 97.5 },
-      periods: ['Hôm nay', 'Tuần này', 'Tháng này'], slots: ['Ca Sáng', 'Ca Chiều', 'Ca Tối'], sources: [],
-      hubs: DEFAULT_STATIONS.map(s => [s, 98.5, 99.1, 97.8]), scoped: false,
-      access: { role: 'admin', levelCode: 'L1', levelNum: 1, email: 'xuan.nguyenthanh01@spxexpress.com', hubs: ['ALL', ...DEFAULT_STATIONS] }
+      periods: ['Hôm nay', 'Tuần này', 'Tháng này'],
+      slots: ['Ca Sáng', 'Ca Chiều', 'Ca Tối'],
+      sources: [],
+      hubs: DEFAULT_STATIONS.map(s => [s, 98.5, 99.1, 97.8]),
+      scoped: false,
+      access: {
+        role: 'admin',
+        levelCode: 'L1',
+        levelNum: 1,
+        email: 'xuan.nguyenthanh01@spxexpress.com',
+        hubs: ['ALL', ...DEFAULT_STATIONS]
+      }
     });
   }
-  flm_getFailOrdersByDay() { return { success: true, orders: [] }; }
 
-  rom_listConfig() { return JSON.stringify({ success: true, data: [] }); }
-  rom_getScopeForPreview() { return JSON.stringify({ success: true, scope: [] }); }
-  spx_getOverviewPart() { return JSON.stringify({ success: true, data: {} }); }
-  spx_getStationWeather() { return { temp: 28, desc: 'Nắng nhẹ', icon: '01d' }; }
-  spx_adminGetFirestoreQuota() { return { reads: 120, writes: 45, maxReads: 50000, maxWrites: 20000 }; }
+  flm_getFailOrdersByDay() {
+    return {
+      success: true,
+      orders: []
+    };
+  }
+
+  // ============================================================
+  // 7. ADMIN ZONE & QUOTA STATS & PREVIEWS
+  // ============================================================
+  rom_listConfig() {
+    return JSON.stringify({ success: true, data: [] });
+  }
+
+  rom_getScopeForPreview() {
+    return JSON.stringify({ success: true, scope: [] });
+  }
+
+  spx_getOverviewPart() {
+    return JSON.stringify({ success: true, data: {} });
+  }
+
+  spx_getStationWeather() {
+    return { temp: 28, desc: 'Nắng nhẹ', icon: '01d' };
+  }
+
+  spx_adminGetFirestoreQuota() {
+    return { reads: 120, writes: 45, maxReads: 50000, maxWrites: 20000 };
+  }
+
   spx_adminGetOnlineUsers() {
-    return { success: true, onlineCount: 1, users: [{ email: 'xuan.nguyenthanh01@spxexpress.com', station: 'Krông Pắc 02', lastActive: new Date().toISOString() }] };
+    return {
+      success: true,
+      onlineCount: 1,
+      users: [{ email: 'xuan.nguyenthanh01@spxexpress.com', station: 'Krông Pắc 02', lastActive: new Date().toISOString() }]
+    };
   }
-  spx_adminListModuleStatus() {
-    return { success: true, modules: { tondong: { status: 'normal' }, pick: { status: 'normal' }, quahan: { status: 'normal' }, doncaucuu: { status: 'normal' }, kpifail: { status: 'normal' }, vipham: { status: 'normal' }, rider_plan: { status: 'normal' }, luong: { status: 'normal' }, tracuu: { status: 'normal' }, tailieu: { status: 'normal' }, adminzone: { status: 'normal' }, analytics: { status: 'normal' } } };
-  }
-  spx_getAiQuotaStats() { return { success: true, used: 12, limit: 1000 }; }
-  spx_getAllHubNames() { return DEFAULT_STATIONS; }
-  spx_getFeedbackList() { return []; }
-  spx_getUnmatchedWorkplaces() { return []; }
-  spx_getUserAccessDetail() { return { success: true, user: { email: 'xuan.nguyenthanh01@spxexpress.com', role: 'admin', level: 1 } }; }
-  submitAccessRequest() { return { success: true, message: 'Yêu cầu truy cập đã được tiếp nhận.' }; }
-  search_searchSortCode() { return { success: true, results: [] }; }
 
-  getTriggerLogs() { return { success: true, logs: db.data.triggerLogs || [] }; }
-  async runTriggerManually(triggerName) { return await triggerManager.runTriggerManually(triggerName); }
-  exportWorkspaceSnapshot() { return { success: true, data: db.data }; }
+  spx_adminListModuleStatus() {
+    return {
+      success: true,
+      modules: {
+        tondong: { status: 'normal' },
+        pick: { status: 'normal' },
+        quahan: { status: 'normal' },
+        doncaucuu: { status: 'normal' },
+        kpifail: { status: 'normal' },
+        vipham: { status: 'normal' },
+        rider_plan: { status: 'normal' },
+        luong: { status: 'normal' },
+        tracuu: { status: 'normal' },
+        tailieu: { status: 'normal' },
+        adminzone: { status: 'normal' },
+        analytics: { status: 'normal' }
+      }
+    };
+  }
+
+  spx_getAiQuotaStats() {
+    return { success: true, used: 12, limit: 1000 };
+  }
+
+  spx_getAllHubNames() {
+    return DEFAULT_STATIONS;
+  }
+
+  spx_getFeedbackList() {
+    return [];
+  }
+
+  spx_getUnmatchedWorkplaces() {
+    return [];
+  }
+
+  spx_getUserAccessDetail() {
+    return { success: true, user: { email: 'xuan.nguyenthanh01@spxexpress.com', role: 'admin', level: 1 } };
+  }
+
+  submitAccessRequest() {
+    return { success: true, message: 'Yêu cầu truy cập đã được tiếp nhận.' };
+  }
+
+  search_searchSortCode() {
+    return { success: true, results: [] };
+  }
+
+  // ============================================================
+  // 8. TRIGGER LOGS & MANUAL TRIGGER EXECUTION
+  // ============================================================
+  getTriggerLogs() {
+    return {
+      success: true,
+      logs: db.data.triggerLogs || []
+    };
+  }
+
+  async runTriggerManually(triggerName) {
+    return await triggerManager.runTriggerManually(triggerName);
+  }
+
+  exportWorkspaceSnapshot() {
+    return {
+      success: true,
+      data: db.data
+    };
+  }
 }
 
 module.exports = new RpcDispatcher();
