@@ -75,7 +75,11 @@
                 }
               } else {
                 if (_successCb) {
-                  _successCb(data.result, _userObject);
+                  try {
+                    _successCb(data.result, _userObject);
+                  } catch (cbErr) {
+                    console.error(`[RPC Callback Error in ${prop}]:`, cbErr);
+                  }
                 }
               }
             })
