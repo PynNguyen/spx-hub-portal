@@ -325,6 +325,46 @@ app.post('/api/rpc/:functionName', async (req, res) => {
   const args = req.body.args || [];
   const userEmail = req.headers['x-spx-user-email'] || getCookie(req, 'spx_user_email') || req.body.user || 'xuan.nguyenthanh01@spxexpress.com';
 
+  // [FIX MÀN HÌNH TRẮNG] Phục vụ lấy mã HTML của các module Lazy Loading
+  if (functionName === 'getModuleHtml') {
+    const moduleName = (args && args[0]) || '';
+    let target = String(moduleName).trim();
+    if (!target.endsWith('.html')) target += '.html';
+    const filePath = path.join(VIEWS_DIR, target);
+    if (fs.existsSync(filePath)) {
+      let content = fs.readFileSync(filePath, 'utf8');
+      content = renderTemplate(content);
+      return res.json({ success: true, result: content });
+    } else {
+      return res.json({ success: false, error: `Module file ${target} not found` });
+    }
+  }
+
+  // [CACHE] Cung cấp phiên bản module
+  if (functionName === 'spx_getModuleVersions') {
+    return res.json({
+      success: true,
+      result: JSON.stringify({
+        success: true,
+        versions: {
+          JS_KPIFail: '2026.10.29',
+          JS_Rider_plan: '2026.10.29',
+          JS_DonCauCuu: '2026.10.29',
+          JS_ViPham: '2026.10.29',
+          Analytics_Block: '2026.10.29',
+          JS_Luong: '2026.10.29',
+          JS_Quahan: '2026.10.29',
+          JS_TaiLieu: '2026.10.29',
+          JS_Tracuu: '2026.10.29',
+          JS_AdminZone: '2026.10.29'
+        }
+      })
+    });
+  }
+  const functionName = req.params.functionName;
+  const args = req.body.args || [];
+  const userEmail = req.headers['x-spx-user-email'] || getCookie(req, 'spx_user_email') || req.body.user || 'xuan.nguyenthanh01@spxexpress.com';
+
   try {
     const result = await rpcDispatcher.dispatch(functionName, args, userEmail);
     res.json({ success: true, result: result });
