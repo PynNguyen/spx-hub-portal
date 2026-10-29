@@ -201,18 +201,17 @@ app.get('/', (req, res) => {
       html = bridgeScript + html;
     }
 
-    // Tiêm nút Đăng Xuất & Chuyển Tài Khoản vào Header người dùng
-    const userAccountAction = `
-    <div id="spxAuthActionWrap" class="flex items-center gap-1.5 ml-2">
-      <a href="/login" title="Chuyển tài khoản Google Workspace" class="px-2 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 text-[#ee4d2d] text-[10px] font-extrabold flex items-center gap-1 transition-all border border-orange-200 shadow-xs">
-        <i class="fas fa-right-from-bracket"></i> <span>Đổi Nick</span>
+    // Thêm nút Đăng xuất tinh tế cạnh Avatar
+    const logoutBtn = `
+      <a href="/login" onclick="localStorage.removeItem('spx_user_session');" title="Đăng xuất / Chuyển tài khoản Google Workspace (${user.email})" class="text-slate-400 hover:text-[#ee4d2d] text-sm p-1 ml-1 transition-colors flex items-center justify-center">
+        <i class="fas fa-right-from-bracket"></i>
       </a>
-    </div>
     `;
 
     if (html.includes('id="spx-userinfo-wrap"')) {
       html = html.replace('id="spx-userinfo-wrap"', 'id="spx-userinfo-wrap" data-auth="ready"');
-      html = html.replace('</div>\n      <div class="w-10 h-10', '</div>' + userAccountAction + '\n      <div class="w-10 h-10');
+      html = html.replace('<!-- Author info -->', '');
+      html = html.replace('</div>\n    </div>\n  </div>\n</div>\n\n<!-- [MỚI', '</div>' + logoutBtn + '\n    </div>\n  </div>\n</div>\n\n<!-- [MỚI');
     }
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');

@@ -38,7 +38,7 @@
     <div class="mb-6 p-3.5 bg-orange-50/70 border border-orange-100 rounded-2xl text-[12px] text-slate-600 leading-relaxed">
       <div class="flex items-start gap-2">
         <i class="fas fa-info-circle text-[#ee4d2d] mt-0.5 shrink-0"></i>
-        <span>Hệ thống chỉ cho phép tài khoản Google Workspace chính thức của công ty (<strong>@spxexpress.com</strong>).</span>
+        <span>Hệ thống chỉ cho phép tài khoản Google Workspace chính thức của công ty (<strong>@spxexpress.com</strong>). Quyền truy cập và trạm quản lý sẽ được hệ thống tự động nhận diện theo chức danh của bạn.</span>
       </div>
     </div>
 
@@ -63,23 +63,6 @@
         </div>
       </div>
 
-      <!-- Quick Roles / Hub Selector (Nếu cần demo/phân quyền nhanh) -->
-      <div>
-        <label for="roleSelector" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-          Vai trò truy cập:
-        </label>
-        <select 
-          id="roleSelector" 
-          class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-[#ee4d2d] focus:bg-white transition-all cursor-pointer"
-        >
-          <option value="admin">Quản trị viên Hệ thống (Level 1 - Root Admin)</option>
-          <option value="aom">Quản lý Khu vực (Level 2 - AOM Tây Nguyên)</option>
-          <option value="sup">Giám sát Cụm Trạm (Level 3 - SUP Đắk Lắk)</option>
-          <option value="lead" selected>Trưởng Hub (Level 4 - Lead Krông Pắc 02)</option>
-          <option value="staff">Nhân viên Vận hành (Level 5 - Staff Hub)</option>
-        </select>
-      </div>
-
       <!-- Submit Button -->
       <button 
         type="submit" 
@@ -89,37 +72,13 @@
         <i class="fab fa-google"></i>
         <span>Đăng nhập với Google Workspace</span>
       </button>
-
-      <!-- Google Official One-Tap Container (tùy chọn) -->
-      <div id="g_id_onload"
-           data-client_id=""
-           data-context="signin"
-           data-ux_mode="popup"
-           data-callback="handleCredentialResponse"
-           data-auto_prompt="false">
-      </div>
     </form>
 
     <!-- Error/Status Alert -->
     <div id="alertBox" class="hidden mt-4 p-3 rounded-xl text-xs font-semibold text-center"></div>
 
-    <!-- Quick Accounts Shortcut for Testing -->
-    <div class="mt-6 pt-5 border-t border-slate-100">
-      <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 text-center mb-3">Tài khoản xác thực nhanh:</p>
-      <div class="grid grid-cols-2 gap-2">
-        <button type="button" onclick="quickLogin('xuan.nguyenthanh01@spxexpress.com', 'admin')" class="p-2 text-left bg-slate-50 hover:bg-orange-50 rounded-lg border border-slate-200 hover:border-orange-200 transition-all">
-          <div class="text-[11px] font-bold text-slate-700 truncate">Admin Xuân</div>
-          <div class="text-[10px] text-orange-600 font-semibold">Root Admin (L1)</div>
-        </button>
-        <button type="button" onclick="quickLogin('lead.krongpak02@spxexpress.com', 'lead')" class="p-2 text-left bg-slate-50 hover:bg-orange-50 rounded-lg border border-slate-200 hover:border-orange-200 transition-all">
-          <div class="text-[11px] font-bold text-slate-700 truncate">Lead Krông Pắc 02</div>
-          <div class="text-[10px] text-sky-600 font-semibold">Trưởng Hub (L4)</div>
-        </button>
-      </div>
-    </div>
-
     <!-- Footer -->
-    <div class="mt-6 text-center text-[11px] text-slate-400 font-medium">
+    <div class="mt-8 pt-4 border-t border-slate-100 text-center text-[11px] text-slate-400 font-medium">
       SPX Express &bull; Bảo mật thông tin nội bộ &bull; 2026
     </div>
   </div>
@@ -134,16 +93,9 @@
       box.classList.remove('hidden');
     }
 
-    function quickLogin(email, role) {
-      document.getElementById('emailInput').value = email;
-      document.getElementById('roleSelector').value = role;
-      document.getElementById('loginForm').dispatchEvent(new Event('submit'));
-    }
-
     async function handleWorkspaceLogin(e) {
       if (e) e.preventDefault();
       const email = document.getElementById('emailInput').value.trim().toLowerCase();
-      const role = document.getElementById('roleSelector').value;
       const btn = document.getElementById('submitBtn');
 
       if (!email.endsWith('@spxexpress.com')) {
@@ -152,19 +104,21 @@
       }
 
       btn.disabled = true;
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Đang xác thực...';
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Đang xác thực tài khoản...';
 
       try {
         const res = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, role })
+          body: JSON.stringify({ email })
         });
         const data = await res.json();
 
         if (data.success) {
-          showAlert('Xác thực thành công! Đang chuyển hướng...', false);
+          showAlert('Xác thực thành công! Quyền: ' + data.user.levelLabel + ' — Đang chuyển hướng...', false);
           localStorage.setItem('spx_user_session', JSON.stringify(data.user));
+          localStorage.setItem('spx_current_user_email', data.user.email);
+          localStorage.setItem('spx_default_hub', data.user.defaultHub);
           setTimeout(() => {
             window.location.href = '/';
           }, 600);

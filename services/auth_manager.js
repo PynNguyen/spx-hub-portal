@@ -98,7 +98,7 @@ class AuthManager {
   /**
    * Xác thực và cấp quyền tài khoản Google Workspace
    */
-  authenticate(email, requestedRole = null) {
+  authenticate(email) {
     if (!email || typeof email !== 'string') {
       return { success: false, message: 'Email không hợp lệ' };
     }
@@ -109,17 +109,23 @@ class AuthManager {
     if (!cleanEmail.endsWith('@spxexpress.com')) {
       return {
         success: false,
-        message: 'Chỉ tài khoản Google Workspace nội bộ (@spxexpress.com) mới được phép đăng nhập!'
+        message: 'Chỉ tài khoản Google Workspace chính thức (@spxexpress.com) mới được phép đăng nhập!'
       };
     }
 
-    // 2. Tra cứu trong danh bạ
+    // 2. Tra cứu trong danh bạ nội bộ
     let user = USERS_DIRECTORY[cleanEmail];
 
     if (!user) {
-      const isRoot = (cleanEmail === 'xuan.nguyenthanh01@spxexpress.com');
-      const role = isRoot ? 'admin' : (requestedRole || 'lead');
-      const lvlInfo = ROLE_LEVEL_MAP[role] || ROLE_LEVEL_MAP.lead;
+      const isRoot = (cleanEmail === 'xuan.nguyenthanh01@spxexpress.com' || cleanEmail.startsWith('admin.'));
+      let role = 'staff';
+      if (isRoot) role = 'admin';
+      else if (cleanEmail.startsWith('rom.')) role = 'rom';
+      else if (cleanEmail.startsWith('aom.')) role = 'aom';
+      else if (cleanEmail.startsWith('sup.')) role = 'sup';
+      else if (cleanEmail.startsWith('lead.')) role = 'lead';
+
+      const lvlInfo = ROLE_LEVEL_MAP[role] || ROLE_LEVEL_MAP.staff;
 
       user = {
         email: cleanEmail,

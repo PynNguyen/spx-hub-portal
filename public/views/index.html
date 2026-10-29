@@ -988,6 +988,9 @@ border: 1px solid #334155; transform: translateY(5px); }
 }
 
 /* Mascot Bot AI */
+.hidden, [id^="view-"].hidden, .module-view.hidden, #view-tondong.hidden, #view-pick.hidden, #spx-demo-dashboard.hidden {
+  display: none !important;
+}
 
 .mascot-shield { background: #ffffff; border-radius: 50%; padding: 6px; box-shadow: 0 15px 35px rgba(0,0,0,0.15); border: 4px solid transparent; transition: all 0.3s ease; }
 
@@ -3211,7 +3214,7 @@ body {
 
 
 /* ── FMS & PICK FULL-WIDTH ZERO-SIDEBAR LAYOUT (UI/UX 2.0) ── */
-#view-tondong, #view-pick {
+#view-tondong:not(.hidden), #view-pick:not(.hidden) {
   display: flex !important;
   flex-direction: column !important;
   width: 100% !important;
@@ -3221,8 +3224,11 @@ body {
   min-width: 0 !important;
   overflow: hidden !important;
 }
-#view-tondong > main, #view-pick > main,
-#view-tondong > #fms-root, #view-pick > #pick-root {
+#view-tondong.hidden, #view-pick.hidden, [id^="view-"].hidden, .module-view.hidden, #spx-demo-dashboard.hidden {
+  display: none !important;
+}
+#view-tondong:not(.hidden) > main, #view-pick:not(.hidden) > main,
+#view-tondong:not(.hidden) > #fms-root, #view-pick:not(.hidden) > #pick-root {
   display: flex !important;
   flex-direction: column !important;
   width: 100% !important;
@@ -4528,6 +4534,7 @@ function spxRenderOverviewSkeleton(body) {
   if (!body) return;
   var isRealAdmin = !!(window.SPX_ACCESS && window.SPX_ACCESS.role === 'admin');
   var effectiveLevel = (isRealAdmin && SPX_PREVIEW_LEVEL) ? SPX_PREVIEW_LEVEL : ((window.SPX_ACCESS && window.SPX_ACCESS.role) || 'admin');
+  if (!effectiveLevel || typeof effectiveLevel !== 'string') effectiveLevel = 'admin';
   var levelLabel = (typeof SPX_LEVEL_LABEL !== 'undefined' && SPX_LEVEL_LABEL[effectiveLevel]) || effectiveLevel;
   var titleMap = {
     admin: spxUiLabel('Tổng quan điều hành toàn hệ thống'), rom: spxUiLabel('Tổng quan điều hành toàn vùng'),
@@ -4535,7 +4542,7 @@ function spxRenderOverviewSkeleton(body) {
     lead: spxUiLabel('Trung tâm điều hành Hub'), staff: spxUiLabel('Work Queue – Công việc của tôi')
   };
 
-  var s = header_(titleMap[effectiveLevel] || spxUiLabel('Tổng quan'), levelLabel, 'SPX HUB / ' + spxUiLabel('Tổng quan') + ' / ' + effectiveLevel.toUpperCase());
+  var s = header_(titleMap[effectiveLevel] || spxUiLabel('Tổng quan'), levelLabel || 'Admin', 'SPX HUB / ' + spxUiLabel('Tổng quan') + ' / ' + effectiveLevel.toUpperCase());
 
   // Priority Cards Section
   s += '<div style="font-size:11px;font-weight:800;color:#354157;text-transform:uppercase;letter-spacing:.03em;margin:14px 0 8px">⚡ ' + spxUiLabel('Ưu tiên vận hành') + ' <span style="font-weight:400;color:#8490a3;text-transform:none">— ' + spxUiLabel('5 chỉ số thật cần xử lý trước') + '</span></div>';
@@ -5180,10 +5187,11 @@ function spxSwitchPreviewLevel(level){ spxSetPreviewLevel(level); }
 
 function spxRenderOverviewSummary(body, res, skipReload){
   window._spxOverviewRealRes = res; // lưu lại cho spxSwitchPreviewLevel dùng, tránh gọi lại backend
-  var isRealAdmin = res.levelCode === 'admin';
-  var effectiveLevel = (isRealAdmin && SPX_PREVIEW_LEVEL) ? SPX_PREVIEW_LEVEL : res.levelCode;
+  var isRealAdmin = (res && res.levelCode === 'admin');
+  var effectiveLevel = (isRealAdmin && SPX_PREVIEW_LEVEL) ? SPX_PREVIEW_LEVEL : ((res && res.levelCode) || (window.SPX_ACCESS && window.SPX_ACCESS.role) || 'admin');
+  if (!effectiveLevel || typeof effectiveLevel !== 'string') effectiveLevel = 'admin';
   var levelLabel = (typeof SPX_LEVEL_LABEL !== 'undefined' && SPX_LEVEL_LABEL[effectiveLevel]) || effectiveLevel;
-  var aging = res.aging || {}, kpi = res.kpifail || {};
+  var aging = (res && res.aging) || {}, kpi = (res && res.kpifail) || {};
 
   var titleMap = {
     admin: spxUiLabel('Tổng quan điều hành toàn hệ thống'), rom: spxUiLabel('Tổng quan điều hành toàn vùng'),
@@ -5194,7 +5202,7 @@ function spxRenderOverviewSummary(body, res, skipReload){
   // [DỌN — Bước 5] Bộ chọn "Xem thử" không còn vẽ RIÊNG trong Tổng quan nữa —
   // đã chuyển hẳn lên header (#spxHeaderPreviewLevelWrap), luôn hiện ở mọi
   // module, không chỉ Tổng quan. Tránh 2 nơi cùng 1 chức năng.
-  s += header_(titleMap[effectiveLevel] || spxUiLabel('Tổng quan'), levelLabel, 'SPX HUB / ' + spxUiLabel('Tổng quan') + ' / ' + effectiveLevel.toUpperCase());
+  s += header_(titleMap[effectiveLevel] || spxUiLabel('Tổng quan'), levelLabel || 'Admin', 'SPX HUB / ' + spxUiLabel('Tổng quan') + ' / ' + effectiveLevel.toUpperCase());
 
   if (isRealAdmin && SPX_PREVIEW_LEVEL && SPX_PREVIEW_LEVEL !== 'admin') {
     // [SỬA — hoàn thành tính năng lọc thật cho Lead/Staff, theo yêu cầu trực
@@ -14245,7 +14253,10 @@ function _spxUpdateHeaderUserLevel(access){
   // tin cậy nhất để biết access đã sẵn sàng).
   if (typeof spxRefreshHeaderPreviewLevelVisibility === 'function') spxRefreshHeaderPreviewLevelVisibility(access);
   if (!el) return;
-  var label = (access && access.levelLabel && access.role !== 'denied') ? access.levelLabel : spxUiLabel('Khách');
+  var label = (access && access.levelLabel && access.role !== 'denied') 
+    ? access.levelLabel 
+    : ((window.__SPX_CURRENT_USER__ && window.__SPX_CURRENT_USER__.levelLabel) 
+       || (access && access.role === 'admin' ? 'Admin (L1)' : (access && access.role ? access.role.toUpperCase() : 'Admin (L1)')));
   el.textContent = label;
 }
 

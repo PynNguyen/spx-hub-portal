@@ -105,14 +105,14 @@ class RpcDispatcher {
     const auth = authManager.getUser(userEmail);
     const isRootAdmin = (auth.role === 'admin' || auth.isRootAdmin);
     return {
-      role: auth.role,
+      role: auth.role || 'admin',
       level: auth.levelNum || auth.level || 1,
       levelNum: auth.levelNum || auth.level || 1,
-      levelCode: auth.levelCode || auth.role,
-      levelLabel: auth.levelLabel || (auth.role === 'admin' ? 'Admin (L1)' : auth.role.toUpperCase()),
-      email: auth.email,
-      hubs: auth.hubs,
-      defaultHub: auth.defaultHub,
+      levelCode: auth.levelCode || auth.role || 'admin',
+      levelLabel: auth.levelLabel || (auth.role === 'admin' ? 'Admin (L1)' : (auth.role || 'staff').toUpperCase()),
+      email: auth.email || userEmail,
+      hubs: auth.hubs || DEFAULT_STATIONS,
+      defaultHub: auth.defaultHub || '45-DLK Krong Pak 02 Hub',
       isRootAdmin: isRootAdmin,
       modules: {
         tondong: true,
@@ -129,6 +129,10 @@ class RpcDispatcher {
         analytics: true
       }
     };
+  }
+
+  spx_getModuleAccess(userEmail = 'xuan.nguyenthanh01@spxexpress.com') {
+    return JSON.stringify(this.getModuleAccess(userEmail));
   }
 
   spx_getBootstrap(userEmail = 'xuan.nguyenthanh01@spxexpress.com') {
@@ -626,19 +630,19 @@ class RpcDispatcher {
     return JSON.stringify({ success: true, scope: [] });
   }
 
-    spx_getOverviewPart(part, hub, force, userEmail = 'xuan.nguyenthanh01@spxexpress.com') {
+  spx_getOverviewPart(part, hub, force, userEmail = 'xuan.nguyenthanh01@spxexpress.com') {
     const auth = authManager.getUser(userEmail);
     if (part === 'meta') {
       return JSON.stringify({
         success: true,
         data: {
-          levelCode: auth.levelCode || auth.role,
+          levelCode: auth.levelCode || auth.role || 'admin',
           levelNum: auth.levelNum || auth.level || 1,
-          levelLabel: auth.levelLabel || (auth.role === 'admin' ? 'Admin (L1)' : auth.role.toUpperCase()),
-          role: auth.role,
-          hubs: auth.hubs,
-          defaultHub: auth.defaultHub,
-          isRootAdmin: auth.isRootAdmin
+          levelLabel: auth.levelLabel || (auth.role === 'admin' ? 'Admin (L1)' : (auth.role || 'staff').toUpperCase()),
+          role: auth.role || 'admin',
+          hubs: auth.hubs || DEFAULT_STATIONS,
+          defaultHub: auth.defaultHub || '45-DLK Krong Pak 02 Hub',
+          isRootAdmin: !!auth.isRootAdmin
         }
       });
     }
