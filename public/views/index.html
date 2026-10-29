@@ -7463,7 +7463,7 @@ function spxRenderHubPickerList(stations, isSearching){
     return;
   }
 
-  html += stations.map(function(h){
+  html += stations.filter(function(h){ return h && h !== 'ALL'; }).map(function(h){
     var isCur = h === spxHeaderSelectedHub;
     return '<div class="spx-hub-picker-item' + (isCur ? ' selected' : '') + '" data-hub="' + spxEscHtml(h) + '" onclick="spxSelectHubInPicker(this)">'
       + '<span><i class="fas fa-map-marker-alt" style="margin-right:8px;color:#8490a3;font-size:11px"></i>' + spxEscHtml(h) + '</span>'

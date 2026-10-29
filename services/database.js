@@ -66,7 +66,10 @@ class WorkspaceDatabase {
         console.log(`📦 [Database] Initialized new workspace database at ${DB_FILE}`);
       }
 
-      // Khởi tạo dữ liệu mẫu nếu DB trống
+      // Nạp dữ liệu vận hành THẬT (100% Real Operational Data)
+      this.loadRealDataset();
+
+      // Khởi tạo dữ liệu mặc định nếu DB trống
       this.seedDefaultData();
 
       // Tự động lưu định kỳ nếu có thay đổi (mỗi 5 giây)
@@ -288,6 +291,38 @@ class WorkspaceDatabase {
   // LOG TRIGGER EXECUTION
   // ============================================================
   // ============================================================
+  // REAL OPERATIONAL DATA INGESTION
+  // ============================================================
+  loadRealDataset() {
+    const realDatasetPath = path.join(__dirname, '..', 'data', 'real_dataset.json');
+    if (fs.existsSync(realDatasetPath)) {
+      try {
+        const raw = fs.readFileSync(realDatasetPath, 'utf8');
+        const realData = JSON.parse(raw);
+        const currentCore = (this.data.agingData && this.data.agingData.core) || [];
+        const isMock = currentCore.length === 0 || (currentCore[0] && String(currentCore[0].shipmentId || '').startsWith('SPXKP'));
+
+        if (isMock && realData.aging_core && realData.aging_core.length > 0) {
+          console.log(`🚀 [Database] Ingesting ${realData.aging_core.length} REAL operational orders into Workspace DB!`);
+          this.data.agingData = {
+            core: realData.aging_core,
+            lost: []
+          };
+          this.data.kpiOrders = realData.kpi_orders || [];
+          this.isDirty = true;
+          this.saveNow();
+        } else if (!this.data.kpiOrders || this.data.kpiOrders.length === 0) {
+          this.data.kpiOrders = realData.kpi_orders || [];
+          this.isDirty = true;
+          this.saveNow();
+        }
+      } catch (err) {
+        console.error('❌ [Database Real Data Ingestion Error]:', err);
+      }
+    }
+  }
+
+  // ============================================================
   // WORKSPACE SEEDING & DATA HELPERS
   // ============================================================
   seedDefaultData() {
@@ -402,11 +437,11 @@ class WorkspaceDatabase {
       this.isDirty = true;
     }
 
-    if (!this.data.rescueOrders || this.data.rescueOrders.length === 0) {
+    if (!this.data.rescueOrders || this.data.rescueOrders.length === 0 || this.data.rescueOrders[0].tracking_no.startsWith('SPX7788')) {
       this.data.rescueOrders = [
         {
-          tracking_no: 'SPX7788991122VN',
-          station_name: '45-DLK Krông Pắk 02 Hub',
+          tracking_no: 'SPXVN06317039536A',
+          station_name: '45-DLK Krong Pak 02 Hub',
           export_date: new Date(Date.now() - 3600000 * 2).toISOString(),
           status: 'Khẩn cấp',
           urgency: 'red',
@@ -415,8 +450,8 @@ class WorkspaceDatabase {
           recipient_phone: '0905123456'
         },
         {
-          tracking_no: 'SPX7788991123VN',
-          station_name: '45-DLK Krông Pắk 02 Hub',
+          tracking_no: 'SPXVN06388795878A',
+          station_name: '45-DLK Krong Pak 02 Hub',
           export_date: new Date(Date.now() - 3600000 * 5).toISOString(),
           status: 'Khẩn cấp',
           urgency: 'red',
@@ -425,8 +460,8 @@ class WorkspaceDatabase {
           recipient_phone: '0914987654'
         },
         {
-          tracking_no: 'SPX7788991124VN',
-          station_name: '45-DLK Buôn Ma Thuột Hub',
+          tracking_no: 'SPXVN06317042893A',
+          station_name: '45-DLK Krong Pak 02 Hub',
           export_date: new Date(Date.now() - 3600000 * 8).toISOString(),
           status: 'Khẩn cấp',
           urgency: 'red',

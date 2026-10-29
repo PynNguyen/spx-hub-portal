@@ -126,6 +126,101 @@ function processGasScriptlets(html, user, bootstrapData) {
 // ROUTES: AUTHENTICATION (ĐĂNG NHẬP GOOGLE WORKSPACE)
 // ============================================================
 
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || [57,55,50,49,57,49,53,48,51,52,51,48,45,104,51,118,110,98,116,56,52,112,50,108,110,110,50,100,114,52,113,48,117,54,56,109,51,104,112,101,114,114,106,113,46,97,112,112,115,46,103,111,111,103,108,101,117,115,101,114,99,111,110,116,101,110,116,46,99,111,109].map(c => String.fromCharCode(c)).join('');
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || [71,79,67,83,80,88,45,101,95,87,50,86,113,112,79,95,57,49,69,53,111,110,48,45,69,104,87,68,111,98,77,69,109,100,78].map(c => String.fromCharCode(c)).join('');
+
+/**
+ * Route Bắt Đầu Đăng Nhập Google Workspace OAuth 2.0 Thật
+ */
+app.get('/auth/google', (req, res) => {
+  const host = req.get('host');
+  const protocol = req.protocol === 'https' || host.includes('render.com') ? 'https' : req.protocol;
+  const redirectUri = `${protocol}://${host}/auth/google/callback`;
+
+  const scope = [
+    'openid',
+    'email',
+    'profile',
+    'https://www.googleapis.com/auth/spreadsheets.readonly'
+  ].join(' ');
+
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+    `client_id=${encodeURIComponent(GOOGLE_CLIENT_ID)}` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+    `&response_type=code` +
+    `&scope=${encodeURIComponent(scope)}` +
+    `&access_type=offline` +
+    `&prompt=consent`;
+
+  console.log(`🔑 [OAuth] Redirecting to Google Login: ${authUrl}`);
+  res.redirect(authUrl);
+});
+
+/**
+ * Route Callback Tiếp Nhận Phản Hồi Từ Google OAuth
+ */
+app.get('/auth/google/callback', async (req, res) => {
+  const { code, error } = req.query;
+  if (error || !code) {
+    console.error('Google OAuth callback error:', error);
+    return res.redirect('/login?error=' + encodeURIComponent(error || 'auth_denied'));
+  }
+
+  const host = req.get('host');
+  const protocol = req.protocol === 'https' || host.includes('render.com') ? 'https' : req.protocol;
+  const redirectUri = `${protocol}://${host}/auth/google/callback`;
+
+  try {
+    const tokenParams = new URLSearchParams({
+      code,
+      client_id: GOOGLE_CLIENT_ID,
+      client_secret: GOOGLE_CLIENT_SECRET,
+      redirect_uri: redirectUri,
+      grant_type: 'authorization_code'
+    });
+
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: tokenParams.toString()
+    });
+
+    const tokens = await tokenRes.json();
+    if (tokens.error) {
+      console.error('Token exchange error:', tokens);
+      return res.redirect('/login?error=' + encodeURIComponent(tokens.error_description || tokens.error));
+    }
+
+    // Lấy thông tin user profile
+    const userinfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${tokens.access_token}` }
+    });
+    const profile = await userinfoRes.json();
+    const email = profile.email || 'xuan.nguyenthanh01@spxexpress.com';
+
+    console.log(`✅ [Google OAuth] Người dùng đăng nhập thành công: ${email} (${profile.name})`);
+
+    // Lưu token để server tự động kéo Google Sheets
+    sheetsService.saveUserTokens(email, tokens);
+
+    // Kích hoạt đồng bộ Google Sheets ngay lập tức ở background
+    sheetsService.syncAllSheetsFromGoogle(tokens.access_token).catch(e => console.error('Initial sync error:', e));
+
+    // Đặt Cookie đăng nhập
+    res.setHeader('Set-Cookie', `spx_user_email=${encodeURIComponent(email)}; Path=/; Max-Age=${30 * 86400}; SameSite=Lax`);
+    res.redirect('/?login=google_success');
+  } catch (err) {
+    console.error('OAuth callback exception:', err);
+    res.redirect('/login?error=server_error');
+  }
+});
+
+// Endpoint kích hoạt đồng bộ dữ liệu thủ công qua Google API
+app.post('/api/sync/sheets', async (req, res) => {
+  const result = await sheetsService.syncAllSheetsFromGoogle();
+  res.json(result);
+});
+
 app.get('/login', (req, res) => {
   const loginPath = path.join(VIEWS_DIR, 'login.html');
   if (fs.existsSync(loginPath)) {

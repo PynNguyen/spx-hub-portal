@@ -411,7 +411,7 @@ function qdoRenderLead(rows, hasCogs) {
     (QDO.sel.aom ? ('AOM: ' + qdoEsc(QDO.sel.aom) + (qdoLang() === 'en' ? ' · days at hub' : ' · số ngày đơn nằm tại trạm')) :
     (qdoLang() === 'en' ? 'All scope · days at hub' : 'Toàn bộ phạm vi · số ngày đơn nằm tại trạm')));
   var clearBtn = QDO.kf ? '<button class="qdo-btn" style="background:#fee2e2;color:#dc2626;border-color:#fca5a5;font-weight:700;margin-right:8px" data-qdo-act="kclear" title="' + (qdoLang() === 'en' ? 'Clear filter to view all' : 'Bỏ lọc để xem tất cả') + '">✕ ' + (qdoLang() === 'en' ? 'Clear filter' : 'Bỏ lọc') + ' (' + qdoEsc(qdoKfLabel(QDO.kf)) + ')</button>' : '';
-  return '<div class="qdo-card" id="qdo-list"><div class="qdo-ch"><div><div class="qdo-ct">' + qdoT('lTitle') + (QDO.kf ? ' · ' + qdoEsc(qdoKfLabel(QDO.kf)) : '') + '</div><div class="qdo-cs">' + subScope + '</div></div><div class="qdo-seg">' + clearBtn + '<button class="qdo-btn" data-qdo-act="copyall">' + qdoT('copyAll') + '</button><button class="qdo-btn" data-qdo-act="csv">' + qdoT('csv') + '</button></div></div>' +
+  return '<div class="qdo-card" id="qdo-list"><div class="qdo-ch"><div><div class="qdo-ct">' + qdoT('lTitle') + (QDO.kf ? ' · ' + qdoEsc(qdoKfLabel(QDO.kf)) : '') + '</div><div class="qdo-cs">' + subScope + '</div></div><div class="qdo-seg">' + clearBtn + '<button class="qdo-btn" data-qdo-act="copyall">' + qdoT('copyAll') + '</button><button class="qdo-btn" data-qdo-act="csv">' + qdoT('csv') + '</button><button class="qdo-btn pri" style="background:#2563eb;color:#fff;font-weight:700;margin-left:8px" onclick="document.getElementById('qdo-file-input').click()">📥 NẠP FILE QUÁ HẠN</button><input type="file" id="qdo-file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="qdoUploadFile(event)"></div></div>' +
     '<div class="qdo-bar"><span class="qdo-chip">' + qdoT('lCount', lst.length) + '</span><select class="qdo-sel" data-qdo-sel="lproc">' + optP + '</select><select class="qdo-sel" data-qdo-sel="lfin">' + optF + '</select>' +
     '<input class="qdo-in" id="qdo-q" placeholder="' + qdoEsc(qdoT('searchId')) + '" value="' + qdoEsc(L.q) + '"></div>' + tbl +
     '<div class="qdo-pg"><button class="qdo-btn" data-qdo-act="lpage" data-qdo-v="-1"' + (L.page <= 1 ? ' disabled' : '') + '>' + qdoT('prev') + '</button><button class="qdo-btn" data-qdo-act="lpage" data-qdo-v="1"' + (L.page >= pages ? ' disabled' : '') + '>' + qdoT('next') + '</button><span class="qdo-upd">' + qdoT('rowsPg', lst.length, L.page, pages) + '</span></div></div>';
@@ -632,3 +632,85 @@ function quahanApplyAccessUI(access) { try { QDO.access = access; qdoRender(); }
 
 </script>
 </div>
+
+function qdoUploadFile(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  if (typeof qdoToast === 'function') qdoToast('Đang đọc file ' + file.name + '...', 'info');
+
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var orders = [];
+      if (typeof XLSX !== 'undefined') {
+        var data = new Uint8Array(e.target.result);
+        var workbook = XLSX.read(data, { type: 'array' });
+        var sheetName = workbook.SheetNames.find(function(n) { return /lm.*aging|aging/i.test(n); }) || workbook.SheetNames[0];
+        var ws = workbook.Sheets[sheetName];
+        var rawRows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+        if (rawRows.length > 2) {
+          var header = rawRows[1].map(function(c) { return String(c || '').toLowerCase().trim(); });
+          var colShip = header.findIndex(function(h) { return /spx_shipment_id|shipment/i.test(h); });
+          var colHub = header.findIndex(function(h) { return /fleet_final_station|hub/i.test(h); });
+          var colStatus = header.findIndex(function(h) { return /fleet_final_status|status/i.test(h); });
+          var colTiming = header.findIndex(function(h) { return /timing_date/i.test(h); });
+          var colAging = header.findIndex(function(h) { return /^aging/i.test(h); });
+          var colCogs = header.findIndex(function(h) { return /cogs/i.test(h); });
+          var colInbound = header.findIndex(function(h) { return /inbound/i.test(h); });
+          var colLost = header.findIndex(function(h) { return /đến hạn lost|lost/i.test(h); });
+          var colProc = header.findIndex(function(h) { return /trạng thái xử lý|process/i.test(h); });
+          var colAom = header.findIndex(function(h) { return h === 'aom'; });
+          var colSup = header.findIndex(function(h) { return h === 'sup'; });
+
+          for (var i = 2; i < rawRows.length; i++) {
+            var row = rawRows[i];
+            var shipId = colShip >= 0 ? String(row[colShip] || '').trim() : '';
+            if (!shipId) continue;
+            var timing = colTiming >= 0 ? parseFloat(row[colTiming]) || 0 : 0;
+            var bucket = timing <= 2 ? '1–2 ngày' : (timing <= 5 ? '3–5 ngày' : 'Trên 5 ngày');
+            orders.push({
+              shipmentId: shipId,
+              hubName: colHub >= 0 ? String(row[colHub] || '').trim() : '45-DLK Krong Pak 02 Hub',
+              Hub: colHub >= 0 ? String(row[colHub] || '').trim() : '45-DLK Krong Pak 02 Hub',
+              station: colHub >= 0 ? String(row[colHub] || '').trim() : '45-DLK Krong Pak 02 Hub',
+              aom: colAom >= 0 ? String(row[colAom] || '').trim() : 'Trần Hữu Danh',
+              sup: colSup >= 0 ? String(row[colSup] || '').trim() : 'Trương Lê Uy Trí',
+              processStatus: colProc >= 0 ? String(row[colProc] || 'Đang xử lý') : 'Đang xử lý',
+              finalStatus: colStatus >= 0 ? String(row[colStatus] || 'onhold') : 'onhold',
+              lostToday: colLost >= 0 ? String(row[colLost] || '') : '',
+              timingDate: timing,
+              aging: colAging >= 0 ? parseFloat(row[colAging]) || timing : timing,
+              agingBucket: bucket,
+              att: 1,
+              inboundAt: colInbound >= 0 ? String(row[colInbound] || '') : '',
+              cogs: colCogs >= 0 ? parseFloat(row[colCogs]) || 0 : 0,
+              reason: 'Khách hẹn lại'
+            });
+          }
+        }
+      }
+
+      if (orders.length === 0) {
+        if (typeof qdoToast === 'function') qdoToast('Không đọc được dữ liệu đơn từ file (hãy kiểm tra sheet 1. LM high aging)', 'error');
+        return;
+      }
+
+      if (typeof qdoToast === 'function') qdoToast('Đã đọc ' + orders.length + ' đơn. Đang lưu vào hệ thống...', 'info');
+      google.script.run.withFailureHandler(function(err) {
+        if (typeof qdoToast === 'function') qdoToast('Lỗi lưu đơn: ' + ((err && err.message) || err), 'error');
+      }).withSuccessHandler(function(resStr) {
+        var res = typeof resStr === 'string' ? JSON.parse(resStr) : resStr;
+        if (res && res.success) {
+          if (typeof qdoToast === 'function') qdoToast('✅ Đã nạp thành công ' + orders.length + ' đơn Quá Hạn vào hệ thống!', 'success');
+          qdoLoadData(true);
+        } else {
+          if (typeof qdoToast === 'function') qdoToast('Lỗi lưu: ' + ((res && res.error) || 'Thất bại'), 'error');
+        }
+      }).aging_saveImportedData(orders);
+
+    } catch (err) {
+      if (typeof qdoToast === 'function') qdoToast('Lỗi xử lý file: ' + err.message, 'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
