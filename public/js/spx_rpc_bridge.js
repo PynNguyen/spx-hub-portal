@@ -26,24 +26,26 @@
     var _successCb = null;
     var _failureCb = null;
     var _userObject = null;
+    var proxyInstance = null;
 
     var runner = {
       withSuccessHandler: function (fn) {
         _successCb = fn;
-        return runner;
+        return proxyInstance;
       },
       withFailureHandler: function (fn) {
         _failureCb = fn;
-        return runner;
+        return proxyInstance;
       },
       withUserObject: function (obj) {
         _userObject = obj;
-        return runner;
+        return proxyInstance;
       }
     };
 
     // Proxy bắt mọi tên hàm được gọi: google.script.run.functionName(...args)
-    return new Proxy(runner, {
+    proxyInstance = new Proxy(runner, {
+
       get: function (target, prop) {
         if (prop in target) {
           return target[prop];
