@@ -101,7 +101,7 @@ function parseCsv(text) {
 }
 
 class RpcDispatcher {
-  flm_getDailyStationKpi(hub, month) {
+    flm_getDailyStationKpi(hub, month) {
     const h = (hub || '').toLowerCase();
     const isKrongPak = !h || h.includes('krong pak') || h.includes('02');
     
@@ -115,6 +115,48 @@ class RpcDispatcher {
           successRate: '86.3%',
           totalVolume: 44570
         },
+        daily: [
+          { date: '2026-10-28', dow: 'T4', fmRate: '100.0%', lmRate: '99.9%', sopRate: '0.00%', successRate: '79.9%', volume: 1355 },
+          { date: '2026-10-27', dow: 'T3', fmRate: '100.0%', lmRate: '100.0%', sopRate: '0.00%', successRate: '87.5%', volume: 1344 },
+          { date: '2026-10-26', dow: 'T2', fmRate: '100.0%', lmRate: '100.0%', sopRate: '0.00%', successRate: '82.8%', volume: 1431 },
+          { date: '2026-10-25', dow: 'CN', fmRate: '99.4%', lmRate: '100.0%', sopRate: '0.00%', successRate: '88.5%', volume: 1504 },
+          { date: '2026-10-24', dow: 'T7', fmRate: '100.0%', lmRate: '100.0%', sopRate: '0.00%', successRate: '89.7%', volume: 1422 },
+          { date: '2026-10-23', dow: 'T6', fmRate: '100.0%', lmRate: '100.0%', sopRate: '0.00%', successRate: '86.2%', volume: 1549 },
+          { date: '2026-10-22', dow: 'T5', fmRate: '100.0%', lmRate: '100.0%', sopRate: '0.00%', successRate: '86.1%', volume: 1559 },
+          { date: '2026-10-21', dow: 'T4', fmRate: '100.0%', lmRate: '100.0%', sopRate: '0.00%', successRate: '87.7%', volume: 1470 },
+          { date: '2026-10-20', dow: 'T3', fmRate: '100.0%', lmRate: '99.9%', sopRate: '0.00%', successRate: '82.8%', volume: 1288 },
+          { date: '2026-10-19', dow: 'T2', fmRate: '99.3%', lmRate: '99.9%', sopRate: '0.00%', successRate: '85.1%', volume: 1641 },
+          { date: '2026-10-18', dow: 'CN', fmRate: '100.0%', lmRate: '99.8%', sopRate: '3.57%', successRate: '86.2%', volume: 1769, isSopAlert: true },
+          { date: '2026-10-17', dow: 'T7', fmRate: '100.0%', lmRate: '100.0%', sopRate: '0.00%', successRate: '85.9%', volume: 1829 },
+          { date: '2026-10-16', dow: 'T6', fmRate: '100.0%', lmRate: '99.9%', sopRate: '0.00%', successRate: '86.6%', volume: 1635 },
+          { date: '2026-10-15', dow: 'T5', fmRate: '95.0%', lmRate: '99.9%', sopRate: '0.00%', successRate: '88.6%', volume: 2039 },
+          { date: '2026-10-14', dow: 'T4', fmRate: '99.3%', lmRate: '99.9%', sopRate: '0.00%', successRate: '91.0%', volume: 2019 },
+          { date: '2026-10-13', dow: 'T3', fmRate: '100.0%', lmRate: '99.7%', sopRate: '0.00%', successRate: '91.4%', volume: 2006 },
+          { date: '2026-10-12', dow: 'T2', fmRate: '100.0%', lmRate: '99.9%', sopRate: '0.00%', successRate: '89.5%', volume: 2346 },
+          { date: '2026-10-11', dow: 'CN', fmRate: '100.0%', lmRate: '99.7%', sopRate: '0.00%', successRate: '83.7%', volume: 1547 },
+          { date: '2026-10-10', dow: 'T7', fmRate: '100.0%', lmRate: '99.9%', sopRate: '0.00%', successRate: '87.6%', volume: 1655 },
+          { date: '2026-10-09', dow: 'T6', fmRate: '100.0%', lmRate: '99.9%', sopRate: '0.00%', successRate: '83.4%', volume: 1557 },
+          { date: '2026-10-08', dow: 'T5', fmRate: '100.0%', lmRate: '100.0%', sopRate: '0.00%', successRate: '85.7%', volume: 1741 }
+        ]
+      };
+    } else {
+      return {
+        success: true,
+        summary: {
+          fmRate: '98.8%',
+          lmRate: '99.5%',
+          sopRate: '0.12%',
+          successRate: '85.0%',
+          totalVolume: 28400
+        },
+        daily: [
+          { date: '2026-10-28', dow: 'T4', fmRate: '99.1%', lmRate: '99.6%', sopRate: '0.00%', successRate: '84.2%', volume: 920 },
+          { date: '2026-10-27', dow: 'T3', fmRate: '99.5%', lmRate: '99.8%', sopRate: '0.00%', successRate: '86.1%', volume: 940 },
+          { date: '2026-10-26', dow: 'T2', fmRate: '98.9%', lmRate: '99.2%', sopRate: '0.10%', successRate: '83.5%', volume: 890 }
+        ]
+      };
+    }
+  },
         daily: [
           { date: '2026-10-28', dow: 'T4', fmRate: '100.0%', lmRate: '99.9%', sopRate: '0.00%', successRate: '79.9%', volume: 1355 },
           { date: '2026-10-27', dow: 'T3', fmRate: '100.0%', lmRate: '100.0%', sopRate: '0.00%', successRate: '87.5%', volume: 1344 },
@@ -159,7 +201,7 @@ class RpcDispatcher {
     }
   }
 
-  rp_checkAccess(email) {
+    rp_checkAccess(email) {
     return {
       allowed: true,
       isAdmin: true,
@@ -168,6 +210,7 @@ class RpcDispatcher {
       email: email || 'xuan.nguyenthanh01@spxexpress.com',
       stations: DEFAULT_STATIONS
     };
+  };
   }
 
   async dispatch(functionName, args = [], userEmail = 'xuan.nguyenthanh01@spxexpress.com') {
@@ -1005,7 +1048,7 @@ class RpcDispatcher {
     });
   }
 
-    getOrders(hub) {
+      getOrders(hub) {
     const h = (hub || '').toLowerCase();
     if (h.includes('dak rlap') || h.includes('rlap')) {
       return [];
@@ -1076,12 +1119,11 @@ class RpcDispatcher {
     });
   }
 
-    getComplaintData(hub) {
+      getComplaintData(hub) {
     const h = (hub || '').toLowerCase();
     if (h.includes('dak rlap') || h.includes('rlap')) {
       return [];
     }
-    // Trả về đúng 180 vụ việc thực tế của 45-DLK Krong Pak 02 Hub
     const rows = [];
     const drivers = ['NGUYỄN ĐÌNH CẢNH [64656]', 'TRẦN VĂN AN', 'LÊ THÀNH ĐẠT', 'NGUYỄN VĂN TIẾN', 'VÕ HOÀNG NAM', 'PHẠM VĂN ĐỨC'];
     for (let i = 0; i < 180; i++) {
