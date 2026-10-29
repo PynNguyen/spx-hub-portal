@@ -361,9 +361,6 @@ app.post('/api/rpc/:functionName', async (req, res) => {
       })
     });
   }
-  const functionName = req.params.functionName;
-  const args = req.body.args || [];
-  const userEmail = req.headers['x-spx-user-email'] || getCookie(req, 'spx_user_email') || req.body.user || 'xuan.nguyenthanh01@spxexpress.com';
 
   try {
     const result = await rpcDispatcher.dispatch(functionName, args, userEmail);
