@@ -279,6 +279,7 @@ app.get('/', (req, res) => {
 
     // 3. Tiêm bộ RPC Bridge & Thanh công cụ Đăng xuất / Chuyển tài khoản
     const bridgeScript = `
+    <script>window.RUNTIME_CACHE = window.RUNTIME_CACHE || { agingData: [], agingDataLoaded: true };</script>
     <!-- SPX Hub Multi-Hub RPC Bridge & Authentication Bar -->
     <script>
       window.__SPX_CURRENT_USER__ = ${JSON.stringify(user)};
