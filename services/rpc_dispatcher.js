@@ -30,6 +30,71 @@ const DEFAULT_STATIONS = [
   'M\'Đrắk'
 ];
 
+/**
+ * Trình phân tích CSV chuẩn RFC-4180 in-memory
+ */
+function parseCsv(text) {
+  if (!text || typeof text !== 'string') return [];
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  const rows = [];
+  let currentRow = [];
+  let currentToken = '';
+  let inQuotes = false;
+  let i = 0;
+  const len = text.length;
+
+  while (i < len) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (i + 1 < len && text[i + 1] === '"') {
+          currentToken += '"';
+          i += 2;
+        } else {
+          inQuotes = false;
+          i++;
+        }
+      } else {
+        currentToken += c;
+        i++;
+      }
+    } else {
+      if (c === '"') {
+        inQuotes = true;
+        i++;
+      } else if (c === ',') {
+        currentRow.push(currentToken.trim());
+        currentToken = '';
+        i++;
+      } else if (c === '\r' || c === '\n') {
+        currentRow.push(currentToken.trim());
+        currentToken = '';
+        if (currentRow.length > 1 || (currentRow.length === 1 && currentRow[0] !== '')) {
+          rows.push(currentRow);
+        }
+        currentRow = [];
+        if (c === '\r' && i + 1 < len && text[i + 1] === '\n') {
+          i += 2;
+        } else {
+          i++;
+        }
+      } else {
+        currentToken += c;
+        i++;
+      }
+    }
+  }
+
+  if (currentToken !== '' || currentRow.length > 0) {
+    currentRow.push(currentToken.trim());
+    if (currentRow.length > 1 || (currentRow.length === 1 && currentRow[0] !== '')) {
+      rows.push(currentRow);
+    }
+  }
+
+  return rows;
+}
+
 class RpcDispatcher {
   async dispatch(functionName, args = [], userEmail = 'xuan.nguyenthanh01@spxexpress.com') {
     console.log(`📡 [RPC Call] Function: "${functionName}", User: "${userEmail}", Args:`, args.length);
@@ -136,15 +201,19 @@ class RpcDispatcher {
   }
 
   spx_getBootstrap(userEmail = 'xuan.nguyenthanh01@spxexpress.com') {
+    const auth = authManager.getUser(userEmail);
     return JSON.stringify({
       email: userEmail,
       moduleAccess: {
-        role: 'admin',
-        level: 1,
+        role: auth.role || 'admin',
+        level: auth.levelNum || 1,
+        levelNum: auth.levelNum || 1,
+        levelCode: auth.levelCode || 'admin',
+        levelLabel: auth.levelLabel || 'Admin (L1)',
         email: userEmail,
         hubs: ['ALL', ...DEFAULT_STATIONS],
-        defaultHub: '45-DLK Krong Pak 02 Hub',
-        isRootAdmin: true
+        defaultHub: auth.defaultHub || '45-DLK Krong Pak 02 Hub',
+        isRootAdmin: !!auth.isRootAdmin
       },
       analyticsPerm: {
         allowed: true,
@@ -206,7 +275,7 @@ class RpcDispatcher {
     });
   }
 
-    spx_getModuleVersions() {
+  spx_getModuleVersions() {
     return JSON.stringify({
       success: true,
       versions: {
@@ -233,7 +302,6 @@ class RpcDispatcher {
         tracuu: 'v2026_clean_orig',
         JS_Tracuu: 'v2026_clean_orig',
         tailieu: 'v2026_clean_orig',
-        JS_TaiLieu: 'v2026_clean_orig',
         JS_Tailieu: 'v2026_clean_orig',
         adminzone: 'v2026_clean_orig',
         JS_AdminZone: 'v2026_clean_orig',
@@ -242,44 +310,6 @@ class RpcDispatcher {
         Analytics_Block: 'v2026_clean_orig'
       }
     });
-  }
-
-  aging_getDataVersion() {
-    return '1';
-  }
-
-  kpifail_getDataVersion() {
-    return '1';
-  }
-
-  aging_clearCache() {
-    return { success: true };
-  }
-
-  kpifail_clearCache() {
-    return { success: true };
-  }
-
-  aging_getNotesOnly() {
-    return { success: true, notes: {} };
-  }
-
-  kpifail_getNotes() {
-    return JSON.stringify({ success: true, notes: {} });
-  }
-
-  fms_live_getSyncMeta() {
-    return JSON.stringify({
-      success: true,
-      syncTime: new Date().toISOString(),
-      status: 'SYNCED'
-    });
-  }
-
-  ana_getStationDataStamp(stationName) {
-    const key = (stationName || '').trim();
-    const st = db.data.stations[key];
-    return (st && st.updatedAt) || '1';
   }
 
   spx_getHeartbeat(ctxJson) {
@@ -322,7 +352,7 @@ class RpcDispatcher {
   // ============================================================
   // 2. DYNAMIC MODULE LOADING (Lazy Loading Views)
   // ============================================================
-    getModuleHtml(moduleKey) {
+  getModuleHtml(moduleKey) {
     if (!moduleKey) return '';
     const keyLower = String(moduleKey).trim().toLowerCase().replace(/\.html$/, '');
 
@@ -377,143 +407,351 @@ class RpcDispatcher {
   }
 
   // ============================================================
-  // 3. WORKSPACE SAVE / LOAD / DELETE TRIGGERS (FMS Tồn Đọng & Trạm)
+  // 3. FMS / TỒN ĐỌNG LASTMILE (In-Memory Upload & Live Sync)
   // ============================================================
-  saveStationData(stationName, mergedOrdersJson, inboundLock, clientEpoch, userEmail) {
-    let orders = [];
+  onhold_processFMSInMemory(csvString, userEmail = 'xuan.nguyenthanh01@spxexpress.com') {
+    if (!csvString) return { error: 'Dữ liệu file trống.' };
+
     try {
-      orders = typeof mergedOrdersJson === 'string' ? JSON.parse(mergedOrdersJson) : (mergedOrdersJson || []);
+      const data = parseCsv(csvString);
+      if (!data || data.length < 2) return { error: 'File CSV không có dữ liệu hợp lệ.' };
+
+      const headers = data[0].map(h => (h || '').toString().trim());
+      const findIdx = (name) => headers.findIndex(h => h.toLowerCase() === name.toLowerCase());
+
+      const c = {
+        id: findIdx('Order ID'), ward: findIdx('Ward Name'), reason: findIdx('OnHoldReason'),
+        status: findIdx('Status'), cur: findIdx('Current Station'), dest: findIdx('Destination Station'),
+        attempts: findIdx('Delivery Attempts'), recTime: findIdx('Current Station Received Time'),
+        holdTimes: findIdx('Total of On Hold Times')
+      };
+
+      let apptIdx = findIdx('Reschedule Time');
+      if (apptIdx === -1) apptIdx = 26;
+
+      const REQUIRED_HARD = [['Order ID', 'id'], ['Status', 'status'], ['Current Station', 'cur']];
+      const missingHardCols = REQUIRED_HARD.filter(p => c[p[1]] === -1).map(p => p[0]);
+      if (missingHardCols.length) {
+        return { error: 'File FMS thiếu cột bắt buộc: ' + missingHardCols.join(', ') + '. Kiểm tra lại file export.' };
+      }
+
+      let hubData = {};
+      const inTransitExceptions = [];
+      const destColMissing = (c.dest === -1);
+
+      const validRows = data.slice(1).filter(r => c.dest === -1 || r[c.cur] === r[c.dest]);
+      const hubs = [...new Set(validRows.map(r => r[c.cur]))].filter(Boolean);
+
+      hubs.forEach(h => { hubData[h] = { stats: [0, 0, 0, 0, 0, 0, 0, 0], details: [[], [], [], [], [], [], []] }; });
+
+      let now = null;
+      data.slice(1).forEach(r => {
+        if (c.recTime === -1) return;
+        const t = new Date(r[c.recTime]);
+        if (!isNaN(t.getTime()) && (!now || t.getTime() > now.getTime())) now = t;
+      });
+      const _nowIsFromData = !!now;
+      if (!now) now = new Date();
+
+      data.slice(1).forEach(r => {
+        if (c.dest !== -1 && r[c.cur] !== r[c.dest]) {
+          if (r[c.id]) inTransitExceptions.push({ id: r[c.id], current: r[c.cur], destination: r[c.dest] });
+          return;
+        }
+
+        const hub = r[c.cur];
+        const status = (r[c.status] || '').toString().trim();
+        if (!hub || !hubData[hub] || !status.includes('Received')) return;
+
+        const reason = (r[c.reason] || '').toString().trim().toLowerCase();
+        const attempts = parseInt(r[c.attempts]) || 0;
+        const target = hubData[hub];
+        const zoneId = (r.length > 37 && r[37]) ? r[37].toString().trim() : 'Zone 1';
+        const account = (r.length > 22 && r[22]) ? r[22].toString().trim() : 'N/A';
+
+        let appointmentDate = '/';
+        if (apptIdx !== -1 && r.length > apptIdx && r[apptIdx]) {
+          const rawDate = r[apptIdx].toString().trim();
+          if (rawDate !== '0' && rawDate !== '' && rawDate.toLowerCase() !== 'null' && rawDate.toLowerCase() !== 'n/a') {
+            const match = rawDate.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            appointmentDate = match ? (match[3] + '/' + match[2] + '/' + match[1]) : rawDate.substring(0, 10);
+          }
+        }
+
+        const recTime = new Date(r[c.recTime]);
+        const recTimeValid = !isNaN(recTime.getTime());
+        let recTimeIso = '';
+        if (recTimeValid) {
+          const y = recTime.getFullYear();
+          const m = String(recTime.getMonth() + 1).padStart(2, '0');
+          const d = String(recTime.getDate()).padStart(2, '0');
+          recTimeIso = `${y}-${m}-${d}`;
+        }
+
+        const holdTimes = parseInt(r[c.holdTimes], 10) || 0;
+        const rowData = [r[c.id], zoneId, r[c.ward], account, r[c.reason], appointmentDate, recTimeIso, holdTimes];
+
+        if (reason.includes('buyer never place')) { target.stats[4]++; target.details[4].push(rowData); }
+        else if (reason.includes('unable to deliver')) { target.stats[4]++; target.details[4].push(rowData); }
+        else if (reason.includes('reject') || reason.includes('cancel')) { target.stats[4]++; target.details[4].push(rowData); }
+        else if (attempts >= 3 && reason.includes('insufficient time')) { target.stats[2]++; target.details[2].push(rowData); }
+        else if (attempts >= 3) { target.stats[3]++; target.details[3].push(rowData); }
+        else if (reason.includes('reschedule')) { target.stats[1]++; target.details[1].push(rowData); }
+        else if (reason === 'normal' || reason === '') { target.stats[0]++; target.details[0].push(rowData); }
+        else { target.stats[2]++; target.details[2].push(rowData); }
+
+        if (recTimeValid) {
+          const diffDays = (now.getTime() - recTime.getTime()) / 86400000;
+          const agingRow = [r[c.id], zoneId, r[c.ward], account, r[c.reason], diffDays.toFixed(1) + ' ngày', recTimeIso];
+          if (diffDays >= 3 && diffDays <= 5) { target.stats[5]++; target.details[5].push(agingRow); }
+          else if (diffDays > 5) { target.stats[6]++; target.details[6].push(agingRow); }
+        }
+
+        target.stats[7]++;
+      });
+
+      hubs.forEach(h => {
+        const hd = hubData[h];
+        if (!hd) return;
+        const reasonCounts = {};
+        [1, 2, 3, 4, 6].forEach(catIdx => {
+          (hd.details[catIdx] || []).forEach(row => {
+            const reasonKey = (row[4] || 'Khác').toString();
+            reasonCounts[reasonKey] = (reasonCounts[reasonKey] || 0) + 1;
+          });
+        });
+        hd.reasonTop = Object.keys(reasonCounts).map(k => ({ reason: k, count: reasonCounts[k] }))
+          .sort((a, b) => b.count - a.count).slice(0, 8);
+      });
+
+      // Lưu trữ đồng bộ vào database để các lần truy cập sau có sẵn
+      db.data.fmsData = {
+        hubs: hubs.sort(),
+        data: hubData,
+        asOfTime: now.toISOString(),
+        updatedAt: new Date().toISOString(),
+        updatedBy: userEmail
+      };
+      db.isDirty = true;
+
+      return {
+        success: true,
+        hubs: hubs.sort(),
+        data: hubData,
+        inTransitExceptions: inTransitExceptions,
+        destColMissing: destColMissing,
+        asOfTime: now.toISOString(),
+        asOfFromData: _nowIsFromData,
+        missingColumns: []
+      };
     } catch (e) {
-      orders = [];
+      console.error('Lỗi onhold_processFMSInMemory:', e);
+      return { error: e.message };
     }
-
-    const res = db.saveStationData(stationName, orders, inboundLock, clientEpoch, userEmail);
-    return res;
   }
 
-  getStationData(stationName) {
-    return db.getStationData(stationName);
-  }
-
-  getStationDataBundle(stationName) {
-    const data = db.getStationData(stationName);
-    return {
+  fms_live_getSnapshot() {
+    const fms = db.data.fmsData || {};
+    return JSON.stringify({
       success: true,
-      stationName,
-      data: data.orders || [],
-      inboundLock: data.inboundLock,
-      epoch: data.epoch,
-      updatedAt: data.updatedAt,
-      serverTime: new Date().toISOString()
-    };
+      hubs: fms.hubs || DEFAULT_STATIONS,
+      data: fms.data || {},
+      asOfTime: fms.asOfTime || new Date().toISOString()
+    });
   }
 
-  saveSupplementData(stationName, supplementJson, clientEpoch, userEmail) {
-    let supp = {};
-    try {
-      supp = typeof supplementJson === 'string' ? JSON.parse(supplementJson) : (supplementJson || {});
-    } catch (e) {}
+  fms_live_getSyncMeta() {
+    return JSON.stringify({
+      success: true,
+      syncTime: (db.data.fmsData && db.data.fmsData.asOfTime) || new Date().toISOString(),
+      status: 'SYNCED'
+    });
+  }
 
-    const key = (stationName || '').trim();
-    db.data.supplements[key] = {
-      supplement: supp,
-      epoch: Date.now(),
-      updatedAt: new Date().toISOString(),
-      updatedBy: userEmail
+  fms_live_getExplorerFilterOptions() {
+    return JSON.stringify({
+      success: true,
+      hubs: (db.data.fmsData && db.data.fmsData.hubs) || DEFAULT_STATIONS,
+      reasons: ['Customer Reschedule', 'Bad weather', 'Buyer Never Place', 'Insufficient time', 'Reject / Cancel']
+    });
+  }
+
+  fms_live_getExplorerPage() {
+    return JSON.stringify({
+      success: true,
+      rows: [],
+      total: 0
+    });
+  }
+
+  fms_live_getHubDetailFull(hub) {
+    const fms = db.data.fmsData || {};
+    const hubKey = hub || '45-DLK Krong Pak 02 Hub';
+    const hubInfo = (fms.data && (fms.data[hubKey] || fms.data['45-DLK Krông Pắk 02 Hub'])) || {
+      stats: [5, 3, 4, 1, 2, 2, 1, 18],
+      details: [[], [], [], [], [], [], []],
+      reasonTop: [{ reason: 'Customer Reschedule', count: 3 }, { reason: 'Bad weather', count: 2 }]
+    };
+    return JSON.stringify({
+      success: true,
+      hub: hubKey,
+      data: hubInfo
+    });
+  }
+
+  // ============================================================
+  // 4. QUÁ HẠN & LOST (Aging Data Master RPC)
+  // ============================================================
+  aging_getMasterData() {
+    const core = (db.data.agingData && db.data.agingData.core) || [];
+    const lost = (db.data.agingData && db.data.agingData.lost) || [];
+    return JSON.stringify({
+      success: true,
+      coreData: core,
+      lostData: lost,
+      notes: db.data.agingNotes || {},
+      version: 'V5.' + Date.now()
+    });
+  }
+
+  aging_getDataVersion() {
+    return 'V5.' + (db.data.agingDataVersion || Date.now());
+  }
+
+  aging_clearCache() {
+    return JSON.stringify({ success: true, message: 'Đã xóa bộ nhớ đệm Quá Hạn.' });
+  }
+
+  aging_getNotesOnly() {
+    return JSON.stringify({
+      success: true,
+      notes: db.data.agingNotes || {}
+    });
+  }
+
+  aging_saveNote(orderId, note, hub, userEmail = 'xuan.nguyenthanh01@spxexpress.com') {
+    if (!db.data.agingNotes) db.data.agingNotes = {};
+    const timeStr = new Date().toLocaleString('vi-VN');
+    db.data.agingNotes[orderId] = {
+      text: note,
+      user: userEmail,
+      time: timeStr,
+      hub: hub
     };
     db.isDirty = true;
-    return { success: true, msg: 'Đã lưu dữ liệu bổ sung thành công.' };
-  }
-
-  getSupplementData(stationName) {
-    const key = (stationName || '').trim();
-    const item = db.data.supplements[key] || { supplement: {}, epoch: 0 };
-    return { success: true, supplement: item.supplement, epoch: item.epoch };
-  }
-
-  saveInboundLockToCloud(stationName, inboundValue) {
-    const key = (stationName || '').trim();
-    if (db.data.stations[key]) {
-      db.data.stations[key].inboundLock = !!inboundValue;
-      db.isDirty = true;
-    }
-    return { success: true, inboundLock: !!inboundValue };
-  }
-
-  getInboundLock(stationName) {
-    const key = (stationName || '').trim();
-    const st = db.data.stations[key];
-    return (st && st.inboundLock) || false;
-  }
-
-  clearStationData(stationName, userEmail) {
-    return db.clearStationData(stationName, userEmail);
-  }
-
-  ana_pushTonState() {
-    return { success: true };
-  }
-
-  getTrendDrivers() {
-    return [];
-  }
-
-  getTrendStation() {
-    return {};
-  }
-
-  getTrendDriverList() {
-    return [];
-  }
-
-  logAIFeedback() {
-    return { success: true };
-  }
-
-  // ============================================================
-  // 4. RIDER PLAN & FORECAST (Save / Load)
-  // ============================================================
-  saveDriverPlan(payload, userEmail) {
-    return { success: true, msg: 'Đã lưu kế hoạch tài xế' };
-  }
-
-  saveRiderPlan(payload, userEmail) {
-    return db.saveRiderPlan(payload, userEmail);
-  }
-
-  loadRiderPlan(month) {
-    return db.loadRiderPlan(month);
-  }
-
-  loadAllData(month, overrideHub) {
-    const m = month || new Date().toISOString().slice(0, 7);
-    const plan = db.loadRiderPlan(m);
-    return {
+    return JSON.stringify({
       success: true,
-      month: m,
-      hub: overrideHub || 'Krông Pắc 02',
-      planData: (plan.data && plan.data.plan) || [],
-      forecastData: []
-    };
+      user: userEmail,
+      time: timeStr
+    });
   }
 
   // ============================================================
-  // 5. RESCUE ORDERS & VIOLATIONS (Đơn Cứu Cứu & Vi Phạm)
+  // 5. PICK / FIRSTMILE (Pick Station Data & Summary)
   // ============================================================
-  getOrders(forceRefresh) {
-    const rescueList = db.data.rescueOrders || [];
-    return {
+  pick_live_getStations() {
+    return JSON.stringify(DEFAULT_STATIONS);
+  }
+
+  pick_live_getStationData(stationName) {
+    const stName = stationName || '45-DLK Krong Pak 02 Hub';
+    return JSON.stringify({
       success: true,
-      rows: rescueList,
-      resolved: Object.keys(db.data.resolvedOrders || {}), // Array!
-      count: rescueList.length,
-      access: {
-        role: 'admin',
-        email: 'xuan.nguyenthanh01@spxexpress.com',
-        displayName: 'Admin Xuân',
-        stations: ['ALL', ...DEFAULT_STATIONS]
+      station: stName,
+      pending: 12,
+      picking: 6,
+      completed: 158,
+      drivers: 14,
+      slaRate: 99.2,
+      lastUpdated: new Date().toLocaleTimeString('vi-VN')
+    });
+  }
+
+  pick_getFmSummary() {
+    return JSON.stringify({
+      totalPicked: 158,
+      totalPending: 12,
+      totalPicking: 6,
+      slaRate: 99.2
+    });
+  }
+
+  pick_getFmHighAging() {
+    return JSON.stringify([]);
+  }
+
+  pick_live_forceRefreshNow() {
+    return JSON.stringify({ success: true, timestamp: Date.now() });
+  }
+
+  // ============================================================
+  // 6. KPI FAIL HUB
+  // ============================================================
+  kpifail_getIndexSummary() {
+    return JSON.stringify({
+      success: true,
+      totalFM: 2,
+      totalLM: 3,
+      totalSOP: 1,
+      totalFail: 6,
+      hubs: {
+        '45-DLK Krong Pak 02 Hub': 3,
+        'Buôn Ma Thuột': 2,
+        'Ea Kar': 1
       }
-    };
+    });
+  }
+
+  kpifail_getMasterDataLite() {
+    const kpiOrders = db.data.kpiFailOrders || [
+      { order_id: 'SPXKP001', hub: '45-DLK Krong Pak 02 Hub', fail_type: 'LM Late', driver_name: 'Nguyễn Văn A', deadline: '2026-10-29 12:00:00' },
+      { order_id: 'SPXKP002', hub: '45-DLK Krong Pak 02 Hub', fail_type: 'FM Late', driver_name: 'Trần Văn B', deadline: '2026-10-29 11:30:00' },
+      { order_id: 'SPXKP003', hub: 'Buôn Ma Thuột', fail_type: 'Wrong SOP', driver_name: 'Lê Văn C', deadline: '2026-10-29 14:00:00' }
+    ];
+    return JSON.stringify({
+      success: true,
+      orders: kpiOrders
+    });
+  }
+
+  flm_getFailOrdersByDay() {
+    return JSON.stringify({ success: true, data: [] });
+  }
+
+  kpifail_getDataVersion() {
+    return JSON.stringify({ version: 'KPI_2026_V1' });
+  }
+
+  kpifail_clearCache() {
+    return JSON.stringify({ success: true });
+  }
+
+  kpifail_getNotes() {
+    return JSON.stringify({ success: true, notes: {} });
+  }
+
+  kpifail_saveNote() {
+    return JSON.stringify({ success: true });
+  }
+
+  // ============================================================
+  // 7. ĐƠN CẦN CỨU CỨU & VI PHẠM
+  // ============================================================
+  rq_getIndexSummary() {
+    return JSON.stringify({
+      success: true,
+      red: 3,
+      orange: 0,
+      total: 3
+    });
+  }
+
+  getOrders() {
+    return db.data.rescueOrders || [];
+  }
+
+  rq_getOrders() {
+    return db.data.rescueOrders || [];
   }
 
   getResolvedOrders() {
@@ -523,8 +761,9 @@ class RpcDispatcher {
     };
   }
 
-  setResolvedStatus(trackingNo, resolved, userEmail) {
+  setResolvedStatus(trackingNo, resolved, userEmail = 'xuan.nguyenthanh01@spxexpress.com') {
     if (!trackingNo) return { success: false, msg: 'Thiếu mã đơn' };
+    if (!db.data.resolvedOrders) db.data.resolvedOrders = {};
     db.data.resolvedOrders[trackingNo] = {
       resolved: !!resolved,
       resolvedAt: new Date().toISOString(),
@@ -534,7 +773,8 @@ class RpcDispatcher {
     return { success: true, trackingNo, resolved: !!resolved };
   }
 
-  setResolvedStatusBulk(items, resolved, userEmail) {
+  setResolvedStatusBulk(items, resolved, userEmail = 'xuan.nguyenthanh01@spxexpress.com') {
+    if (!db.data.resolvedOrders) db.data.resolvedOrders = {};
     (items || []).forEach(no => {
       if (no) {
         db.data.resolvedOrders[no] = {
@@ -548,29 +788,209 @@ class RpcDispatcher {
     return { success: true, count: (items || []).length };
   }
 
-  getComplaintData(forceRefresh) {
+  vp_getIndexSummary() {
+    return JSON.stringify({
+      success: true,
+      noTicket: 2,
+      ticketed: 1,
+      total: 3
+    });
+  }
+
+  getComplaintData() {
+    return db.data.violations || [];
+  }
+
+  vp_getData() {
     return db.data.violations || [];
   }
 
   // ============================================================
-  // 6. TRA CỨU & TÀI LIỆU & KPI FAIL
+  // 8. RIDER PLAN & FORECAST
+  // ============================================================
+  rp_getIndexSummary() {
+    return JSON.stringify({
+      success: true,
+      missingCount: 0,
+      total: 12,
+      completedCount: 12
+    });
+  }
+
+  loadForecastData(monthStr) {
+    const m = monthStr || new Date().toISOString().slice(0, 7);
+    return {
+      dates: ['2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31'],
+      stations: {
+        '45-DLK Krong Pak 02 Hub': {
+          sup: 'Sup Đắk Lắk',
+          province: 'Đắk Lắk',
+          lm: [380, 410, 430, 420, 440],
+          fm: [120, 115, 130, 125, 135],
+          target: 400,
+          riders_plan: [9, 9, 10, 9, 10]
+        }
+      }
+    };
+  }
+
+  loadRiderPlan(month) {
+    return db.loadRiderPlan(month);
+  }
+
+  saveDriverPlan() {
+    return { success: true, msg: 'Đã lưu kế hoạch tài xế thành công.' };
+  }
+
+  saveRiderPlan(payload, userEmail) {
+    return db.saveRiderPlan(payload, userEmail);
+  }
+
+  riderPlan_getSubscribedSheetLinks() {
+    return JSON.stringify({ success: true, links: [] });
+  }
+
+  // ============================================================
+  // 9. TỔNG QUAN SONG SONG (Overview Priority Cards & Meta)
+  // ============================================================
+  spx_getOverviewPart(part, hub, force, userEmail = 'xuan.nguyenthanh01@spxexpress.com') {
+    const auth = authManager.getUser(userEmail);
+
+    if (part === 'meta') {
+      return JSON.stringify({
+        success: true,
+        data: {
+          levelCode: auth.levelCode || 'admin',
+          levelNum: auth.levelNum || 1,
+          levelLabel: auth.levelLabel || 'Admin (L1)',
+          role: auth.role || 'admin',
+          hubs: DEFAULT_STATIONS,
+          defaultHub: auth.defaultHub || '45-DLK Krong Pak 02 Hub',
+          isRootAdmin: true,
+          lastSync: new Date().toLocaleTimeString('vi-VN')
+        }
+      });
+    }
+
+    if (part === 'aging') {
+      const coreLen = (db.data.agingData && db.data.agingData.core ? db.data.agingData.core.length : 24);
+      const lostLen = (db.data.agingData && db.data.agingData.lost ? db.data.agingData.lost.length : 5);
+      return JSON.stringify({
+        success: true,
+        data: {
+          total: coreLen + lostLen,
+          overdueCount: coreLen,
+          closedLostCount: lostLen,
+          hubs: {
+            '45-DLK Krong Pak 02 Hub': 12,
+            'Buôn Ma Thuột': 8,
+            'Ea Kar': 5,
+            'Cư Kuin': 4
+          },
+          lastSync: new Date().toLocaleTimeString('vi-VN')
+        }
+      });
+    }
+
+    if (part === 'kpifail') {
+      return JSON.stringify({
+        success: true,
+        data: {
+          totalFail: 6,
+          totalFM: 2,
+          totalLM: 3,
+          totalSOP: 1,
+          hubs: {
+            '45-DLK Krong Pak 02 Hub': 3,
+            'Buôn Ma Thuột': 2,
+            'Ea Kar': 1
+          },
+          lastSync: new Date().toLocaleTimeString('vi-VN')
+        }
+      });
+    }
+
+    if (part === 'rescue') {
+      const redCount = (db.data.rescueOrders ? db.data.rescueOrders.length : 3);
+      return JSON.stringify({
+        success: true,
+        data: {
+          redCount: redCount,
+          total: redCount,
+          orangeCount: 0,
+          hubs: {
+            '45-DLK Krong Pak 02 Hub': 2,
+            'Buôn Ma Thuột': 1
+          },
+          lastSync: new Date().toLocaleTimeString('vi-VN')
+        }
+      });
+    }
+
+    if (part === 'violation') {
+      const vCount = (db.data.violations ? db.data.violations.length : 3);
+      return JSON.stringify({
+        success: true,
+        data: {
+          noTicketCount: 2,
+          total: vCount,
+          ticketedCount: 1,
+          hubs: {
+            '45-DLK Krong Pak 02 Hub': 2,
+            'Buôn Ma Thuột': 1
+          },
+          lastSync: new Date().toLocaleTimeString('vi-VN')
+        }
+      });
+    }
+
+    if (part === 'riderplan') {
+      return JSON.stringify({
+        success: true,
+        data: {
+          missingCount: 0,
+          total: 12,
+          completedCount: 12,
+          hubs: {
+            '45-DLK Krong Pak 02 Hub': 1
+          },
+          lastSync: new Date().toLocaleTimeString('vi-VN')
+        }
+      });
+    }
+
+    return JSON.stringify({ success: true, data: {} });
+  }
+
+  // ============================================================
+  // 10. AI ASSISTANT (Mascot Analysis & Gemini Insights)
+  // ============================================================
+  ana_askMascotAssistant(prompt, ctxJson) {
+    return {
+      success: true,
+      answer: '🤖 [SPX AI Assistant] Ca vận hành hôm nay tại khu vực Tây Nguyên ổn định. Các trạm cần lưu ý giải tỏa 24 đơn quá hạn tại Krông Pắc và Buôn Ma Thuột trước 14:00. Tồn đọng FMS và Pick đang ở mức kiểm soát tốt.'
+    };
+  }
+
+  ana_askGeminiAI(prompt, ctxJson) {
+    return {
+      success: true,
+      answer: '🤖 [SPX AI Assistant] Phân tích vận hành: 24 đơn quá hạn tập trung chủ yếu ở trạm Krông Pắc 02 (12 đơn) do lý do Khách hẹn lại (Reschedule). Đề xuất điều phối 2 tài xế hỗ trợ giao ca chiều để đảm bảo tỷ lệ SLA đạt trên 98.5%.'
+    };
+  }
+
+  // ============================================================
+  // 11. TRA CỨU, TÀI LIỆU & TIỆN ÍCH KHÁC
   // ============================================================
   tracuu_getAllWards() {
     return [
-      { ward: 'Thị trấn Phước An', station: 'Krông Pắc 02', zoneId: 'Zone 1' },
-      { ward: 'Xã Ea Kly', station: 'Krông Pắc 02', zoneId: 'Zone 2' },
-      { ward: 'Xã Ea Phê', station: 'Krông Pắc 02', zoneId: 'Zone 3' },
-      { ward: 'Xã Hòa Đông', station: 'Krông Pắc 02', zoneId: 'Zone 1' },
-      { ward: 'Xã Ea Kuăng', station: 'Krông Pắc 02', zoneId: 'Zone 2' },
-      { ward: 'Xã Krông Búk', station: 'Krông Pắc 02', zoneId: 'Zone 2' },
-      { ward: 'Xã Ea Yông', station: 'Krông Pắc 02', zoneId: 'Zone 1' },
-      { ward: 'Xã Ea Kênh', station: 'Krông Pắc 02', zoneId: 'Zone 1' },
-      { ward: 'Xã Ea Hiu', station: 'Krông Pắc 02', zoneId: 'Zone 2' },
-      { ward: 'Xã Ea Uy', station: 'Krông Pắc 02', zoneId: 'Zone 2' },
-      { ward: 'Xã Ea Yiêng', station: 'Krông Pắc 02', zoneId: 'Zone 3' },
-      { ward: 'Xã Vụ Bổn', station: 'Krông Pắc 02', zoneId: 'Zone 3' },
-      { ward: 'Xã Tân Tiến', station: 'Krông Pắc 02', zoneId: 'Zone 2' },
-      { ward: 'Xã Hòa An', station: 'Krông Pắc 02', zoneId: 'Zone 1' }
+      { ward: 'Thị trấn Phước An', station: '45-DLK Krong Pak 02 Hub', zoneId: 'Zone 1' },
+      { ward: 'Xã Ea Kly', station: '45-DLK Krong Pak 02 Hub', zoneId: 'Zone 2' },
+      { ward: 'Xã Ea Phê', station: '45-DLK Krong Pak 02 Hub', zoneId: 'Zone 3' },
+      { ward: 'Xã Hòa Đông', station: '45-DLK Krong Pak 02 Hub', zoneId: 'Zone 1' },
+      { ward: 'Xã Ea Kuăng', station: '45-DLK Krong Pak 02 Hub', zoneId: 'Zone 2' },
+      { ward: 'Xã Krông Búk', station: '45-DLK Krong Pak 02 Hub', zoneId: 'Zone 2' },
+      { ward: 'Xã Hòa An', station: '45-DLK Krong Pak 02 Hub', zoneId: 'Zone 1' }
     ];
   }
 
@@ -581,7 +1001,7 @@ class RpcDispatcher {
     }));
   }
 
-  wiki_getDocumentData_v2(forceRefresh) {
+  wiki_getDocumentData_v2() {
     return {
       success: true,
       version: 'v2-row-wide-real-links',
@@ -591,118 +1011,15 @@ class RpcDispatcher {
     };
   }
 
-  flm_getKpiBundle() {
+  rom_listConfig() {
     return JSON.stringify({
       success: true,
-      builtAt: new Date().toISOString(),
-      asOf: new Date().toISOString(),
-      targets: { fms: 98.5, pick: 99.0, ontime: 97.5 },
-      periods: ['Hôm nay', 'Tuần này', 'Tháng này'],
-      slots: ['Ca Sáng', 'Ca Chiều', 'Ca Tối'],
-      sources: [],
-      hubs: DEFAULT_STATIONS.map(s => [s, 98.5, 99.1, 97.8]),
-      scoped: false,
-      access: {
-        role: 'admin',
-        levelCode: 'L1',
-        levelNum: 1,
-        email: 'xuan.nguyenthanh01@spxexpress.com',
-        hubs: ['ALL', ...DEFAULT_STATIONS]
-      }
+      data: [{ romEmail: 'rom.taynguyen@spxexpress.com', romName: 'ROM Tây Nguyên' }]
     });
-  }
-
-  flm_getFailOrdersByDay() {
-    return {
-      success: true,
-      orders: []
-    };
-  }
-
-  // ============================================================
-  // 7. ADMIN ZONE & QUOTA STATS & PREVIEWS
-  // ============================================================
-  rom_listConfig() {
-    return JSON.stringify({ success: true, data: [] });
   }
 
   rom_getScopeForPreview() {
     return JSON.stringify({ success: true, scope: [] });
-  }
-
-  spx_getOverviewPart(part, hub, force, userEmail = 'xuan.nguyenthanh01@spxexpress.com') {
-    const auth = authManager.getUser(userEmail);
-    if (part === 'meta') {
-      return JSON.stringify({
-        success: true,
-        data: {
-          levelCode: auth.levelCode || auth.role || 'admin',
-          levelNum: auth.levelNum || auth.level || 1,
-          levelLabel: auth.levelLabel || (auth.role === 'admin' ? 'Admin (L1)' : (auth.role || 'staff').toUpperCase()),
-          role: auth.role || 'admin',
-          hubs: auth.hubs || DEFAULT_STATIONS,
-          defaultHub: auth.defaultHub || '45-DLK Krong Pak 02 Hub',
-          isRootAdmin: !!auth.isRootAdmin
-        }
-      });
-    }
-
-    if (part === 'aging') {
-      return JSON.stringify({
-        success: true,
-        data: {
-          total: 0,
-          hubs: {},
-          lastSync: new Date().toLocaleTimeString('vi-VN')
-        }
-      });
-    }
-
-    if (part === 'kpifail') {
-      return JSON.stringify({
-        success: true,
-        data: {
-          totalFail: 0,
-          rate: 99.2,
-          hubs: {}
-        }
-      });
-    }
-
-    if (part === 'rescue') {
-      return JSON.stringify({
-        success: true,
-        data: {
-          pendingCount: 0,
-          urgentCount: 0,
-          orders: []
-        }
-      });
-    }
-
-    if (part === 'violation') {
-      return JSON.stringify({
-        success: true,
-        data: {
-          totalViolations: 0,
-          pendingReview: 0,
-          cases: []
-        }
-      });
-    }
-
-    if (part === 'riderplan') {
-      return JSON.stringify({
-        success: true,
-        data: {
-          totalRiders: 25,
-          activeToday: 24,
-          planCompliance: 98
-        }
-      });
-    }
-
-    return JSON.stringify({ success: true, data: {} });
   }
 
   spx_getStationWeather() {
@@ -717,7 +1034,7 @@ class RpcDispatcher {
     return {
       success: true,
       onlineCount: 1,
-      users: [{ email: 'xuan.nguyenthanh01@spxexpress.com', station: 'Krông Pắc 02', lastActive: new Date().toISOString() }]
+      users: [{ email: 'xuan.nguyenthanh01@spxexpress.com', station: '45-DLK Krong Pak 02 Hub', lastActive: new Date().toISOString() }]
     };
   }
 
@@ -765,13 +1082,6 @@ class RpcDispatcher {
     return { success: true, message: 'Yêu cầu truy cập đã được tiếp nhận.' };
   }
 
-  search_searchSortCode() {
-    return { success: true, results: [] };
-  }
-
-  // ============================================================
-  // 8. TRIGGER LOGS & MANUAL TRIGGER EXECUTION
-  // ============================================================
   getTriggerLogs() {
     return {
       success: true,

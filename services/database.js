@@ -66,6 +66,9 @@ class WorkspaceDatabase {
         console.log(`📦 [Database] Initialized new workspace database at ${DB_FILE}`);
       }
 
+      // Khởi tạo dữ liệu mẫu nếu DB trống
+      this.seedDefaultData();
+
       // Tự động lưu định kỳ nếu có thay đổi (mỗi 5 giây)
       const saveInterval = setInterval(() => {
         if (this.isDirty) {
@@ -284,18 +287,176 @@ class WorkspaceDatabase {
   // ============================================================
   // LOG TRIGGER EXECUTION
   // ============================================================
-  logTrigger(triggerName, details = {}, status = 'SUCCESS') {
-    const entry = {
-      triggerName,
-      status,
-      timestamp: new Date().toISOString(),
-      details
-    };
-    this.data.triggerLogs.unshift(entry);
-    if (this.data.triggerLogs.length > 500) {
-      this.data.triggerLogs = this.data.triggerLogs.slice(0, 500);
+  // ============================================================
+  // WORKSPACE SEEDING & DATA HELPERS
+  // ============================================================
+  seedDefaultData() {
+    const STATIONS = [
+      '45-DLK Krông Pắk 02 Hub',
+      '45-DLK Buôn Ma Thuột Hub',
+      '45-DLK Ea Kar Hub',
+      '45-DLK Cư Kuin Hub',
+      '45-DLK Krông Pắk Hub'
+    ];
+
+    if (!this.data.agingData || !Array.isArray(this.data.agingData.core) || this.data.agingData.core.length === 0) {
+      const core = [];
+      const lost = [];
+      const sampleWards = ['Phường Tân Lập', 'Xã Ea Kly', 'Thị trấn Phước An', 'Xã Hòa An', 'Xã Hòa Đông', 'Xã Ea Phê', 'Xã Ea Yông'];
+      const reasons = ['Customer Reschedule', 'Bad weather', 'Insufficient time', 'Address not found', 'Customer refused'];
+
+      for (let i = 1; i <= 24; i++) {
+        const hub = STATIONS[i % STATIONS.length];
+        const ward = sampleWards[i % sampleWards.length];
+        const days = Number((1.2 + (i % 6) * 0.9).toFixed(1));
+        const bucket = days <= 2 ? '1–2 ngày' : (days <= 5 ? '2–5 ngày' : '> 7 ngày');
+        core.push({
+          shipmentId: 'SPX' + (793000000000 + i),
+          hubName: hub,
+          aom: 'AOM Đắk Lắk - Tây Nguyên',
+          sup: 'SUP Krông Pắk',
+          ward: ward,
+          processStatus: 'On Hold',
+          finalStatus: 'onhold',
+          lostToday: (i % 2 === 0) ? 'today' : '',
+          timingDate: days,
+          aging: days,
+          agingBucket: bucket,
+          att: (i % 4) + 1,
+          inboundAt: new Date(Date.now() - days * 86400000).toISOString().slice(0, 16),
+          cogs: 180000 + (i * 25000),
+          reason: reasons[i % reasons.length]
+        });
+      }
+
+      for (let j = 1; j <= 5; j++) {
+        const hub = STATIONS[j % STATIONS.length];
+        const days = Number((6.0 + j * 0.5).toFixed(1));
+        lost.push({
+          shipmentId: 'SPXLST' + (893000000000 + j),
+          hubName: hub,
+          aom: 'AOM Đắk Lắk - Tây Nguyên',
+          sup: 'SUP Krông Pắk',
+          processStatus: 'Chốt Lost',
+          finalStatus: 'lost',
+          isChotLost: true,
+          lostToday: 'today',
+          timingDate: days,
+          aging: days,
+          agingBucket: '> 7 ngày',
+          att: 3,
+          inboundAt: new Date(Date.now() - days * 86400000).toISOString().slice(0, 16),
+          cogs: 450000 + (j * 75000)
+        });
+      }
+
+      this.data.agingData = { core, lost };
+      this.isDirty = true;
     }
-    this.isDirty = true;
+
+    if (!this.data.fmsData || !this.data.fmsData.data) {
+      const hubData = {};
+      STATIONS.forEach((h, hIdx) => {
+        hubData[h] = {
+          stats: [50 + hIdx * 10, 15 + hIdx * 2, 8 + hIdx, 3 + hIdx, 5 + hIdx, 6 + hIdx, 2, 89 + hIdx * 15],
+          details: [[], [], [], [], [], [], []],
+          reasonTop: [
+            { reason: 'Customer Reschedule', count: 15 + hIdx * 2 },
+            { reason: 'Bad weather / Mưa lớn', count: 8 + hIdx },
+            { reason: 'Unable to deliver', count: 5 + hIdx },
+            { reason: 'Attempts >= 3', count: 3 + hIdx },
+            { reason: 'Address not found', count: 2 }
+          ]
+        };
+      });
+
+      this.data.fmsData = {
+        hubs: STATIONS,
+        data: hubData,
+        asOfTime: new Date().toISOString()
+      };
+      this.isDirty = true;
+    }
+
+    if (!this.data.rescueOrders || this.data.rescueOrders.length === 0) {
+      this.data.rescueOrders = [
+        {
+          tracking_no: 'SPX7788991122VN',
+          station_name: '45-DLK Krông Pắk 02 Hub',
+          export_date: new Date(Date.now() - 3600000 * 2).toISOString(),
+          status: 'Khẩn cấp',
+          urgency: 'red',
+          reason: 'Đơn trễ hẹn giao 2 ca, khách gọi hotline',
+          recipient_name: 'Nguyễn Văn An',
+          recipient_phone: '0905123456'
+        },
+        {
+          tracking_no: 'SPX7788991123VN',
+          station_name: '45-DLK Krông Pắk 02 Hub',
+          export_date: new Date(Date.now() - 3600000 * 5).toISOString(),
+          status: 'Khẩn cấp',
+          urgency: 'red',
+          reason: 'Khách khiếu nại chưa nhận hàng',
+          recipient_name: 'Trần Thị Bích',
+          recipient_phone: '0914987654'
+        },
+        {
+          tracking_no: 'SPX7788991124VN',
+          station_name: '45-DLK Buôn Ma Thuột Hub',
+          export_date: new Date(Date.now() - 3600000 * 8).toISOString(),
+          status: 'Khẩn cấp',
+          urgency: 'red',
+          reason: 'Sắp hết hạn xử lý SLA (còn 2h)',
+          recipient_name: 'Lê Văn Cường',
+          recipient_phone: '0982345678'
+        }
+      ];
+      this.isDirty = true;
+    }
+
+    if (!this.data.violations || this.data.violations.length === 0) {
+      this.data.violations = [
+        {
+          case_id: 'VP-2026-001',
+          station_name: '45-DLK Krông Pắk 02 Hub',
+          driver_name: 'Lê Văn Tài',
+          driver_phone: '0934123890',
+          violation_type: 'Giao sai quy trình SOP',
+          ticket_no: '',
+          created_at: new Date(Date.now() - 86400000 * 1).toISOString(),
+          status: 'PENDING'
+        },
+        {
+          case_id: 'VP-2026-002',
+          station_name: '45-DLK Krông Pắk 02 Hub',
+          driver_name: 'Nguyễn Hoàng Nam',
+          driver_phone: '0945234901',
+          violation_type: 'Trễ giờ xuất bến ca sáng',
+          ticket_no: '',
+          created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+          status: 'PENDING'
+        },
+        {
+          case_id: 'VP-2026-003',
+          station_name: '45-DLK Buôn Ma Thuột Hub',
+          driver_name: 'Phạm Quốc Dũng',
+          driver_phone: '0912345789',
+          violation_type: 'Cập nhật sai trạng thái đơn',
+          ticket_no: 'SPX-TCK-9901',
+          created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
+          status: 'INVESTIGATING'
+        }
+      ];
+      this.isDirty = true;
+    }
+
+    if (!this.data.agingNotes) {
+      this.data.agingNotes = {
+        'SPX793000000002': { note: 'Khách hẹn giao buổi chiều sau 17h', user: 'xuan.nguyenthanh01@spxexpress.com', time: new Date().toISOString() },
+        'SPX793000000004': { note: 'Đã phân tuyến lại cho Rider Tuấn', user: 'xuan.nguyenthanh01@spxexpress.com', time: new Date().toISOString() }
+      };
+      this.isDirty = true;
+    }
   }
 }
 

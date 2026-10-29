@@ -4542,7 +4542,7 @@ function spxRenderOverviewSkeleton(body) {
     lead: spxUiLabel('Trung tâm điều hành Hub'), staff: spxUiLabel('Work Queue – Công việc của tôi')
   };
 
-  var s = header_(titleMap[effectiveLevel] || spxUiLabel('Tổng quan'), levelLabel || 'Admin', 'SPX HUB / ' + spxUiLabel('Tổng quan') + ' / ' + effectiveLevel.toUpperCase());
+  var s = header_(titleMap[effectiveLevel] || spxUiLabel('Tổng quan'), levelLabel || 'Admin', 'SPX HUB / ' + spxUiLabel('Tổng quan') + ' / ' + (effectiveLevel ? String(effectiveLevel).toUpperCase() : 'ADMIN'));
 
   // Priority Cards Section
   s += '<div style="font-size:11px;font-weight:800;color:#354157;text-transform:uppercase;letter-spacing:.03em;margin:14px 0 8px">⚡ ' + spxUiLabel('Ưu tiên vận hành') + ' <span style="font-weight:400;color:#8490a3;text-transform:none">— ' + spxUiLabel('5 chỉ số thật cần xử lý trước') + '</span></div>';
@@ -5202,7 +5202,7 @@ function spxRenderOverviewSummary(body, res, skipReload){
   // [DỌN — Bước 5] Bộ chọn "Xem thử" không còn vẽ RIÊNG trong Tổng quan nữa —
   // đã chuyển hẳn lên header (#spxHeaderPreviewLevelWrap), luôn hiện ở mọi
   // module, không chỉ Tổng quan. Tránh 2 nơi cùng 1 chức năng.
-  s += header_(titleMap[effectiveLevel] || spxUiLabel('Tổng quan'), levelLabel || 'Admin', 'SPX HUB / ' + spxUiLabel('Tổng quan') + ' / ' + effectiveLevel.toUpperCase());
+  s += header_(titleMap[effectiveLevel] || spxUiLabel('Tổng quan'), levelLabel || 'Admin', 'SPX HUB / ' + spxUiLabel('Tổng quan') + ' / ' + (effectiveLevel ? String(effectiveLevel).toUpperCase() : 'ADMIN'));
 
   if (isRealAdmin && SPX_PREVIEW_LEVEL && SPX_PREVIEW_LEVEL !== 'admin') {
     // [SỬA — hoàn thành tính năng lọc thật cho Lead/Staff, theo yêu cầu trực
@@ -5212,8 +5212,8 @@ function spxRenderOverviewSummary(body, res, skipReload){
     // còn "chỉ đổi cách trình bày" nữa. Chỉ AOM/SUP còn giữ nguyên hạn chế cũ
     // (phạm vi của họ là NHIỀU Hub trong 1 tổ chức — 1 tham số overrideHub duy
     // nhất không đủ diễn đạt, cần việc riêng lớn hơn để làm đúng).
-    var _headerHubNow = (localStorage.getItem('spx_default_hub')||'').trim();
-    var _isRealFiltered = (SPX_PREVIEW_LEVEL === 'lead' || SPX_PREVIEW_LEVEL === 'staff') && _headerHubNow && _headerHubNow.toUpperCase() !== 'ALL';
+    var _headerHubNow = String(localStorage.getItem('spx_default_hub') || '').trim();
+    var _isRealFiltered = (SPX_PREVIEW_LEVEL === 'lead' || SPX_PREVIEW_LEVEL === 'staff') && _headerHubNow && (_headerHubNow.toUpperCase() !== 'ALL');
     s += noteBox('wip', _isRealFiltered
       ? '<b>' + spxUiLabel('Đang XEM THỬ giao diện cấp') + ' ' + levelLabel + '</b> — ' + spxUiLabel('số liệu bên dưới ĐÃ được lọc đúng theo Hub đang chọn ở header') + ' (' + spxEscHtml(_headerHubNow) + '), ' + spxUiLabel('không phải số toàn hệ thống.')
       : ((SPX_PREVIEW_LEVEL === 'lead' || SPX_PREVIEW_LEVEL === 'staff')
