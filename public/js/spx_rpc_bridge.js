@@ -11,7 +11,6 @@
 
   console.log('⚡ [SPX Bridge] Initializing Local Multi-User RPC Bridge...');
 
-  // Thông tin phiên người dùng hiện tại
   var currentUserEmail = localStorage.getItem('spx_user_email') || 'xuan.nguyenthanh01@spxexpress.com';
   var currentUserName = localStorage.getItem('spx_user_name') || 'Admin Xuân - Krông Pắc 02';
 
@@ -43,18 +42,14 @@
       }
     };
 
-    // Proxy bắt mọi tên hàm được gọi: google.script.run.functionName(...args)
     proxyInstance = new Proxy(runner, {
-
       get: function (target, prop) {
         if (prop in target) {
           return target[prop];
         }
 
-        // prop chính là tên hàm backend được gọi (ví dụ: getStationData, saveStationData, getOrders...)
         return function (...args) {
           var startTime = performance.now();
-          // Gửi request tới Node.js Local Server
           fetch('/api/rpc/' + encodeURIComponent(prop), {
             method: 'POST',
             headers: {
@@ -94,9 +89,10 @@
         };
       }
     });
+
+    return proxyInstance;
   }
 
-  // Khởi tạo window.google.script.run
   window.google = window.google || {};
   window.google.script = window.google.script || {};
 
@@ -107,11 +103,8 @@
     configurable: true
   });
 
-  // Mock google.script.host và google.script.url
   window.google.script.host = window.google.script.host || {
-    close: function () {
-      window.close();
-    },
+    close: function () { window.close(); },
     setHeight: function () {},
     setWidth: function () {},
     editor: { focus: function () {} }
@@ -122,9 +115,7 @@
       if (cb) {
         var params = {};
         var searchParams = new URLSearchParams(window.location.search);
-        searchParams.forEach(function (val, key) {
-          params[key] = val;
-        });
+        searchParams.forEach(function (val, key) { params[key] = val; });
         cb({
           hash: window.location.hash.replace(/^#/, ''),
           parameter: params,
