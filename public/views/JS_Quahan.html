@@ -411,7 +411,7 @@ function qdoRenderLead(rows, hasCogs) {
     (QDO.sel.aom ? ('AOM: ' + qdoEsc(QDO.sel.aom) + (qdoLang() === 'en' ? ' · days at hub' : ' · số ngày đơn nằm tại trạm')) :
     (qdoLang() === 'en' ? 'All scope · days at hub' : 'Toàn bộ phạm vi · số ngày đơn nằm tại trạm')));
   var clearBtn = QDO.kf ? '<button class="qdo-btn" style="background:#fee2e2;color:#dc2626;border-color:#fca5a5;font-weight:700;margin-right:8px" data-qdo-act="kclear" title="' + (qdoLang() === 'en' ? 'Clear filter to view all' : 'Bỏ lọc để xem tất cả') + '">✕ ' + (qdoLang() === 'en' ? 'Clear filter' : 'Bỏ lọc') + ' (' + qdoEsc(qdoKfLabel(QDO.kf)) + ')</button>' : '';
-  return '<div class="qdo-card" id="qdo-list"><div class="qdo-ch"><div><div class="qdo-ct">' + qdoT('lTitle') + (QDO.kf ? ' · ' + qdoEsc(qdoKfLabel(QDO.kf)) : '') + '</div><div class="qdo-cs">' + subScope + '</div></div><div class="qdo-seg">' + clearBtn + '<button class="qdo-btn" data-qdo-act="copyall">' + qdoT('copyAll') + '</button><button class="qdo-btn" data-qdo-act="csv">' + qdoT('csv') + '</button><button class="qdo-btn pri" style="background:#2563eb;color:#fff;font-weight:700;margin-left:8px" onclick="document.getElementById('qdo-file-input').click()">📥 NẠP FILE QUÁ HẠN</button><input type="file" id="qdo-file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="qdoUploadFile(event)"></div></div>' +
+  return '<div class="qdo-card" id="qdo-list"><div class="qdo-ch"><div><div class="qdo-ct">' + qdoT('lTitle') + (QDO.kf ? ' · ' + qdoEsc(qdoKfLabel(QDO.kf)) : '') + '</div><div class="qdo-cs">' + subScope + '</div></div><div class="qdo-seg">' + clearBtn + '<button class="qdo-btn" data-qdo-act="copyall">' + qdoT('copyAll') + '</button><button class="qdo-btn" data-qdo-act="csv">' + qdoT('csv') + '</button><button class="qdo-btn" id="spxSyncSheetsBtn" style="background:#059669;color:#fff;font-weight:700;margin-left:8px" onclick="spxSyncGoogleSheetsNow()">🔄 ĐỒNG BỘ GOOGLE SHEETS</button><button class="qdo-btn pri" style="background:#2563eb;color:#fff;font-weight:700;margin-left:8px" onclick="document.getElementById('qdo-file-input').click()">📥 NẠP FILE QUÁ HẠN</button><input type="file" id="qdo-file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="qdoUploadFile(event)"></div></div>' +
     '<div class="qdo-bar"><span class="qdo-chip">' + qdoT('lCount', lst.length) + '</span><select class="qdo-sel" data-qdo-sel="lproc">' + optP + '</select><select class="qdo-sel" data-qdo-sel="lfin">' + optF + '</select>' +
     '<input class="qdo-in" id="qdo-q" placeholder="' + qdoEsc(qdoT('searchId')) + '" value="' + qdoEsc(L.q) + '"></div>' + tbl +
     '<div class="qdo-pg"><button class="qdo-btn" data-qdo-act="lpage" data-qdo-v="-1"' + (L.page <= 1 ? ' disabled' : '') + '>' + qdoT('prev') + '</button><button class="qdo-btn" data-qdo-act="lpage" data-qdo-v="1"' + (L.page >= pages ? ' disabled' : '') + '>' + qdoT('next') + '</button><span class="qdo-upd">' + qdoT('rowsPg', lst.length, L.page, pages) + '</span></div></div>';
@@ -630,8 +630,24 @@ function qhGetActivePreviewOrgFilter(){
 
 function quahanApplyAccessUI(access) { try { QDO.access = access; qdoRender(); } catch (e) {} }
 
-</script>
-</div>
+async function spxSyncGoogleSheetsNow() {
+  const btn = document.getElementById('spxSyncSheetsBtn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Đang kéo Google Sheets...'; }
+  try {
+    const res = await fetch('/api/sync/sheets', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      if (typeof qdoToast === 'function') qdoToast('✅ Đã đồng bộ ' + data.count + ' đơn từ Google Sheets!', 'success');
+      setTimeout(function() { window.location.reload(); }, 800);
+    } else {
+      if (typeof qdoToast === 'function') qdoToast('Lỗi đồng bộ: ' + (data.error || 'Vui lòng kiểm tra quyền'), 'error');
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-arrows-rotate mr-1"></i><span>Đồng bộ Google Sheets</span>'; }
+    }
+  } catch (e) {
+    if (typeof qdoToast === 'function') qdoToast('Lỗi mạng: ' + e.message, 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-arrows-rotate mr-1"></i><span>Đồng bộ Google Sheets</span>'; }
+  }
+}
 
 function qdoUploadFile(event) {
   var file = event.target.files[0];
@@ -714,3 +730,5 @@ function qdoUploadFile(event) {
   };
   reader.readAsArrayBuffer(file);
 }
+</script>
+</div>

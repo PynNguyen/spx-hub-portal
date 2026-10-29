@@ -139,19 +139,44 @@ class WorkspaceSheetsService {
       console.log(`📊 [Google Sheets API] Nhận được ${rawRows.length} dòng từ sheet '1. LM high aging'!`);
 
       if (rawRows.length > 2) {
-        // Dòng index 1 là tiêu đề cột
-        const header = rawRows[1].map(c => String(c || '').toLowerCase().trim());
-        const colShip = header.findIndex(h => /spx_shipment_id|shipment/i.test(h));
-        const colHub = header.findIndex(h => /fleet_final_station|hub/i.test(h));
-        const colStatus = header.findIndex(h => /fleet_final_status|status/i.test(h));
-        const colTiming = header.findIndex(h => /timing_date/i.test(h));
-        const colAging = header.findIndex(h => /^aging/i.test(h));
-        const colCogs = header.findIndex(h => /cogs/i.test(h));
-        const colInbound = header.findIndex(h => /inbound/i.test(h));
-        const colLost = header.findIndex(h => /đến hạn lost|lost/i.test(h));
-        const colProc = header.findIndex(h => /trạng thái xử lý|process/i.test(h));
-        const colAom = header.findIndex(h => h === 'aom');
-        const colSup = header.findIndex(h => h === 'sup');
+        // Chuẩn hóa tiêu đề dòng index 1 (dòng 2 trong Sheet)
+        const hdr = rawRows[1].map(c => String(c || '').toLowerCase().replace(/\s+/g, ' ').trim());
+        
+        // Dò cột theo đúng chuẩn _aging_lmColumnMap_ của Apps Script gốc
+        let colShip = -1, colStatus = -1, colHub = -1, colInbound = -1, colAtt = -1;
+        let colTiming = -1, colAging = -1, colCogs = -1, colLost = -1, colProc = -1;
+        let colAom = -1, colSup = -1;
+
+        for (let c = 0; c < hdr.length; c++) {
+          const h = hdr[c];
+          if (!h) continue;
+          if (h === 'spx_shipment_id') colShip = c;
+          else if (h === 'fleet_final_status') colStatus = c;
+          else if (h === 'fleet_final_station') colHub = c;
+          else if (h.indexOf('inbound_date_current') === 0) colInbound = c;
+          else if (h.indexOf('deliver_attempt') === 0) colAtt = c;
+          else if (h.indexOf('timing_date') === 0) colTiming = c;
+          else if (/^aging(\(sum\))?$/.test(h)) colAging = c;
+          else if (h.indexOf('cogs') === 0) colCogs = c;
+          else if (h === 'aom') colAom = c;
+          else if (h === 'sup') colSup = c;
+          else if (h.indexOf('đến hạn lost') === 0) colLost = c;
+          else if (h.indexOf('trạng thái xử lý') === 0) colProc = c;
+        }
+
+        // Fallback sang vị trí mặc định nếu sheet không đổi tên
+        if (colShip < 0) colShip = 5;
+        if (colStatus < 0) colStatus = 10;
+        if (colHub < 0) colHub = 11;
+        if (colInbound < 0) colInbound = 12;
+        if (colAtt < 0) colAtt = 14;
+        if (colTiming < 0) colTiming = 15;
+        if (colAging < 0) colAging = 16;
+        if (colCogs < 0) colCogs = 18;
+        if (colLost < 0) colLost = 0;
+        if (colProc < 0) colProc = 1;
+        if (colAom < 0) colAom = 2;
+        if (colSup < 0) colSup = 3;
 
         const parsedOrders = [];
         for (let i = 2; i < rawRows.length; i++) {
@@ -159,40 +184,95 @@ class WorkspaceSheetsService {
           const shipId = colShip >= 0 ? String(row[colShip] || '').trim() : '';
           if (!shipId) continue;
 
-          const timing = colTiming >= 0 ? parseFloat(String(row[colTiming]).replace(/,/g, '')) || 0 : 0;
+          const timing = colTiming >= 0 ? parseFloat(String(row[colTiming] || '').replace(/,/g, '')) || 0 : 0;
+          const agingVal = colAging >= 0 ? parseFloat(String(row[colAging] || '').replace(/,/g, '')) || timing : timing;
           const bucket = timing <= 2 ? '1–2 ngày' : (timing <= 5 ? '3–5 ngày' : 'Trên 5 ngày');
-          const cogs = colCogs >= 0 ? parseFloat(String(row[colCogs]).replace(/,/g, '')) || 0 : 0;
+          const cogs = colCogs >= 0 ? parseFloat(String(row[colCogs] || '').replace(/[^\d.]/g, '')) || 0 : 0;
+          const hubVal = colHub >= 0 ? String(row[colHub] || '').trim() : '';
+          const finalStat = colStatus >= 0 ? String(row[colStatus] || '').trim() : 'onhold';
 
           parsedOrders.push({
             shipmentId: shipId,
-            hubName: colHub >= 0 ? String(row[colHub] || '').trim() : '45-DLK Krong Pak 02 Hub',
-            Hub: colHub >= 0 ? String(row[colHub] || '').trim() : '45-DLK Krong Pak 02 Hub',
-            station: colHub >= 0 ? String(row[colHub] || '').trim() : '45-DLK Krong Pak 02 Hub',
-            aom: colAom >= 0 ? String(row[colAom] || '').trim() : 'Trần Hữu Danh',
-            sup: colSup >= 0 ? String(row[colSup] || '').trim() : 'Trương Lê Uy Trí',
-            processStatus: colProc >= 0 ? String(row[colProc] || 'Đang xử lý') : 'Đang xử lý',
-            finalStatus: colStatus >= 0 ? String(row[colStatus] || 'onhold') : 'onhold',
-            lostToday: colLost >= 0 ? String(row[colLost] || '') : '',
+            hubName: hubVal,
+            Hub: hubVal,
+            station: hubVal,
+            aom: colAom >= 0 ? String(row[colAom] || '').trim() : '',
+            sup: colSup >= 0 ? String(row[colSup] || '').trim() : '',
+            processStatus: colProc >= 0 ? String(row[colProc] || 'Đang xử lý').trim() : 'Đang xử lý',
+            finalStatus: finalStat,
+            lostToday: colLost >= 0 ? String(row[colLost] || '').trim() : '',
             timingDate: timing,
-            aging: colAging >= 0 ? parseFloat(String(row[colAging]).replace(/,/g, '')) || timing : timing,
+            aging: agingVal,
             agingBucket: bucket,
-            att: 1,
+            att: colAtt >= 0 ? parseInt(String(row[colAtt] || 1), 10) || 1 : 1,
             inboundAt: colInbound >= 0 ? String(row[colInbound] || '') : '',
             cogs: cogs,
-            reason: timing <= 2 ? 'Khách hẹn lại' : (timing <= 5 ? 'Chờ đối soát / kiểm tra' : 'Tạm giữ theo dõi')
+            reason: String(row[colProc] || 'Đang xử lý')
           });
+        }
+
+        // 2. Kéo sheet 'Raw' từ [Aging & Lost] (1vvOZG80Rz5PTNPFsbHzmUMPkPaAkGOY70nDHBwfzjQE)
+        let parsedLostOrders = [];
+        try {
+          const lostUrl = `https://sheets.googleapis.com/v4/spreadsheets/${this.sheetsConfig.lostId}/values/Raw!A1:L?valueRenderOption=FORMATTED_VALUE`;
+          const lostRes = await fetch(lostUrl, { headers: { Authorization: `Bearer ${token}` } });
+          if (lostRes.ok) {
+            const lostSheetData = await lostRes.json();
+            const lostRows = lostSheetData.values || [];
+            if (lostRows.length > 1) {
+              const lHeader = lostRows[0].map(c => String(c || '').toLowerCase().replace(/\s+/g, ' ').trim());
+              let lShip = lHeader.findIndex(h => /spx_shipment_id|mã đơn|tracking/i.test(h));
+              let lHub = lHeader.findIndex(h => /fleet_final_station|hub|station|trạm/i.test(h));
+              let lProc = lHeader.findIndex(h => /trạng thái xử lý|xử lý/i.test(h));
+              let lCogs = lHeader.findIndex(h => /cogs|giá trị/i.test(h));
+              let lStatus = lHeader.findIndex(h => /fleet_final_status|status/i.test(h));
+
+              if (lShip < 0) lShip = 2;
+              if (lProc < 0) lProc = 3;
+              if (lHub < 0) lHub = 5;
+              if (lCogs < 0) lCogs = 9;
+              if (lStatus < 0) lStatus = 10;
+
+              for (let i = 1; i < lostRows.length; i++) {
+                const row = lostRows[i];
+                const sId = String(row[lShip] || '').trim();
+                if (!sId || ['spx_shipment_id', 'mã đơn hàng', 'spx tracking'].includes(sId.toLowerCase())) continue;
+                const hName = String(row[lHub] || '').trim();
+                const cogsVal = lCogs >= 0 ? parseFloat(String(row[lCogs] || '').replace(/[^\d.]/g, '')) || 0 : 0;
+
+                parsedLostOrders.push({
+                  isChotLost: true,
+                  lostToday: '',
+                  processStatus: String(row[lProc] || ''),
+                  aom: '-',
+                  sup: '-',
+                  shipmentId: sId,
+                  finalStatus: String(row[lStatus] || ''),
+                  hubName: hName,
+                  Hub: hName,
+                  station: hName,
+                  aging: 'CHỐT LOST',
+                  cogs: cogsVal
+                });
+              }
+              console.log(`✅ [Sheets Sync] Đồng bộ thành công ${parsedLostOrders.length} đơn Chốt Lost từ Google Sheet!`);
+            }
+          }
+        } catch (errLost) {
+          console.error('⚠️ [Sheets Sync Lost Error]:', errLost.message);
         }
 
         if (parsedOrders.length > 0) {
           if (!db.data.agingData) db.data.agingData = {};
           db.data.agingData.core = parsedOrders;
+          db.data.agingData.lost = parsedLostOrders;
           db.data.agingDataVersion = Date.now();
           db.data.agingDataLastSync = new Date().toISOString();
           db.isDirty = true;
           db.saveNow();
           this.lastSyncTime = new Date();
-          console.log(`✅ [Sheets Sync] Đồng bộ thành công ${parsedOrders.length} đơn thật vào hệ thống từ Google Sheet!`);
-          return { success: true, count: parsedOrders.length, lastSync: this.lastSyncTime };
+          console.log(`✅ [Sheets Sync] Đồng bộ thành công ${parsedOrders.length} đơn Core + ${parsedLostOrders.length} đơn Lost thật từ Google Sheets!`);
+          return { success: true, count: parsedOrders.length, lostCount: parsedLostOrders.length, lastSync: this.lastSyncTime };
         }
       }
 

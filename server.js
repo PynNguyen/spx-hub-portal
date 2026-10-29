@@ -376,6 +376,20 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('============================================================\n');
 
   triggerManager.start();
+
+  // Tự động đồng bộ Google Sheets khi khởi động (nếu đã có token)
+  setTimeout(() => {
+    sheetsService.syncAllSheetsFromGoogle().then(res => {
+      if (res && res.success) {
+        console.log(`✅ [Startup] Tự động đồng bộ Google Sheets thành công: ${res.count} đơn.`);
+      }
+    }).catch(e => console.warn('[Startup] Sheets sync:', e.message));
+  }, 5000);
+
+  // Tự động kéo dữ liệu mới từ Google Sheets định kỳ mỗi 15 phút
+  setInterval(() => {
+    sheetsService.syncAllSheetsFromGoogle().catch(e => console.warn('[Cron] Sheets sync:', e.message));
+  }, 15 * 60 * 1000);
 });
 
 // Xử lý đóng kết nối an toàn khi shutdown (Graceful Shutdown)
