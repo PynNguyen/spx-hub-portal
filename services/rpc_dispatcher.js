@@ -6,12 +6,14 @@ class RPCDispatcher {
     this.hubs = [];
     this.loadHubs();
 
-    // Bind methods
+    // Map methods
     this.getOrders = this.getRescueOrders.bind(this);
     this.rq_getOrders = this.getRescueOrders.bind(this);
     this.flm_getKpiBundle = this.getKpiBundle.bind(this);
     this.flm_getDailyStationKpi = this.getKpiBundle.bind(this);
+    this.kpifail_getMasterDataLite = this.getMasterDataLite.bind(this);
     this.flm_getFailOrdersByDay = this.getFailOrdersByDay.bind(this);
+    this.kpifail_getNotes = this.getNotes.bind(this);
     this.vp_getData = this.getComplaintData.bind(this);
     this.getComplaintData = this.getComplaintData.bind(this);
     this.getHubList = this.getHubsList.bind(this);
@@ -48,10 +50,12 @@ class RPCDispatcher {
     if (typeof this[action] === 'function') {
       return await this[action](...payload);
     }
+    if (action === 'spx_getOverviewPart') return this.getOverviewPart(...payload);
+    if (action === 'kpifail_getMasterDataLite') return this.getMasterDataLite(...payload);
     if (action === 'flm_getKpiBundle') return this.getKpiBundle();
     if (action === 'getOrders' || action === 'rq_getOrders') return this.getRescueOrders(...payload);
     if (action === 'flm_getFailOrdersByDay') return this.getFailOrdersByDay(...payload);
-    if (action === 'spx_getOverviewPart') return this.getOverviewPart();
+    if (action === 'kpifail_getNotes') return this.getNotes();
     if (action === 'spx_getHeartbeat') return this.getHeartbeat();
     if (action.startsWith('rp_')) return this.rp_checkAccess(userEmail);
     if (action.startsWith('vp_')) return this.getComplaintData(...payload);
@@ -64,7 +68,72 @@ class RPCDispatcher {
   }
 
   // ==========================================================
-  // 1. KPI MODULE — flm_getKpiBundle
+  // 1. TỔNG QUAN — spx_getOverviewPart (Khớp 100% Hình 2)
+  // ==========================================================
+  getOverviewPart(part = 'aging', hub = '45-DLK Krong Pak 02 Hub', force = false) {
+    const isKrongPak = String(hub).includes('Krong Pak 02') || String(hub).includes('45-DLK');
+    let partData = {};
+
+    if (part === 'aging') {
+      partData = {
+        overdueCount: 0,
+        closedLostCount: 0,
+        otherFlaggedCount: 0
+      };
+    } else if (part === 'kpifail') {
+      partData = {
+        totalFM: isKrongPak ? 1 : 2,
+        totalLM: isKrongPak ? 1 : 1,
+        totalSOP: 0,
+        fm: isKrongPak ? 1 : 2,
+        lm: isKrongPak ? 1 : 1,
+        sop: 0
+      };
+    } else if (part === 'rescue') {
+      partData = {
+        redCount: 0
+      };
+    } else if (part === 'violation') {
+      partData = {
+        noTicketCount: isKrongPak ? 128 : 45
+      };
+    } else if (part === 'riderplan') {
+      partData = {
+        missingCount: 0,
+        single: {
+          entered: true,
+          inbound: isKrongPak ? 1725 : 1450,
+          fc: isKrongPak ? 1836 : 1500,
+          pct: isKrongPak ? 94 : 97,
+          riders: 28,
+          ridersFc: 28
+        }
+      };
+    }
+
+    return JSON.stringify({
+      success: true,
+      data: partData,
+      generatedAt: Date.now()
+    });
+  }
+
+  getHeartbeat() {
+    return JSON.stringify({
+      success: true,
+      timestamp: Date.now(),
+      asOf: '2026-10-28',
+      modules: {
+        kpifail: { status: 'normal' },
+        doncaucuu: { status: 'normal' },
+        vipham: { status: 'normal' },
+        rider_plan: { status: 'normal' }
+      }
+    });
+  }
+
+  // ==========================================================
+  // 2. KPI MODULE — flm_getKpiBundle & kpifail_getMasterDataLite
   // ==========================================================
   getKpiBundle() {
     const dates = [
@@ -165,41 +234,75 @@ class RPCDispatcher {
     });
   }
 
-  // ==========================================================
-  // 2. TỔNG QUAN & HEARTBEAT (Tránh lỗi phân tích dữ liệu)
-  // ==========================================================
-  getOverviewPart() {
+  getMasterDataLite(hub = '45-DLK Krong Pak 02 Hub', days = 31) {
     return JSON.stringify({
       success: true,
-      data: {
-        station: '45-DLK Krong Pak 02 Hub',
-        asOf: '2026-10-28',
-        kpi: { fm: 99.3, lm: 99.9, sop: 0.08, volume: 44570, deliveryRate: 86.3 },
-        rescue: { total: 1, red: 1, orange: 0, green: 0 },
-        violations: { total: 180, logistics: 100, nonShopee: 67, shopee: 13, ticketed: 52 }
-      }
+      records: [
+        {
+          id: 'SPXVN06431408780A',
+          hub: hub,
+          category: 'SOP',
+          type: 'wrong fm',
+          reason: 'Sai quy trình bắn giao Pickup',
+          date: '18/10',
+          rider: 'Rider 102',
+          status: 'Chưa xử lý'
+        },
+        {
+          id: 'SPXVN06555409864A',
+          hub: hub,
+          category: 'SOP',
+          type: 'wrong fm',
+          reason: 'Sai quy trình bắn giao Pickup',
+          date: '18/10',
+          rider: 'Rider 105',
+          status: 'Chưa xử lý'
+        },
+        {
+          id: 'SPXVN06419283711A',
+          hub: hub,
+          category: 'FM',
+          type: 'late fm',
+          reason: 'Trễ giao ca 1',
+          date: '16/10',
+          rider: 'Rider 108',
+          status: 'Chưa xử lý'
+        },
+        {
+          id: 'SPXVN06528193822A',
+          hub: hub,
+          category: 'LM',
+          type: 'late lm',
+          reason: 'Trễ phát đơn LastMile',
+          date: '15/10',
+          rider: 'Rider 110',
+          status: 'Chưa xử lý'
+        }
+      ]
     });
   }
 
-  getHeartbeat() {
+  getFailOrdersByDay(payloadStr = '{}') {
     return JSON.stringify({
       success: true,
-      timestamp: Date.now(),
-      asOf: '2026-10-28',
-      modules: {
-        kpifail: { status: 'normal' },
-        doncaucuu: { status: 'normal' },
-        vipham: { status: 'normal' },
-        rider_plan: { status: 'normal' }
-      }
+      page: 1,
+      total: 2,
+      rows: [
+        { id: 'SPXVN06431408780A', hub: '45-DLK Krong Pak 02 Hub', category: 'SOP', type: 'wrong fm', reason: 'Sai quy trình bắn giao Pickup', date: '18/10', rider: 'Rider 102' },
+        { id: 'SPXVN06555409864A', hub: '45-DLK Krong Pak 02 Hub', category: 'SOP', type: 'wrong fm', reason: 'Sai quy trình bắn giao Pickup', date: '18/10', rider: 'Rider 105' }
+      ]
     });
+  }
+
+  getNotes() {
+    return JSON.stringify({ success: true, notes: {} });
   }
 
   // ==========================================================
   // 3. ĐƠN CẦU CỨU — getOrders
   // ==========================================================
   getRescueOrders(force = false) {
-    const exportTime = new Date(Date.now() - 3600000 * 15.7).toISOString(); // còn 8.3h
+    const exportTime = new Date(Date.now() - 3600000 * 15.7).toISOString();
     return {
       success: true,
       resolved: [],
@@ -223,18 +326,6 @@ class RPCDispatcher {
           recipient_name: 'Khách hàng Krông Pắc',
           recipient_phone: '0905123456'
         }
-      ]
-    };
-  }
-
-  getFailOrdersByDay(payloadStr = '{}') {
-    return {
-      success: true,
-      page: 1,
-      total: 2,
-      rows: [
-        { id: 'SPXVN06431408780A', hub: '45-DLK Krong Pak 02 Hub', category: 'SOP', type: 'wrong fm', reason: 'Sai quy trình bắn giao Pickup', date: '18/10', rider: 'Rider 102' },
-        { id: 'SPXVN06555409864A', hub: '45-DLK Krong Pak 02 Hub', category: 'SOP', type: 'wrong fm', reason: 'Sai quy trình bắn giao Pickup', date: '18/10', rider: 'Rider 105' }
       ]
     };
   }
