@@ -16,7 +16,7 @@ class RpcDispatcher {
     console.log(`📡 [RPC Call] "${functionName}", User: "${userEmail}", Args:`, args.length);
     try {
       if (typeof this[functionName] === 'function') {
-        return await this[functionName](<...args, userEmail>);
+        return await this[functionName](...args, userEmail);
       }
       if (functionName.startsWith('getModuleHtml') || functionName === 'include') {
         return this.getModuleHtml(args[0]);
