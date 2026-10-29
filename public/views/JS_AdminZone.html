@@ -1,0 +1,2393 @@
+<!-- =========================================================================
+     [MỚI — chuyển từ 2 modal popup (Quản lý Admin/Duyệt quyền truy cập) sang
+     1 module thật với 2 TAB, theo đúng yêu cầu "phân vùng riêng trên sidebar
+     — mở vào thì duyệt bên trong module đó, không phải popup". Đây là 2 TAB
+     của CÙNG 1 view (không phải 2 toolKey riêng) — vì cơ chế lazy-load chỉ hỗ
+     trợ đúng 1 container cho mỗi toolKey; 2 toolKey trỏ cùng 1 file sẽ khiến
+     nội dung bị chèn 2 lần, trùng ID/trùng hàm trên toàn trang. Giữ nguyên
+     100% ID/hàm/logic backend bên trong 2 phần nội dung — chỉ đổi khung bọc
+     ngoài từ "overlay che toàn màn hình" sang "tab nội bộ trong 1 view".
+     ========================================================================= -->
+<style>
+.access-tab-btn { color:#94a3b8; border-color:transparent; }
+.access-tab-btn.active-tab { color:var(--spx-sev-ok,#22c55e); border-color:var(--spx-sev-ok,#22c55e); }
+.dark .access-tab-btn.active-tab { color:#34d399; border-color:#34d399; }
+.spx-admin-zone-tab { padding:8px 16px; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:0.05em; border-radius:10px 10px 0 0; cursor:pointer; transition:all .15s ease; display:flex; align-items:center; gap:6px; }
+.spx-admin-zone-tab.active { background:#fff; color:#4f46e5; }
+.dark .spx-admin-zone-tab.active { background:#0b1121; color:#818cf8; }
+.spx-admin-zone-tab:not(.active) { color:#94a3b8; }
+.spx-admin-zone-tab:not(.active):hover { color:#64748b; }
+</style>
+
+  <div class="p-2.5 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-[#0b1121] shrink-0 shadow-sm flex items-center gap-1 px-4">
+    <div class="spx-admin-zone-tab" data-adminzone-tabbtn="adminroles" onclick="_spxAdminZoneShowTab('adminroles')"><i class="fas fa-key text-xs"></i> Phân quyền User</div>
+    <div class="spx-admin-zone-tab" data-adminzone-tabbtn="adminapproval" onclick="_spxAdminZoneShowTab('adminapproval')"><i class="fas fa-user-check text-xs"></i> Duyệt quyền truy cập</div>
+    <div class="spx-admin-zone-tab" data-adminzone-tabbtn="adminusage" onclick="_spxAdminZoneShowTab('adminusage')"><i class="fas fa-chart-column text-xs"></i> Tần suất sử dụng</div>
+    <div class="spx-admin-zone-tab" data-adminzone-tabbtn="admincleanup" onclick="_spxAdminZoneShowTab('admincleanup')"><i class="fas fa-server text-xs"></i> Dọn dẹp hệ thống</div>
+    <div class="spx-admin-zone-tab" data-adminzone-tabbtn="adminstations" onclick="_spxAdminZoneShowTab('adminstations')"><i class="fas fa-map-location-dot text-xs"></i> <span data-i18n-ui="Trạm quản lý">Trạm quản lý</span></div>
+    <div class="spx-admin-zone-tab" data-adminzone-tabbtn="adminmodules" onclick="_spxAdminZoneShowTab('adminmodules')"><i class="fas fa-toggle-on text-xs"></i> <span data-i18n-ui="Quản lý Module">Quản lý Module</span></div>
+    <div class="spx-admin-zone-tab" data-adminzone-tabbtn="adminadvanced" onclick="_spxAdminZoneShowTab('adminadvanced')"><i class="fas fa-toolbox text-xs"></i> Tuỳ chọn nâng cao</div>
+  </div>
+
+  <div class="flex-1 overflow-y-auto custom-scrollbar" data-scroll-root="true">
+
+  <!-- ===================== TAB: PHÂN QUYỀN USER (Quản lý Admin) ===================== -->
+  <div id="adminzone-tab-adminroles" class="hidden">
+  <div class="max-w-2xl mx-auto px-4 py-5 w-full">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+      <div class="px-5 py-4 bg-indigo-50 dark:bg-indigo-900/30 border-b border-indigo-100 dark:border-indigo-800">
+        <h3 class="font-black text-indigo-800 dark:text-indigo-300 uppercase tracking-widest text-xs flex items-center gap-2"><i class="fas fa-user-shield"></i> Quản lý Admin</h3>
+        <p class="text-indigo-600/70 dark:text-indigo-400 font-bold text-[10px] mt-0.5">Chỉ admin cấp 1 mới thêm/xoá được admin cấp 2</p>
+      </div>
+      <div class="p-5 bg-white dark:bg-[#0b1121]">
+        <div class="flex flex-col gap-2 mb-4 pb-4 border-b border-slate-100 dark:border-slate-700">
+          <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Thêm admin cấp 2</label>
+          <div class="flex gap-2">
+            <input id="adminNewEmailInput" type="email" placeholder="email@spxexpress.com" class="flex-1 bg-slate-50 dark:bg-[#151e2f] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all">
+          </div>
+          <input id="adminNewNoteInput" type="text" placeholder="Ghi chú (VD: SUP hub Krông Pắc)" class="bg-slate-50 dark:bg-[#151e2f] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all">
+          <button id="btnAdminAddSubmit" onclick="adminManageAddSubmit()" class="self-end px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-lg text-[10px] uppercase transition-colors shadow-md flex items-center gap-2 active:scale-95"><i class="fas fa-user-plus text-xs"></i> Thêm admin</button>
+          <p id="adminAddMsg" class="text-[10px] font-bold hidden"></p>
+        </div>
+        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Danh sách admin</label>
+        <div id="adminListContainer" class="flex flex-col gap-2">
+          <p class="text-xs text-slate-400 font-semibold flex items-center gap-2"><i class="fas fa-spinner fa-spin"></i> Đang tải...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="max-w-3xl mx-auto px-4 pb-5 w-full">
+    <!-- [MỚI — phân cấp ROM > AOM > SUP > Lead/Staff]
+         Sheet nguồn 'Khu vực quản lý (AOMSup)' do đội khác quản, KHÔNG có cột
+         ROM, nên cấu hình ROM lưu trong DB quản trị và quản tại đây.
+         Phạm vi trạm của ROM suy ra ĐỘNG = hợp các trạm của những AOM được gán
+         -> AOM đổi trạm thì ROM tự cập nhật, không phải sửa 2 nơi. -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+      <div class="px-5 py-4 bg-indigo-50 dark:bg-indigo-900/30 border-b border-indigo-100 dark:border-indigo-800">
+        <h3 class="font-black text-indigo-800 dark:text-indigo-300 uppercase tracking-widest text-xs flex items-center gap-2">
+          <i class="fas fa-sitemap"></i> Phân cấp ROM
+        </h3>
+        <p class="text-indigo-600/70 dark:text-indigo-400 font-bold text-[10px] mt-0.5">
+          1 ROM quản NHIỀU AOM — chọn tất cả AOM thuộc ROM rồi bấm Thiết lập
+        </p>
+      </div>
+
+      <div class="p-5">
+        <label class="block text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 mb-1">Email ROM</label>
+        <input id="romEmailInput" type="email" placeholder="rom@spxexpress.com"
+          class="w-full bg-white dark:bg-[#151e2f] border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-700 dark:text-slate-200 outline-none focus:border-indigo-500 mb-3">
+
+        <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
+          <label class="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400">
+            AOM trực thuộc <span class="text-indigo-600 dark:text-indigo-400">(chọn được nhiều)</span>
+          </label>
+          <div class="flex gap-2">
+            <button type="button" onclick="romToggleAllAoms(true)" class="text-[10px] font-bold text-indigo-600 hover:underline">Chọn tất cả</button>
+            <button type="button" onclick="romToggleAllAoms(false)" class="text-[10px] font-bold text-slate-400 hover:underline">Bỏ chọn</button>
+          </div>
+        </div>
+        <!-- Danh sách hộp kiểm thay cho ô xổ xuống: 1 ROM quản nhiều AOM nên
+             phải chọn được nhiều cùng lúc, và thấy rõ đang chọn những ai. -->
+        <div id="romAomList"
+          class="border border-slate-200 dark:border-slate-600 rounded-lg p-2 mb-3 max-h-52 overflow-y-auto bg-white dark:bg-[#151e2f]">
+          <div class="text-xs text-slate-400 p-2">Đang tải danh sách AOM...</div>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+          <button type="button" onclick="romSetup()"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs px-5 py-2.5 rounded-lg">
+            <i class="fas fa-check"></i> Thiết lập ROM
+          </button>
+          <span id="romPickCount" class="text-[11px] font-bold text-slate-500 dark:text-slate-400"></span>
+        </div>
+
+        <div class="border-t border-slate-100 dark:border-slate-700 mt-5 pt-4">
+          <div class="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 mb-2">ROM đã cấu hình</div>
+          <div id="romConfigBody" class="text-xs text-slate-500 dark:text-slate-400">Đang tải cấu hình...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- ===================== TAB: DUYỆT QUYỀN TRUY CẬP (Duyệt đăng nhập) ===================== -->
+  <div id="adminzone-tab-adminapproval" class="hidden">
+  <div class="max-w-2xl mx-auto px-4 py-5 w-full">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+      <div class="px-5 py-4 bg-emerald-50 dark:bg-emerald-900/30 border-b border-emerald-100 dark:border-emerald-800">
+        <h3 class="font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-widest text-xs flex items-center gap-2"><i class="fas fa-user-check"></i> Duyệt đăng nhập</h3>
+        <p class="text-emerald-600/70 dark:text-emerald-400 font-bold text-[10px] mt-0.5">Admin cấp 1 hoặc cấp 2 đều duyệt được ngay tại đây</p>
+      </div>
+      <div class="px-5 pt-3 bg-white dark:bg-[#0b1121] flex gap-2 border-b border-slate-100 dark:border-slate-700">
+        <button id="accessTabBtn-pending" onclick="switchAccessApprovalTab('pending')" class="access-tab-btn px-3 pb-2.5 text-[11px] font-black uppercase tracking-wide border-b-2 transition-colors flex items-center gap-1.5">
+          <i class="fas fa-hourglass-half text-[10px]"></i> Chờ duyệt <span id="accessTabCount-pending" class="ml-0.5 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[9px] dark:bg-amber-900/40 dark:text-amber-300">0</span>
+        </button>
+        <button id="accessTabBtn-approved" onclick="switchAccessApprovalTab('approved')" class="access-tab-btn px-3 pb-2.5 text-[11px] font-black uppercase tracking-wide border-b-2 transition-colors flex items-center gap-1.5">
+          <i class="fas fa-circle-check text-[10px]"></i> Đã duyệt <span id="accessTabCount-approved" class="ml-0.5 px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[9px] dark:bg-emerald-900/40 dark:text-emerald-300">0</span>
+        </button>
+      </div>
+      <div class="p-5 bg-white dark:bg-[#0b1121]">
+        <div class="relative mb-3">
+          <i class="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
+          <input id="accessApprovalSearchInput" type="text" placeholder="Tìm theo email..." oninput="renderAccessApprovalList(_spxAccessApprovalData)" class="w-full bg-slate-50 dark:bg-[#151e2f] border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all">
+        </div>
+        <div id="accessAddNewBlock" class="flex flex-col gap-2 mb-4 pb-4 border-b border-slate-100 dark:border-slate-700">
+          <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Cấp quyền đăng nhập trước cho email mới</label>
+          <div class="flex gap-2">
+            <input id="accessNewEmailInput" type="email" placeholder="email@spxexpress.com" class="flex-1 bg-slate-50 dark:bg-[#151e2f] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all">
+            <button id="btnAccessAddSubmit" onclick="accessApprovalAddNew()" class="shrink-0 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-lg text-[10px] uppercase transition-colors shadow-md flex items-center gap-2 active:scale-95"><i class="fas fa-user-plus text-xs"></i> Duyệt luôn</button>
+          </div>
+          <p id="accessAddMsg" class="text-[10px] font-bold hidden"></p>
+        </div>
+        <div id="accessApprovalListContainer" class="flex flex-col gap-2">
+          <p class="text-xs text-slate-400 font-semibold flex items-center gap-2"><i class="fas fa-spinner fa-spin"></i> Đang tải...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- ===================== TAB: TẦN SUẤT SỬ DỤNG MODULE (chỉ admin) ===================== -->
+  <div id="adminzone-tab-adminusage" class="hidden">
+  <div class="max-w-3xl mx-auto px-4 py-5 w-full">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+      <div class="px-5 py-4 bg-sky-50 dark:bg-sky-900/30 border-b border-sky-100 dark:border-sky-800 flex justify-between items-center flex-wrap gap-2">
+        <div>
+          <h3 class="font-black text-sky-800 dark:text-sky-300 uppercase tracking-widest text-xs flex items-center gap-2"><i class="fas fa-chart-column"></i> Tần suất sử dụng module</h3>
+          <p class="text-sky-600/70 dark:text-sky-400 font-bold text-[10px] mt-0.5">Chỉ admin xem được — thống kê toàn bộ user</p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <select id="usageStatsRangeSelect" onchange="loadUsageStats(this.value)" class="bg-white dark:bg-[#151e2f] border border-sky-200 dark:border-sky-700 rounded-lg px-2 py-1.5 text-[11px] font-bold text-sky-700 dark:text-sky-300 outline-none">
+            <option value="7">7 ngày gần nhất</option>
+            <option value="30">30 ngày gần nhất</option>
+            <option value="90">90 ngày gần nhất</option>
+          </select>
+          <button onclick="exportUsageStatsCSV()" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white font-black rounded-lg text-[10px] uppercase transition-colors shadow-sm flex items-center gap-1.5 active:scale-95"><i class="fas fa-file-export text-xs"></i> Xuất file</button>
+          <button id="usageStatsClearBtn" onclick="clearUsageStatsHistory()" class="hidden px-3 py-1.5 bg-rose-100 hover:bg-rose-200 dark:bg-rose-900/30 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 font-black rounded-lg text-[10px] uppercase transition-colors flex items-center gap-1.5 active:scale-95"><i class="fas fa-trash text-xs"></i> Xoá lịch sử</button>
+        </div>
+      </div>
+      <div class="p-5 bg-white dark:bg-[#0b1121]">
+        <div id="usageStatsTriggerWarning" class="hidden mb-4 p-3 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 text-xs"></div>
+        <div id="usageStatsSummary" class="text-xs text-slate-500 dark:text-slate-400 font-semibold mb-4"></div>
+
+        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Xếp hạng theo Module</label>
+        <div id="usageStatsByModule" class="flex flex-col gap-1.5 mb-5">
+          <p class="text-xs text-slate-400 font-semibold flex items-center gap-2"><i class="fas fa-spinner fa-spin"></i> Đang tải...</p>
+        </div>
+
+        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Xếp hạng theo User</label>
+        <div id="usageStatsByUser" class="flex flex-col gap-1.5"></div>
+
+        <!-- [MỚI] PHÂN VÙNG: người được duyệt nhưng chưa từng sử dụng -->
+        <div id="usageStatsNeverUsedZone" class="mt-6 rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-900/10 overflow-hidden">
+          <div class="px-4 py-3 border-b border-amber-200 dark:border-amber-800 flex justify-between items-center gap-2 flex-wrap">
+            <div>
+              <div class="text-[11px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-300 flex items-center gap-2"><i class="fas fa-user-clock"></i> Được duyệt nhưng chưa từng sử dụng <span id="usageStatsNeverUsedCount" class="px-1.5 py-0.5 rounded-md bg-amber-200/70 dark:bg-amber-800/60 text-[10px]">0</span></div>
+              <p id="usageStatsNeverUsedNote" class="text-[10px] font-semibold text-amber-700/70 dark:text-amber-400/80 mt-0.5"></p>
+            </div>
+          </div>
+          <div id="usageStatsNeverUsed" class="p-3 flex flex-col gap-1.5 max-h-80 overflow-y-auto"></div>
+        </div>
+
+        <!-- [MỚI] Từng dùng nhưng không có lượt nào trong kỳ đang xem -->
+        <div id="usageStatsInactiveZone" class="hidden mt-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/30 overflow-hidden">
+          <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+            <div class="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center gap-2"><i class="fas fa-moon"></i> Từng dùng nhưng không hoạt động trong kỳ <span id="usageStatsInactiveCount" class="px-1.5 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 text-[10px]">0</span></div>
+          </div>
+          <div id="usageStatsInactive" class="p-3 flex flex-col gap-1.5 max-h-72 overflow-y-auto"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- ===================== TAB: DỌN DẸP HỆ THỐNG (chỉ admin) ===================== -->
+  <div id="adminzone-tab-admincleanup" class="hidden">
+  <div class="max-w-2xl mx-auto px-4 py-5 w-full">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+      <div class="px-5 py-4 bg-rose-50 dark:bg-rose-900/30 border-b border-rose-100 dark:border-rose-800">
+        <h3 class="font-black text-rose-800 dark:text-rose-300 uppercase tracking-widest text-xs flex items-center gap-2"><i class="fas fa-server"></i> Dọn dẹp hệ thống</h3>
+        <p class="text-rose-600/70 dark:text-rose-400 font-bold text-[10px] mt-0.5">Ảnh hưởng TOÀN BỘ user đang dùng app — khác với "Dọn dẹp bộ nhớ đệm" ở header (chỉ ảnh hưởng trình duyệt của riêng bạn)</p>
+      </div>
+      <div class="p-5 bg-white dark:bg-[#0b1121]">
+        <div class="border border-rose-200 dark:border-rose-800/50 rounded-xl p-4 bg-rose-50/50 dark:bg-rose-900/10">
+          <p class="text-[11px] font-black text-slate-700 dark:text-slate-200 uppercase tracking-wide mb-1 flex items-center gap-2"><i class="fas fa-triangle-exclamation text-rose-500 dark:text-rose-400"></i> Xoá cache dùng chung phía server</p>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-3">Xoá toàn bộ cache nghiệp vụ ở cấp hệ thống (quyền truy cập, Quá Hạn, KPI Fail, FMS Live, danh sách Admin...). MỌI user đang dùng app sẽ phải tải lại dữ liệu từ Sheet thật ở lần gọi tiếp theo — có thể gây chậm tạm thời cho tất cả mọi người, không chỉ riêng bạn. Chỉ dùng khi thật sự cần thiết (VD sau khi sửa lỗi cấu trúc dữ liệu, hoặc nghi ngờ cache đang phục vụ sai).</p>
+          <button id="btnSystemCleanupFull" onclick="spxAdminCleanupSystemWide()" class="w-full px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-lg text-[10px] uppercase transition-colors shadow-md flex items-center justify-center gap-2 active:scale-95"><i class="fas fa-server text-xs"></i> Dọn cache hệ thống ngay</button>
+          <p id="systemCleanupMsg" class="text-[10px] font-bold mt-2 hidden"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- ===================== TAB: TUỲ CHỌN NÂNG CAO (chỉ admin) ===================== -->
+  <div id="adminzone-tab-adminstations" class="hidden">
+  <div class="max-w-3xl mx-auto px-4 py-5 w-full">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+      <div class="px-5 py-4 bg-emerald-50 dark:bg-emerald-900/30 border-b border-emerald-100 dark:border-emerald-800 flex justify-between items-center flex-wrap gap-2">
+        <div>
+          <h3 class="font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-widest text-xs flex items-center gap-2"><i class="fas fa-map-location-dot"></i> <span data-i18n-ui="Trạm quản lý theo User">Trạm quản lý theo User</span></h3>
+          <p class="text-emerald-600/70 dark:text-emerald-400 font-bold text-[10px] mt-0.5" data-i18n-ui="Quyền lấy từ dữ liệu tổ chức — cấp thêm trạm khi nguồn còn thiếu">Quyền lấy từ dữ liệu tổ chức — cấp thêm trạm khi nguồn còn thiếu</p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <button onclick="azLoadAllUsers()" class="px-3 py-1.5 bg-white dark:bg-[#151e2f] border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-black rounded-lg text-[10px] uppercase tracking-wider hover:bg-emerald-50 transition-colors"><i class="fas fa-list mr-1"></i><span data-i18n-ui="Xem toàn bộ user">Xem toàn bộ user</span></button>
+        </div>
+      </div>
+      <div class="p-5 bg-white dark:bg-[#0b1121]">
+        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block" data-i18n-ui="Tra cứu 1 user">Tra cứu 1 user</label>
+        <div class="flex items-center gap-2 flex-wrap mb-4">
+          <input id="az-st-email" type="text" placeholder="Nhập email user..." data-i18n-placeholder="Nhập email user..."
+            onkeydown="if(event.key==='Enter'){event.preventDefault();azLookupUserStations();}"
+            class="flex-1 min-w-[240px] bg-slate-50 dark:bg-[#151e2f] border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-semibold outline-none focus:border-emerald-400 transition-colors">
+          <button onclick="azLookupUserStations()" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider transition-colors"><i class="fas fa-magnifying-glass mr-1"></i><span data-i18n-ui="Tra cứu">Tra cứu</span></button>
+        </div>
+        <div id="az-st-result"></div>
+        <div id="az-st-all" class="mt-4"></div>
+      </div>
+    </div>
+
+    <!-- [MỚI — theo yêu cầu trực tiếp "thêm vào admin ở front end để ánh xạ
+         thủ công nếu thiếu"] Backend spx_getUnmatchedWorkplaces()/spx_saveHubAlias()
+         đã xây từ trước nhưng chưa từng nối lên giao diện — bổ sung màn hình
+         thao tác thật ở đây. -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden mt-4">
+      <div class="px-5 py-4 bg-amber-50 dark:bg-amber-900/25 border-b border-amber-100 dark:border-amber-800 flex justify-between items-center flex-wrap gap-2">
+        <div>
+          <h3 class="font-black text-amber-800 dark:text-amber-300 uppercase tracking-widest text-xs flex items-center gap-2"><i class="fas fa-link-slash"></i> <span data-i18n-ui="Nơi làm việc chưa khớp trạm">Nơi làm việc chưa khớp trạm</span></h3>
+          <p class="text-amber-600/70 dark:text-amber-400 font-bold text-[10px] mt-0.5" data-i18n-ui="Người ở các nơi này chưa được cấp trạm nào — ánh xạ về đúng tên trạm thật để cấp quyền">Người ở các nơi này chưa được cấp trạm nào — ánh xạ về đúng tên trạm thật để cấp quyền</p>
+        </div>
+        <button onclick="azLoadUnmatched()" class="px-3 py-1.5 bg-white dark:bg-[#151e2f] border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 font-black rounded-lg text-[10px] uppercase tracking-wider hover:bg-amber-50 transition-colors"><i class="fas fa-rotate mr-1"></i><span data-i18n-ui="Quét lại">Quét lại</span></button>
+      </div>
+      <div class="p-5 bg-white dark:bg-[#0b1121]" id="az-unmatched-body">
+        <p class="text-[11px] text-slate-400" data-i18n-ui="Bấm Quét lại để kiểm tra.">Bấm Quét lại để kiểm tra.</p>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- ===================== TAB: QUẢN LÝ MODULE (chỉ admin cấp 1) ===================== -->
+  <!-- [MỚI — theo yêu cầu trực tiếp "khoá/ẩn/thông báo cho module chưa hoàn
+       thiện hoặc đang trong giai đoạn sửa/bảo trì, tạo 1 phân vùng quản lý
+       riêng trên Admin"] Bật/tắt trạng thái RUNTIME (không cần deploy lại code)
+       cho từng module đã hoàn thiện — user thường bấm vào module đang bảo trì
+       sẽ thấy thông báo thay vì vào giữa chừng lúc dữ liệu/logic chưa ổn định.
+       Cùng khuôn UI/UX với tab "Trạm quản lý" ngay phía trên (thẻ trắng bo
+       góc, header màu dải, nút hành động góc phải) để đồng bộ phong cách. -->
+  <div id="adminzone-tab-adminmodules" class="hidden">
+  <div class="max-w-3xl mx-auto px-4 py-5 w-full flex flex-col gap-4">
+
+    <!-- [MỚI — theo yêu cầu trực tiếp "gửi thông báo popup real-time cho user
+         + chế độ bảo trì toàn hệ thống, chuyển hết user đang dùng sang màn
+         bảo trì"] Khác thẻ "Quản lý Module" bên dưới (khoá TỪNG module) — đây
+         là 2 kênh TOÀN HỆ THỐNG: banner/popup thông báo (không chặn thao tác)
+         + khoá bảo trì toàn hệ thống (chặn hẳn mọi module với user thường).
+         Poll mỗi 120s ở client (xem spxInitAnnouncement() trong index.html)
+         — Apps Script không hỗ trợ push, đây là cách duy nhất khả thi, đã
+         trao đổi rõ độ trễ này với user trước khi làm. -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+      <div class="px-5 py-4 bg-rose-50 dark:bg-rose-900/30 border-b border-rose-100 dark:border-rose-800 flex justify-between items-center flex-wrap gap-2">
+        <div>
+          <h3 class="font-black text-rose-800 dark:text-rose-300 uppercase tracking-widest text-xs flex items-center gap-2"><i class="fas fa-tower-broadcast"></i> <span data-i18n-ui="Thông báo & Bảo trì toàn hệ thống">Thông báo & Bảo trì toàn hệ thống</span></h3>
+          <p class="text-rose-600/70 dark:text-rose-400 font-bold text-[10px] mt-0.5" data-i18n-ui="Gửi popup cho user đang dùng app (trong vòng tối đa 120s) — khác khoá từng module bên dưới">Gửi popup cho user đang dùng app (trong vòng tối đa 120s) — khác khoá từng module bên dưới</p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <button onclick="azLoadAnnouncement()" class="px-3 py-1.5 bg-white dark:bg-[#151e2f] border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-black rounded-lg text-[10px] uppercase tracking-wider hover:bg-rose-50 transition-colors"><i class="fas fa-rotate mr-1"></i><span data-i18n-ui="Làm mới">Làm mới</span></button>
+        </div>
+      </div>
+      <div class="p-5 bg-white dark:bg-[#0b1121]" id="az-announce-body">
+        <p class="text-[11px] text-slate-400"><i class="fas fa-circle-notch fa-spin mr-1"></i>Đang tải...</p>
+      </div>
+    </div>
+
+    <!-- [MỚI — theo yêu cầu trực tiếp "dashboard theo dõi hạn mức Firestore,
+         cho vào phân vùng admin"] Gói Firebase đang dùng là Spark (miễn phí)
+         — giới hạn CỨNG 50K đọc/20K ghi/20K xoá MỖI NGÀY, vượt là Firestore
+         ngừng phục vụ tới hết ngày (giờ UTC), không phải trả phí thêm. -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+      <div class="px-5 py-4 bg-sky-50 dark:bg-sky-900/30 border-b border-sky-100 dark:border-sky-800 flex justify-between items-center flex-wrap gap-2">
+        <div>
+          <h3 class="font-black text-sky-800 dark:text-sky-300 uppercase tracking-widest text-xs flex items-center gap-2"><i class="fas fa-database"></i> <span data-i18n-ui="Hạn mức Firestore (gói Spark)">Hạn mức Firestore (gói Spark)</span></h3>
+          <p class="text-sky-600/70 dark:text-sky-400 font-bold text-[10px] mt-0.5" data-i18n-ui="Vượt hạn mức ngày = Firestore ngừng phục vụ tới hết ngày (giờ UTC), không phải trả phí">Vượt hạn mức ngày = Firestore ngừng phục vụ tới hết ngày (giờ UTC), không phải trả phí</p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <button onclick="azLoadFirestoreQuota()" class="px-3 py-1.5 bg-white dark:bg-[#151e2f] border border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-300 font-black rounded-lg text-[10px] uppercase tracking-wider hover:bg-sky-50 transition-colors"><i class="fas fa-rotate mr-1"></i><span data-i18n-ui="Làm mới">Làm mới</span></button>
+        </div>
+      </div>
+      <div class="p-5 bg-white dark:bg-[#0b1121]" id="az-fsquota-body">
+        <p class="text-[11px] text-slate-400"><i class="fas fa-circle-notch fa-spin mr-1"></i>Đang tải...</p>
+      </div>
+    </div>
+
+    <!-- [MỚI — theo yêu cầu: "thêm phần hạn mức AI để đo AI đang/đã dùng bao nhiêu
+         và AI có phản hồi hay không"] Hệ thống CÓ phát hiện hết hạn mức (mã 429, tự
+         chuyển khoá dự phòng) nhưng trước đây không đếm và không hiện ở đâu. -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden mt-5">
+      <div class="px-5 py-4 bg-violet-50 dark:bg-violet-900/30 border-b border-violet-100 dark:border-violet-800 flex justify-between items-center flex-wrap gap-2">
+        <div>
+          <h3 class="font-black text-violet-800 dark:text-violet-300 uppercase tracking-widest text-xs flex items-center gap-2"><i class="fas fa-brain"></i> <span data-i18n-ui="Hạn mức AI (Insea)">Hạn mức AI (Insea)</span></h3>
+          <p class="text-violet-600/70 dark:text-violet-400 font-bold text-[10px] mt-0.5" data-i18n-ui="Hết hạn mức = AI ngừng phản hồi, số liệu các module KHÔNG bị ảnh hưởng">Hết hạn mức = AI ngừng phản hồi, số liệu các module KHÔNG bị ảnh hưởng</p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <button onclick="azLoadAiQuota()" class="px-3 py-1.5 bg-white dark:bg-[#151e2f] border border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300 rounded-lg text-[11px] font-bold"><i class="fas fa-rotate mr-1"></i><span data-i18n-ui="Làm mới">Làm mới</span></button>
+        </div>
+      </div>
+      <div class="p-5 bg-white dark:bg-[#0b1121]" id="az-aiquota-body">
+        <p class="text-[11px] text-slate-400"><i class="fas fa-circle-notch fa-spin mr-1"></i>Đang tải...</p>
+      </div>
+    </div>
+
+    <!-- [MỚI — theo yêu cầu trực tiếp "biết bao nhiêu user đang online"] -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+      <div class="px-5 py-4 bg-emerald-50 dark:bg-emerald-900/30 border-b border-emerald-100 dark:border-emerald-800 flex justify-between items-center flex-wrap gap-2">
+        <div>
+          <h3 class="font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-widest text-xs flex items-center gap-2"><i class="fas fa-circle-nodes"></i> <span data-i18n-ui="User đang online">User đang online</span></h3>
+          <p class="text-emerald-600/70 dark:text-emerald-400 font-bold text-[10px] mt-0.5" data-i18n-ui="Ước lượng — tính theo lượt gọi định kỳ, trễ tối đa ~15 phút, không phải số tức thời tuyệt đối">Ước lượng — tính theo lượt gọi định kỳ, trễ tối đa ~15 phút, không phải số tức thời tuyệt đối</p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <button onclick="azLoadOnlineUsers()" class="px-3 py-1.5 bg-white dark:bg-[#151e2f] border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-black rounded-lg text-[10px] uppercase tracking-wider hover:bg-emerald-50 transition-colors"><i class="fas fa-rotate mr-1"></i><span data-i18n-ui="Làm mới">Làm mới</span></button>
+        </div>
+      </div>
+      <div class="p-5 bg-white dark:bg-[#0b1121]" id="az-online-body">
+        <p class="text-[11px] text-slate-400"><i class="fas fa-circle-notch fa-spin mr-1"></i>Đang tải...</p>
+      </div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+      <div class="px-5 py-4 bg-amber-50 dark:bg-amber-900/30 border-b border-amber-100 dark:border-amber-800 flex justify-between items-center flex-wrap gap-2">
+        <div>
+          <h3 class="font-black text-amber-800 dark:text-amber-300 uppercase tracking-widest text-xs flex items-center gap-2"><i class="fas fa-toggle-on"></i> <span data-i18n-ui="Quản lý Module">Quản lý Module</span></h3>
+          <p class="text-amber-600/70 dark:text-amber-400 font-bold text-[10px] mt-0.5" data-i18n-ui="Khoá/ẩn tạm thời module đang sửa/bảo trì — có hiệu lực ngay, không cần deploy lại">Khoá/ẩn tạm thời module đang sửa/bảo trì — có hiệu lực ngay, không cần deploy lại</p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <button onclick="azLoadModuleStatus()" class="px-3 py-1.5 bg-white dark:bg-[#151e2f] border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 font-black rounded-lg text-[10px] uppercase tracking-wider hover:bg-amber-50 transition-colors"><i class="fas fa-rotate mr-1"></i><span data-i18n-ui="Làm mới">Làm mới</span></button>
+        </div>
+      </div>
+      <div class="p-5 bg-white dark:bg-[#0b1121]" id="az-modstatus-body">
+        <p class="text-[11px] text-slate-400"><i class="fas fa-circle-notch fa-spin mr-1"></i>Đang tải...</p>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <div id="adminzone-tab-adminadvanced" class="hidden">
+  <div class="max-w-3xl mx-auto px-4 py-5 w-full flex flex-col gap-4">
+
+
+    <!-- [MỚI] Góp ý / Báo lỗi từ người dùng — kênh phản hồi hai chiều, kèm ảnh. -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+      <div class="px-5 py-4 bg-orange-50 dark:bg-orange-900/30 border-b border-orange-100 dark:border-orange-800 flex justify-between items-center flex-wrap gap-2">
+        <div>
+          <h3 class="font-black text-orange-800 dark:text-orange-300 uppercase tracking-widest text-xs flex items-center gap-2"><i class="fas fa-comment-dots"></i> <span data-i18n-ui="Góp ý / Báo lỗi từ người dùng">Góp ý / Báo lỗi từ người dùng</span></h3>
+          <p class="text-orange-600/70 dark:text-orange-400 font-bold text-[10px] mt-0.5" id="az-fb-count">—</p>
+        </div>
+        <button onclick="azLoadFeedback()" class="px-3 py-1.5 bg-white dark:bg-[#151e2f] border border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300 rounded-lg text-[11px] font-bold"><i class="fas fa-rotate mr-1"></i><span data-i18n-ui="Làm mới">Làm mới</span></button>
+      </div>
+      <div class="p-5 bg-white dark:bg-[#0b1121]" id="az-fb-body">
+        <p class="text-[11px] text-slate-400"><i class="fas fa-circle-notch fa-spin mr-1"></i>Đang tải...</p>
+      </div>
+    </div>
+    <!-- Khối 1: Kiểm soát hệ thống & chẩn đoán -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+      <div class="px-5 py-4 bg-indigo-50 dark:bg-indigo-900/30 border-b border-indigo-100 dark:border-indigo-800 flex justify-between items-center">
+        <h3 class="font-black text-indigo-800 dark:text-indigo-300 uppercase tracking-widest text-xs flex items-center gap-2"><i class="fas fa-heart-pulse"></i> Kiểm soát hệ thống &amp; chẩn đoán</h3>
+        <button onclick="loadAdvancedDiagnostics()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-lg text-[10px] uppercase transition-colors flex items-center gap-1.5"><i class="fas fa-rotate-right text-xs"></i> Làm mới</button>
+      </div>
+      <div class="p-5 bg-white dark:bg-[#0b1121]">
+        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Trigger đang chạy</label>
+        <div id="advTriggerList" class="flex flex-col gap-1.5 mb-5">
+          <p class="text-xs text-slate-400 font-semibold flex items-center gap-2"><i class="fas fa-spinner fa-spin"></i> Đang tải...</p>
+        </div>
+
+        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Lỗi gần nhất (tối đa 50 lỗi, 6 tiếng gần đây)</label>
+        <div id="advErrorList" class="flex flex-col gap-1.5 max-h-64 overflow-y-auto custom-scrollbar"></div>
+      </div>
+    </div>
+
+    <!-- Khối 2: Quản lý dữ liệu nền -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+      <div class="px-5 py-4 bg-amber-50 dark:bg-amber-900/30 border-b border-amber-100 dark:border-amber-800">
+        <h3 class="font-black text-amber-800 dark:text-amber-300 uppercase tracking-widest text-xs flex items-center gap-2"><i class="fas fa-sitemap"></i> Quản lý dữ liệu nền</h3>
+        <p class="text-amber-600/70 dark:text-amber-400 font-bold text-[10px] mt-0.5">Mapping Hub → AOM/SUP được SUY RA tự động từ dữ liệu Quá Hạn, không có bảng riêng để sửa — sửa trực tiếp trong Sheet gốc nếu cần đổi người quản lý</p>
+      </div>
+      <div class="p-5 bg-white dark:bg-[#0b1121]">
+        <div class="flex items-center justify-between mb-2">
+          <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Đối chiếu tên Hub lệch giữa Quá Hạn ↔ FMS</label>
+          <button onclick="runHubReconciliation()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-black rounded-lg text-[10px] uppercase transition-colors flex items-center gap-1.5"><i class="fas fa-magnifying-glass text-xs"></i> Quét ngay</button>
+        </div>
+        <div id="advHubMismatchList" class="flex flex-col gap-1.5 mb-5">
+          <p class="text-xs text-slate-400 font-semibold">Bấm "Quét ngay" để kiểm tra (cần đã mở Quá Hạn và Tồn Đọng LastMile ít nhất 1 lần trong phiên này để có dữ liệu so sánh).</p>
+        </div>
+
+        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Mapping Hub → AOM/SUP hiện tại (chỉ xem)</label>
+        <div class="relative mb-2">
+          <i class="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
+          <input id="advOrgMapSearch" type="text" placeholder="Tìm theo tên Hub..." oninput="renderOrgMapTable()" class="w-full bg-slate-50 dark:bg-[#151e2f] border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-amber-500 transition-all">
+        </div>
+        <div id="advOrgMapTable" class="flex flex-col gap-1 max-h-64 overflow-y-auto custom-scrollbar">
+          <p class="text-xs text-slate-400 font-semibold">Đang tải...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Khối 3: Cấu hình vận hành -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+      <div class="px-5 py-4 bg-emerald-50 dark:bg-emerald-900/30 border-b border-emerald-100 dark:border-emerald-800">
+        <h3 class="font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-widest text-xs flex items-center gap-2"><i class="fas fa-sliders"></i> Cấu hình vận hành</h3>
+        <p class="text-emerald-600/70 dark:text-emerald-400 font-bold text-[10px] mt-0.5">Áp dụng ngay cho mọi user, không cần deploy lại code</p>
+      </div>
+      <div class="p-5 bg-white dark:bg-[#0b1121] flex flex-col gap-3">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-[11px] font-bold text-slate-700 dark:text-slate-200">Nhắc dọn cache sau (ngày)</p>
+            <p class="text-[10px] text-slate-400">Hiện chấm đỏ nhắc user tự dọn — không tự làm gì</p>
+          </div>
+          <input id="cfgBadgeDays" type="number" min="1" class="w-20 text-center bg-slate-50 dark:bg-[#151e2f] border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-emerald-500">
+        </div>
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-[11px] font-bold text-slate-700 dark:text-slate-200">Tự động dọn ngầm sau (ngày)</p>
+            <p class="text-[10px] text-slate-400">Tự chạy "Dọn nhẹ" không cần user bấm, không hỏi xác nhận</p>
+          </div>
+          <input id="cfgAutoCleanDays" type="number" min="1" class="w-20 text-center bg-slate-50 dark:bg-[#151e2f] border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-emerald-500">
+        </div>
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-[11px] font-bold text-slate-700 dark:text-slate-200">Ngưỡng dung lượng tự dọn (MB)</p>
+            <p class="text-[10px] text-slate-400">Tự dọn ngầm nếu cache vượt mức này, dù chưa đủ số ngày trên</p>
+          </div>
+          <input id="cfgAutoCleanMB" type="number" min="1" class="w-20 text-center bg-slate-50 dark:bg-[#151e2f] border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-emerald-500">
+        </div>
+        <button onclick="saveAdvancedConfig()" class="w-full mt-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-lg text-[10px] uppercase transition-colors shadow-md flex items-center justify-center gap-2 active:scale-95"><i class="fas fa-floppy-disk text-xs"></i> Lưu cấu hình</button>
+        <p id="cfgSaveMsg" class="text-[10px] font-bold hidden"></p>
+      </div>
+    </div>
+
+  </div>
+  </div>
+
+  </div>
+
+
+<!-- Modal confirm dùng chung — RIÊNG cho zone admin (xác nhận qua rà soát: chỉ
+     3 nơi gọi spxConfirmDialog(), cả 3 đều trong chính module này) -->
+<div id="spxConfirmModal" class="hidden fixed inset-0 bg-slate-900/60 z-[9999] flex items-center justify-center backdrop-blur-sm p-4 transition-opacity">
+  <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden transform transition-transform scale-95" id="spxConfirmModalContent">
+    <div class="px-5 pt-5 pb-2 flex items-start gap-3">
+      <div id="spxConfirmIconWrap" class="shrink-0 w-9 h-9 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+        <i class="fas fa-triangle-exclamation text-amber-500 dark:text-amber-400 text-sm"></i>
+      </div>
+      <div class="min-w-0">
+        <h3 id="spxConfirmTitle" class="font-black text-slate-800 dark:text-slate-100 text-sm">Xác nhận</h3>
+        <p id="spxConfirmMessage" class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1"></p>
+      </div>
+    </div>
+    <div class="px-5 pb-5 pt-3 flex justify-end gap-2">
+      <button id="spxConfirmCancelBtn" class="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 font-black rounded-lg text-[10px] uppercase transition-colors">Huỷ</button>
+      <button id="spxConfirmOkBtn" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-lg text-[10px] uppercase transition-colors shadow-md active:scale-95">Xác nhận</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// [MỚI] Chuyển đổi giữa 2 tab của module này — gọi khi bấm tab, hoặc tự động
+// gọi ngay khi module được mở lần đầu (xem hook trong openModule() ở index.html).
+// [FIX LỖI THẬT — xác nhận qua video quay màn hình "chọn module nào ở Quản trị
+// hệ thống, sidebar vẫn nằm ở Phân quyền User"] 3 tab nội bộ này gọi THẲNG hàm
+// này, hoàn toàn KHÔNG qua spxJumpToNav() — mà CHỈ spxJumpToNav() mới cập nhật
+// class 'active' của .nav-btn trên sidebar. Kết quả: bấm tab bên trong module
+// đổi đúng nội dung, nhưng sidebar bên trái đứng yên ở mục đã bấm lần đầu.
+// Sửa: hàm này TỰ đồng bộ lại sidebar + currentSpxNav mỗi lần chạy — dù được
+// gọi từ click tab nội bộ hay từ hook openModule() lúc mở module lần đầu.
+
+// ══ [MỚI] Trạm quản lý theo User — xem quyền thật + cấp thêm trạm khi thiếu ══
+// Dữ liệu quyền lấy từ nguồn tổ chức (CHỈ ĐỌC). Phần cấp thêm ghi vào sheet
+// riêng mà hệ thống CÓ quyền ghi, không đụng file nguồn.
+var _AZ_HUBS = null;
+
+// [MỚI] Bảng TOÀN BỘ user + trạm quản lý — để đối chiếu thiếu/đủ/thừa mà không
+// phải tra thủ công trên file nguồn. Có lọc theo email/tên/trạm và theo cấp.
+var _AZ_ALL = null;
+
+// ══ [MỚI] Nơi làm việc chưa khớp trạm — ánh xạ tay khi dữ liệu nguồn thiếu ══
+var _AZ_HUB_NAMES_CACHE = null;
+function azLoadUnmatched(){
+  var box = document.getElementById('az-unmatched-body');
+  box.innerHTML = '<p class="text-xs text-slate-400"><i class="fas fa-circle-notch fa-spin mr-1"></i>Đang quét...</p>';
+  google.script.run
+    .withFailureHandler(function(e){ box.innerHTML = '<p class="text-xs text-rose-500">Lỗi: '+(e&&e.message||e)+'</p>'; })
+    .withSuccessHandler(function(s){
+      var r; try { r = JSON.parse(s); } catch(e){ r = null; }
+      if (!r || !r.success) { box.innerHTML = '<p class="text-xs text-rose-500">'+((r&&r.error)||'Không quét được')+'</p>'; return; }
+      _azRenderUnmatched(r.items || []);
+    })
+    .spx_getUnmatchedWorkplaces();
+}
+function _azRenderUnmatched(items){
+  var box = document.getElementById('az-unmatched-body');
+  if (!items.length) {
+    box.innerHTML = '<p class="text-xs text-emerald-600 dark:text-emerald-400 font-bold"><i class="fas fa-circle-check mr-1"></i>Không có nơi làm việc nào chưa khớp — mọi người đã có trạm.</p>';
+    return;
+  }
+  if (!_AZ_HUB_NAMES_CACHE) {
+    google.script.run.withSuccessHandler(function(s){
+      var r; try { r=JSON.parse(s); } catch(e){ return; }
+      if (r && r.success) _AZ_HUB_NAMES_CACHE = r.hubs || [];
+    }).spx_getAllHubNames();
+  }
+  box.innerHTML = items.map(function(it, idx){
+    var opts = (_AZ_HUB_NAMES_CACHE || []).map(function(h){ return '<option value="'+_azEsc(h)+'">'; }).join('');
+    return '<div class="flex items-center gap-2 flex-wrap py-2 border-b border-slate-50 dark:border-slate-800/60 last:border-0">'+
+      '<div class="flex-1 min-w-[180px]"><span class="text-[11px] font-bold text-slate-700 dark:text-slate-200">'+__azEsc(it.place)+'</span>'+
+        '<span class="ml-1.5 text-[9px] text-slate-400">('+it.count+' người · vd: '+__azEsc(it.sample)+')</span></div>'+
+      '<i class="fas fa-arrow-right text-slate-300 text-[10px]"></i>'+
+      '<input id="az-unmatch-to-'+idx+'" list="az-unmatch-hublist" placeholder="Chọn trạm thật..." onkeydown="if(event.key===\'Enter\'){event.preventDefault();azResolveUnmatched(\''+__azEsc(it.place)+'\', '+idx+');}" class="flex-1 min-w-[200px] bg-slate-50 dark:bg-[#151e2f] border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] outline-none focus:border-amber-400">'+
+      '<button onclick="azResolveUnmatched(\''+_azEscJsAttr(it.place)+'\', '+idx+')" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black uppercase transition-colors">Lưu</button>'+
+    '</div>';
+  }).join('') + '<datalist id="az-unmatch-hublist"></datalist>';
+  setTimeout(function(){
+    var dl = document.getElementById('az-unmatch-hublist');
+    if (dl && _AZ_HUB_NAMES_CACHE) dl.innerHTML = _AZ_HUB_NAMES_CACHE.map(function(h){ return '<option value="'+_azEsc(h)+'">'; }).join('');
+  }, 400); // chờ danh sách hub tải xong (gọi song song ở trên)
+}
+function azResolveUnmatched(fromPlace, idx){
+  var to = (document.getElementById('az-unmatch-to-'+idx)||{}).value || '';
+  if (!to.trim()) { if (typeof showToast==='function') showToast(azT('Chọn trạm thật trước đã'),'error'); return; }
+  google.script.run
+    .withFailureHandler(function(e){ if (typeof showToast==='function') showToast(azT('Lỗi: ')+(e&&e.message||e),'error'); })
+    .withSuccessHandler(function(s){
+      var r; try { r=JSON.parse(s); } catch(e){ r=null; }
+      if (r && r.success) { if (typeof showToast==='function') showToast(azT('Đã ánh xạ — có hiệu lực ngay'),'success'); azLoadUnmatched(); }
+      else if (typeof showToast==='function') showToast((r&&r.error)||'Không lưu được','error');
+    })
+    .spx_saveHubAlias(fromPlace, to.trim());
+}
+
+function azLoadAllUsers(){
+  var box = document.getElementById('az-st-all');
+  box.innerHTML = '<p class="text-xs text-slate-400"><i class="fas fa-circle-notch fa-spin mr-1"></i>Đang tải danh sách user...</p>';
+  google.script.run
+    .withFailureHandler(function(e){ box.innerHTML = '<p class="text-xs text-rose-500">Lỗi: '+(e&&e.message||e)+'</p>'; })
+    .withSuccessHandler(function(s){
+      var r; try { r = JSON.parse(s); } catch(e){ r=null; }
+      if (!r || !r.success) { box.innerHTML = '<p class="text-xs text-rose-500">'+((r&&r.error)||'Không tải được')+'</p>'; return; }
+      _AZ_ALL = r; _azRenderAllUsers();
+    })
+    .spx_listAllUserAccess();
+}
+function _azRenderAllUsers(){
+  var box = document.getElementById('az-st-all');
+  if (!_AZ_ALL) return;
+  var q = ((document.getElementById('az-all-q')||{}).value || '').trim().toLowerCase();
+  var lv = (document.getElementById('az-all-role')||{}).value || 'ALL';
+  var rows = _AZ_ALL.rows.filter(function(u){
+    if (lv !== 'ALL' && u.role !== lv) return false;
+    if (!q) return true;
+    if (u.email.toLowerCase().indexOf(q) >= 0) return true;
+    if ((u.name||'').toLowerCase().indexOf(q) >= 0) return true;
+    if ((u.workplace||'').toLowerCase().indexOf(q) >= 0) return true;
+    // tìm cả theo tên trạm được quản lý
+    var all = (u.stations||[]).concat(u.extra||[]);
+    for (var i=0;i<all.length;i++) if (String(all[i]).toLowerCase().indexOf(q) >= 0) return true;
+    return false;
+  });
+  var counts = {};
+  _AZ_ALL.rows.forEach(function(u){ counts[u.role] = (counts[u.role]||0)+1; });
+  var opts = ['ALL','AOM','SUP','LEAD','STAFF'].map(function(k){
+    var lbl = k==='ALL' ? ('Tất cả ('+_AZ_ALL.count+')') : (k+' ('+(counts[k]||0)+')');
+    return '<option value="'+k+'"'+(lv===k?' selected':'')+'>'+lbl+'</option>';
+  }).join('');
+  var head =
+    '<div class="flex items-center gap-2 flex-wrap mb-2">'+
+      '<input id="az-all-q" value="'+_azEsc(q)+'" oninput="_azRenderAllUsers()" placeholder="Lọc theo email, tên, hoặc TÊN TRẠM..." class="flex-1 min-w-[240px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs outline-none focus:border-orange-400">'+
+      '<select id="az-all-role" onchange="_azRenderAllUsers()" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-2 text-xs outline-none">'+opts+'</select>'+
+      '<span class="text-[11px] text-slate-400">'+rows.length+'/'+_AZ_ALL.count+' user</span>'+
+    '</div>';
+  if (!rows.length) { box.innerHTML = head + '<p class="text-xs text-slate-400 py-3">Không có user nào khớp.</p>'; return; }
+  var body = rows.slice(0, 300).map(function(u){
+    var _wp = String(u.workplace||'').replace(/\s+/g,' ').trim().toLowerCase();
+    var st = (u.stations||[]).map(function(h){
+      // Tô xanh đúng trạm user THỰC SỰ làm việc, phân biệt với trạm chỉ quản lý.
+      var isWp = _wp && String(h).replace(/\s+/g,' ').trim().toLowerCase() === _wp;
+      var cls = isWp ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-bold'
+                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300';
+      return '<span class="inline-block px-1.5 py-0.5 m-0.5 rounded text-[10px] '+cls+'" title="'+(isWp?'Nơi làm việc thực tế':'Trạm được quản lý')+'">'+(isWp?'★ ':'')+_azEsc(h)+'</span>';
+    }).join('');
+    var ex = (u.extra||[]).map(function(h){
+      return '<span class="inline-block px-1.5 py-0.5 m-0.5 rounded bg-orange-50 dark:bg-orange-900/20 text-[10px] font-bold text-orange-600 dark:text-orange-300" title="Admin cấp thêm">'+_azEsc(h)+'</span>';
+    }).join('');
+    var warn = (u.total === 0)
+      ? '<span class="px-1.5 py-0.5 rounded bg-rose-50 dark:bg-rose-900/25 text-rose-600 dark:text-rose-400 text-[9px] font-black">CHƯA CÓ TRẠM</span>' : '';
+    return '<tr class="border-b border-slate-50 dark:border-slate-800/60 align-top">'+
+      '<td class="p-2 text-[11px]"><div class="font-bold text-slate-700 dark:text-slate-200">'+_azEsc(u.name||u.email)+'</div>'+
+        '<div class="text-[10px] text-slate-400">'+_azEsc(u.email)+'</div></td>'+
+      '<td class="p-2 text-[11px] text-slate-500 whitespace-nowrap">'+_azEsc(u.position||'—')+'<div class="text-[9px] text-slate-400">'+_azEsc(u.role)+'</div></td>'+
+      '<td class="p-2 text-[11px] text-slate-500">'+_azEsc(u.workplace||'—')+'</td>'+
+      '<td class="p-2 text-center"><span class="font-black text-slate-700 dark:text-slate-200 text-xs">'+u.total+'</span> '+warn+'</td>'+
+      '<td class="p-2">'+(st||ex ? (st+ex) : '<span class="text-[10px] text-slate-400">(không có)</span>')+'</td>'+
+      '<td class="p-2 text-center"><button onclick="document.getElementById(\'az-st-email\').value=\''+_azEscJsAttr(u.email)+'\';azLookupUserStations();" class="text-[10px] font-bold text-[#ee4d2d] hover:underline whitespace-nowrap">Sửa</button></td>'+
+    '</tr>';
+  }).join('');
+  var more = rows.length > 300 ? '<p class="text-[10px] text-slate-400 mt-2">Hiện 300/'+rows.length+' — gõ thêm để thu hẹp.</p>' : '';
+  box.innerHTML = head +
+    '<div class="rounded-2xl border border-slate-100 dark:border-slate-700 overflow-x-auto"><table class="w-full min-w-[820px]">'+
+    '<thead><tr class="text-left text-[9px] uppercase font-black text-slate-400 bg-slate-50 dark:bg-slate-800/40">'+
+      '<th class="p-2">User</th><th class="p-2">Vị trí</th><th class="p-2">Nơi làm việc<div class="font-normal normal-case text-[8px] text-slate-300">(1 trạm, từ FTE)</div></th>'+
+      '<th class="p-2 text-center">Số trạm<div class="font-normal normal-case text-[8px] text-slate-300">quản lý</div></th><th class="p-2">Trạm được quản lý<div class="font-normal normal-case text-[8px] text-slate-300">(có thể nhiều hơn nơi làm việc)</div></th><th class="p-2"></th>'+
+    '</tr></thead><tbody>'+body+'</tbody></table></div>'+more;
+}
+
+function azLookupUserStations(){
+  var em = (document.getElementById('az-st-email')||{}).value || '';
+  var box = document.getElementById('az-st-result');
+  if (!em.trim()) { box.innerHTML = '<p class="text-xs text-rose-500">Nhập email trước đã.</p>'; return; }
+  box.innerHTML = '<p class="text-xs text-slate-400"><i class="fas fa-circle-notch fa-spin mr-1"></i>Đang tra cứu...</p>';
+  google.script.run
+    .withFailureHandler(function(e){ box.innerHTML = '<p class="text-xs text-rose-500">Lỗi: '+(e&&e.message||e)+'</p>'; })
+    .withSuccessHandler(function(s){
+      var r; try { r = JSON.parse(s); } catch(e){ r = null; }
+      if (!r || !r.success) { box.innerHTML = '<p class="text-xs text-rose-500">'+((r&&r.error)||'Không tra được')+'</p>'; return; }
+      _azRenderUserStations(r);
+    })
+    .spx_getUserAccessDetail(em.trim());
+}
+function _azEsc(s){ return (typeof spxEscHtml==='function') ? spxEscHtml(s) : String(s==null?'':s); }
+// [SECURITY FIX — rà soát bảo mật toàn diện] Dùng riêng cho giá trị chèn vào
+// onclick="fn('...')" — _azEsc() (escape HTML thường) KHÔNG đủ an toàn ở đây
+// vì trình duyệt giải mã HTML entity TRƯỚC KHI biên dịch attribute thành JS
+// của event handler (xem giải thích đầy đủ tại spxEscJsAttr() trong
+// index.html) — uỷ quyền lại hàm dùng chung đó, không viết logic mới.
+function _azEscJsAttr(s){ return (typeof spxEscJsAttr==='function') ? spxEscJsAttr(s) : String(s==null?'':s); }
+function _azRenderUserStations(r){
+  var box = document.getElementById('az-st-result');
+  if (!r.found && !(r.extra||[]).length) {
+    box.innerHTML = '<div class="module-note wip-note text-xs">Không tìm thấy email này trong dữ liệu tổ chức. Vẫn có thể cấp trạm thủ công bên dưới.</div>' + _azAddForm(r.email);
+    return;
+  }
+  var src = (r.fromSource||[]).map(function(h){
+    return '<span class="inline-block px-2 py-1 m-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-300">'+_azEsc(h)+'</span>';
+  }).join('') || '<span class="text-[11px] text-slate-400">(không có)</span>';
+  var ext = (r.extra||[]).map(function(h){
+    return '<span class="inline-flex items-center gap-1 px-2 py-1 m-0.5 rounded-md bg-orange-50 dark:bg-orange-900/20 text-[11px] font-bold text-orange-600 dark:text-orange-300">'+_azEsc(h)+
+      '<i class="fas fa-xmark cursor-pointer opacity-60 hover:opacity-100" title="Thu hồi trạm này" onclick="azRevokeStation(\''+_azEscJsAttr(r.email)+'\',\''+_azEscJsAttr(h)+'\')"></i></span>';
+  }).join('') || '<span class="text-[11px] text-slate-400">(chưa cấp thêm trạm nào)</span>';
+  box.innerHTML =
+    '<div class="rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden mb-3"><div class="px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700"></div><div class="p-4">'+
+      '<div class="text-[11px] text-slate-500 mb-2">'+
+        '<b>'+_azEsc(r.email)+'</b> · '+(r.position?_azEsc(r.position):'—')+' · '+(r.role?_azEsc(r.role):'—')+
+        (r.hubName?(' · nơi làm việc: <b>'+_azEsc(r.hubName)+'</b>'):'')+
+      '</div>'+
+      '<div class="text-[10px] font-black uppercase text-slate-400 mb-1">Từ dữ liệu tổ chức ('+(r.fromSource||[]).length+')</div>'+
+      '<div class="mb-2">'+src+'</div>'+
+      '<div class="text-[10px] font-black uppercase text-slate-400 mb-1">Admin cấp thêm ('+(r.extra||[]).length+')</div>'+
+      '<div>'+ext+'</div>'+
+    '</div></div>' + _azHubDetail(r.hubDetail, r.hubName) + _azHubInfoDiag(r.hubInfoDiag) + _azAddForm(r.email);
+}
+// [MỚI — chẩn đoán] Dòng nhỏ báo nguyên nhân thật khi bảng "Chi tiết trạm"
+// (sheet HubSOC infor) trống hoặc thiếu cột — để Admin tự đọc được ngay,
+// khỏi phải báo qua lại nhiều lượt mới xác định được lỗi ở đâu.
+function _azHubInfoDiag(d){
+  if (!d) return '';
+  var probs = [];
+  if (!d.sheetFound) probs.push('KHÔNG tìm thấy sheet "Hub/SOC infor" (hoặc tên cũ "HubSOC infor") trong file nguồn — có thể đã đổi tên khác nữa.');
+  else if (!d.headerRowFound) probs.push('Tìm thấy sheet nhưng KHÔNG thấy dòng tiêu đề chứa cột "Hub Name" trong 10 dòng đầu — có thể cột bị đổi tên hoặc dòng tiêu đề nằm xa hơn.');
+  else if (d.missingColumns && d.missingColumns.length) probs.push('Thiếu cột: '+d.missingColumns.map(_azEsc).join(', ')+' — tên cột trong sheet có thể đã đổi.');
+  if (d.error) probs.push('Lỗi khi đọc: '+_azEsc(d.error));
+  if (!probs.length) return '';
+  return '<div class="rounded-xl border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-900/20 p-3 mb-3 text-[10px] text-rose-700 dark:text-rose-300">'+
+    '<b><i class="fas fa-triangle-exclamation mr-1"></i>Chẩn đoán — vì sao "Chi tiết trạm" trống/thiếu dữ liệu:</b>'+
+    '<ul class="list-disc pl-4 mt-1">'+probs.map(function(p){ return '<li>'+p+'</li>'; }).join('')+'</ul>'+
+    '<div class="mt-1 text-slate-400">(Đã đọc được '+(d.rowsLoaded||0)+' trạm từ sheet nguồn.)</div>'+
+  '</div>';
+}
+// [MỚI] Bảng chi tiết từng trạm user quản lý — lấy từ sheet HubSOC infor.
+function _azHubDetail(list, workplace){
+  // [SỬA — theo phản hồi] Phải phân biệt rõ NƠI LÀM VIỆC THỰC TẾ (đúng 1 trạm,
+  // lấy từ cột 'Nơi làm việc' trong FTE) với TRẠM ĐƯỢC QUẢN LÝ (có thể nhiều
+  // trạm, suy ra từ cây tổ chức). Trước đây bảng liệt kê chung nên nhìn vào
+  // tưởng user làm việc ở cả 10 trạm.
+  if (!list || !list.length) return '';
+  var wpKey = String(workplace||'').replace(/\s+/g,' ').trim().toLowerCase();
+  var rows = list.map(function(h){
+    var loc = [h.city, h.province].filter(Boolean).join(', ');
+    var isWp = wpKey && String(h.name||'').replace(/\s+/g,' ').trim().toLowerCase() === wpKey;
+    // [MỚI — rà soát chủ động "đã tận dụng hết dữ liệu HubSOC infor chưa?"]
+    // 3 trường CÓ SẴN nhưng trước đây chưa hiện: Tọa độ (-> link bản đồ ngay
+    // cạnh tên trạm), Ngày go-live (-> phụ chú dưới cột địa chỉ), AOM & Sup
+    // PIC (OLAP) (-> dự phòng khi cột Sup/PIC riêng đang trống).
+    var mapPin = '';
+    if (h.coord) {
+      var mm = h.coord.match(/(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)/);
+      if (mm) mapPin = ' <a href="https://www.google.com/maps?q='+mm[1]+','+mm[2]+'" target="_blank" rel="noopener" title="Mở vị trí trên Google Maps" class="text-sky-500 hover:text-sky-600"><i class="fas fa-location-dot"></i></a>';
+    }
+    var goLiveTxt = '';
+    if (h.goLive) {
+      var gd = new Date(Number(h.goLive) || h.goLive);
+      if (!isNaN(gd.getTime())) goLiveTxt = '<div class="text-[9px] text-slate-400 mt-0.5">Go-live: '+gd.toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })+'</div>';
+    }
+    var picTxt = h.pic || h.sup || h.aomSupPic || '-';
+    var unmatchedNote = '';
+    if (h._unmatched) {
+      unmatchedNote = (h._suggest && h._suggest.length)
+        ? '<div class="text-[9px] text-amber-500 mt-0.5">Không khớp tên trong sheet nguồn — có thể là: '+h._suggest.map(_azEsc).join(' / ')+'</div>'
+        : '<div class="text-[9px] text-amber-500 mt-0.5">Không khớp tên trong sheet nguồn — không tìm được tên gần giống.</div>';
+    }
+    return '<tr class="border-b border-slate-50 dark:border-slate-800/60'+(isWp?' bg-emerald-50/60 dark:bg-emerald-900/10':'')+'">'+
+      '<td class="p-2 text-[11px] font-bold text-slate-700 dark:text-slate-200">'+
+        (isWp?'<span class="inline-block px-1.5 py-0.5 mr-1.5 rounded bg-emerald-500 text-white text-[8px] font-black align-middle">NƠI LÀM VIỆC</span>':'')+_azEsc(h.name)+mapPin+
+        (h.type?'<span class="ml-1 text-[9px] px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500">'+_azEsc(h.type)+'</span>':'')+unmatchedNote+'</td>'+
+      '<td class="p-2 text-[11px] text-slate-500 font-mono">'+_azEsc(h.hubcode||'-')+'</td>'+
+      '<td class="p-2 text-[11px] text-slate-500">'+_azEsc(loc||'-')+'</td>'+
+      '<td class="p-2 text-[10px] text-slate-400 max-w-[260px]">'+_azEsc(h.address||'-')+goLiveTxt+'</td>'+
+      '<td class="p-2 text-[11px] text-slate-500">'+_azEsc(picTxt)+'</td>'+
+      '<td class="p-2 text-[10px] text-slate-400">'+_azEsc(h.parent||'-')+'</td>'+
+    '</tr>';
+  }).join('');
+  return '<div class="rounded-xl border border-slate-100 dark:border-slate-800 overflow-x-auto mb-3">'+
+    '<div class="px-4 py-2.5 bg-emerald-50 dark:bg-emerald-900/25 border-b border-emerald-100 dark:border-emerald-800 text-[11px] font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-widest">'+
+      '<i class="fas fa-circle-info mr-1.5"></i>Chi tiết '+list.length+' trạm được QUẢN LÝ'+
+      (workplace?'<span class="ml-2 font-normal text-[10px] text-slate-400">· nơi làm việc thực tế: <b class="text-emerald-600 dark:text-emerald-400">'+_azEsc(workplace)+'</b></span>':'')+'</div>'+
+    '<table class="w-full min-w-[720px]"><thead><tr class="text-left text-[9px] uppercase font-black text-slate-400">'+
+      '<th class="p-2">Trạm</th><th class="p-2">Mã</th><th class="p-2">Khu vực</th>'+
+      '<th class="p-2">Địa chỉ</th><th class="p-2">Phụ trách</th><th class="p-2">Hub mẹ</th>'+
+    '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+function _azAddForm(email){
+  return '<div class="rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden">'+
+    '<div class="px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400"><i class="fas fa-plus mr-1.5"></i>Cấp thêm trạm</div><div class="p-4">'+
+    '<div class="flex items-center gap-2 flex-wrap">'+
+      '<input id="az-st-hub" list="az-st-hublist" type="text" placeholder="Gõ hoặc chọn tên trạm..." onkeydown="if(event.key===\'Enter\'){event.preventDefault();azAddStation(\''+_azEsc(email)+'\');}" class="flex-1 min-w-[240px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs outline-none focus:border-orange-400">'+
+      '<datalist id="az-st-hublist"></datalist>'+
+      '<button onclick="azAddStation(\''+_azEscJsAttr(email)+'\')" class="px-3 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-black transition-colors"><i class="fas fa-plus mr-1"></i>Cấp trạm</button>'+
+    '</div>'+
+    '<p class="text-[10px] text-slate-400 mt-2">Trạm cấp thêm áp dụng cho TẤT CẢ module, có hiệu lực ngay sau khi lưu.</p>'+
+  '</div></div>';
+}
+function azLoadHubList(){
+  if (_AZ_HUBS) { _azFillHubList(); return; }
+  google.script.run.withSuccessHandler(function(s){
+    var r; try { r=JSON.parse(s); } catch(e){ return; }
+    if (r && r.success) { _AZ_HUBS = r.hubs || []; _azFillHubList(); }
+  }).spx_getAllHubNames();
+}
+function _azFillHubList(){
+  var dl = document.getElementById('az-st-hublist');
+  if (!dl || !_AZ_HUBS) return;
+  dl.innerHTML = _AZ_HUBS.map(function(h){ return '<option value="'+_azEsc(h)+'">'; }).join('');
+}
+function azAddStation(email){
+  var hub = (document.getElementById('az-st-hub')||{}).value || '';
+  if (!hub.trim()) { if (typeof showToast==='function') showToast(azT('Chọn trạm trước đã'),'error'); return; }
+  google.script.run
+    .withFailureHandler(function(e){ if (typeof showToast==='function') showToast(azT('Lỗi: ')+(e&&e.message||e),'error'); })
+    .withSuccessHandler(function(s){
+      var r; try { r=JSON.parse(s); } catch(e){ r=null; }
+      if (r && r.success) { if (typeof showToast==='function') showToast(azT('Đã cấp trạm'),'success'); azLookupUserStations(); }
+      else if (typeof showToast==='function') showToast((r&&r.error)||'Không lưu được','error');
+    })
+    .spx_addExtraStation(email, hub.trim());
+}
+function azRevokeStation(email, hub){
+  google.script.run
+    .withFailureHandler(function(e){ if (typeof showToast==='function') showToast(azT('Lỗi: ')+(e&&e.message||e),'error'); })
+    .withSuccessHandler(function(s){
+      var r; try { r=JSON.parse(s); } catch(e){ r=null; }
+      if (r && r.success) { if (typeof showToast==='function') showToast(azT('Đã thu hồi'),'success'); azLookupUserStations(); }
+    })
+    .spx_revokeExtraStation(email, hub);
+}
+
+// ═══════════════════ THÔNG BÁO & BẢO TRÌ TOÀN HỆ THỐNG ═══════════════════
+// [MỚI — theo yêu cầu trực tiếp "gửi thông báo popup real-time cho user +
+// chế độ bảo trì toàn hệ thống"] Khác "Quản lý Module" bên dưới (khoá TỪNG
+// module) — đây là 2 kênh TOÀN HỆ THỐNG. User nhận trong vòng tối đa 120s
+// (client tự poll — xem spxInitAnnouncement() ở index.html), KHÔNG tức thời
+// 100% vì Apps Script không hỗ trợ push/WebSocket — đã trao đổi rõ với user.
+function azLoadAnnouncement(){
+  var body = document.getElementById('az-announce-body');
+  body.innerHTML = '<p class="text-[11px] text-slate-400"><i class="fas fa-circle-notch fa-spin mr-1"></i>Đang tải...</p>';
+  google.script.run
+    .withFailureHandler(function(e){ body.innerHTML = '<p class="text-xs text-rose-500">Lỗi: '+(e&&e.message||e)+'</p>'; })
+    .withSuccessHandler(function(s){
+      var r; try { r = JSON.parse(s); } catch(e){ r = null; }
+      if (!r || !r.success) { body.innerHTML = '<p class="text-xs text-rose-500">Không tải được trạng thái hiện tại.</p>'; return; }
+      _azRenderAnnouncement(r.state || {});
+    })
+    .spx_getSystemAnnouncement();
+}
+
+function _azRenderAnnouncement(st){
+  var body = document.getElementById('az-announce-body');
+  var b = st.banner || {}, m = st.maintenance || {};
+  var sevLabels = { info: 'Thông tin', warning: 'Cảnh báo', critical: 'Khẩn cấp' };
+
+  var bannerStatusHTML = b.active
+    ? '<div class="rounded-xl border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-900/10 p-3 mb-3 text-[11px]">'+
+        '<div class="font-black text-sky-700 dark:text-sky-300 uppercase text-[10px] mb-1"><i class="fas fa-circle-check mr-1"></i>Đang hiện popup cho user ('+_azEsc(sevLabels[b.severity]||b.severity)+')</div>'+
+        '<div class="text-slate-600 dark:text-slate-300 font-semibold">'+_azEsc(b.message)+'</div>'+
+        '<div class="text-slate-400 mt-1">bởi '+_azEsc(b.updatedBy)+(b.updatedAt?' · '+_azEsc(new Date(b.updatedAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })):'')+'</div>'+
+        '<button onclick="azClearBanner()" class="mt-2 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase bg-white dark:bg-[#151e2f] border border-sky-300 dark:border-sky-700 text-sky-700 dark:text-sky-300 hover:bg-sky-100"><i class="fas fa-xmark mr-1"></i>Xoá thông báo</button>'+
+      '</div>'
+    : '';
+
+  var maintStatusHTML = m.active
+    ? '<div class="text-[10px] font-black uppercase text-rose-600 dark:text-rose-400 mb-2"><i class="fas fa-circle-exclamation mr-1"></i>ĐANG BẬT — user thường bị chặn toàn bộ app ngay bây giờ</div>'
+    : '<div class="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 mb-2"><i class="fas fa-circle-check mr-1"></i>Đang tắt — hệ thống hoạt động bình thường</div>';
+
+  body.innerHTML =
+    bannerStatusHTML +
+    '<div class="mb-4">'+
+      '<p class="text-[11px] font-black text-slate-700 dark:text-slate-200 uppercase tracking-wide mb-2"><i class="fas fa-bell mr-1"></i>Gửi thông báo (popup, không chặn thao tác)</p>'+
+      '<textarea id="az-ann-msg" rows="2" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-[#151e2f] rounded-lg text-[12px] mb-2" placeholder="VD: Hệ thống sẽ bảo trì lúc 22h00 hôm nay, vui lòng lưu công việc đang làm trước thời điểm đó."></textarea>'+
+      '<div class="flex items-center gap-2 flex-wrap">'+
+        '<select id="az-ann-sev" class="px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 dark:bg-[#151e2f] rounded-lg text-[11px] font-bold">'+
+          '<option value="info">Thông tin</option><option value="warning" selected>Cảnh báo</option><option value="critical">Khẩn cấp</option>'+
+        '</select>'+
+        '<button onclick="azSendBanner()" class="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase bg-sky-600 hover:bg-sky-700 text-white"><i class="fas fa-paper-plane mr-1"></i>Gửi thông báo</button>'+
+      '</div>'+
+      '<p class="text-[10px] text-slate-400 mt-1.5"><i class="fas fa-circle-info mr-1"></i>User đang dùng app sẽ thấy popup trong vòng tối đa 120 giây (không cần tải lại trang). Không chặn thao tác — chỉ để biết trước.</p>'+
+    '</div>'+
+    '<div class="pt-3 border-t border-slate-100 dark:border-slate-800">'+
+      '<p class="text-[11px] font-black text-slate-700 dark:text-slate-200 uppercase tracking-wide mb-2"><i class="fas fa-server mr-1"></i>Khoá bảo trì toàn hệ thống</p>'+
+      maintStatusHTML+
+      '<textarea id="az-maint-msg" rows="2" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-[#151e2f] rounded-lg text-[12px] mb-2" placeholder="Nội dung hiện trên màn bảo trì (VD: Hệ thống đang nâng cấp, dự kiến xong lúc 22h15).">'+_azEsc(m.message||'')+'</textarea>'+
+      '<div class="flex items-center gap-2 flex-wrap">'+
+        (m.active
+          ? '<button onclick="azToggleMaintenance(false)" class="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase bg-emerald-600 hover:bg-emerald-700 text-white"><i class="fas fa-play mr-1"></i>Tắt bảo trì ngay</button>'
+          : '<button onclick="azToggleMaintenance(true)" class="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase bg-rose-600 hover:bg-rose-700 text-white"><i class="fas fa-triangle-exclamation mr-1"></i>Bật bảo trì ngay</button>')+
+      '</div>'+
+      '<p class="text-[10px] text-slate-400 mt-1.5"><i class="fas fa-circle-info mr-1"></i>Chặn TOÀN BỘ app với user thường trong vòng tối đa 120 giây kể từ khi bật. Admin (mọi cấp) luôn tự vào được để kiểm tra/tắt bảo trì.</p>'+
+    '</div>';
+}
+
+function azSendBanner(_ok){
+  var msgEl = document.getElementById('az-ann-msg'), sevEl = document.getElementById('az-ann-sev');
+  var message = msgEl ? msgEl.value.trim() : '';
+  if (!message) { if (typeof showToast==='function') showToast(azT('Nhập nội dung thông báo trước đã'),'error'); return; }
+  if (!_ok) {  // [SỬA — rà soát UI/UX] hộp thoại hệ thống thay confirm() của trình duyệt
+    spxConfirm({ title: 'Gửi thông báo cho TOÀN BỘ người dùng?', message: 'Gửi thông báo này cho TOÀN BỘ user đang dùng app?\n\n"'+message+'"', danger: false,
+      onOk: function () { azSendBanner(true); } });
+    return;
+  }
+  google.script.run
+    .withFailureHandler(function(e){ if (typeof showToast==='function') showToast(azT('Lỗi: ')+(e&&e.message||e),'error'); })
+    .withSuccessHandler(function(s){
+      var r; try { r = JSON.parse(s); } catch(e){ r = null; }
+      if (!r || !r.success) { if (typeof showToast==='function') showToast(azT('Lỗi: ')+((r&&r.error)||'Không gửi được'),'error'); return; }
+      if (typeof showToast==='function') showToast(azT('Đã gửi thông báo'),'success');
+      _azRenderAnnouncement(r.state || {});
+    })
+    .spx_adminSetBanner(message, sevEl ? sevEl.value : 'info');
+}
+
+function azClearBanner(_ok){
+  if (!_ok) {  // [SỬA — rà soát UI/UX] hộp thoại hệ thống thay confirm() của trình duyệt
+    spxConfirm({ title: 'Xoá thông báo đang hiện?', message: 'Xoá thông báo đang hiện?', danger: true,
+      onOk: function () { azClearBanner(true); } });
+    return;
+  }
+  google.script.run
+    .withFailureHandler(function(e){ if (typeof showToast==='function') showToast(azT('Lỗi: ')+(e&&e.message||e),'error'); })
+    .withSuccessHandler(function(s){
+      var r; try { r = JSON.parse(s); } catch(e){ r = null; }
+      if (!r || !r.success) { if (typeof showToast==='function') showToast(azT('Lỗi: ')+((r&&r.error)||'Không xoá được'),'error'); return; }
+      if (typeof showToast==='function') showToast(azT('Đã xoá thông báo'),'success');
+      _azRenderAnnouncement(r.state || {});
+    })
+    .spx_adminSetBanner('', 'info');
+}
+
+function azToggleMaintenance(active, _ok){
+  var msgEl = document.getElementById('az-maint-msg');
+  var message = msgEl ? msgEl.value.trim() : '';
+  var confirmMsg = active
+    ? 'BẬT bảo trì toàn hệ thống? Toàn bộ user thường sẽ bị chặn HẲN mọi module trong vòng tối đa 120 giây — chỉ Admin dùng được lúc này.'
+    : 'TẮT bảo trì toàn hệ thống? User thường sẽ dùng lại được bình thường trong vòng tối đa 120 giây.';
+  if (!_ok) {  // [SỬA — rà soát UI/UX] hộp thoại hệ thống thay confirm() của trình duyệt
+    spxConfirm({ title: confirmMsg, message: '', danger: true,
+      onOk: function () { azToggleMaintenance(active, true); } });
+    return;
+  }
+  google.script.run
+    .withFailureHandler(function(e){ if (typeof showToast==='function') showToast(azT('Lỗi: ')+(e&&e.message||e),'error'); })
+    .withSuccessHandler(function(s){
+      var r; try { r = JSON.parse(s); } catch(e){ r = null; }
+      if (!r || !r.success) { if (typeof showToast==='function') showToast(azT('Lỗi: ')+((r&&r.error)||'Không cập nhật được'),'error'); return; }
+      if (typeof showToast==='function') showToast(active ? 'Đã bật bảo trì' : 'Đã tắt bảo trì','success');
+      _azRenderAnnouncement(r.state || {});
+    })
+    .spx_adminSetMaintenance(active, message);
+}
+
+// ═══════════════════ HẠN MỨC FIRESTORE (GÓI SPARK) ═══════════════════
+// [MỚI — theo yêu cầu trực tiếp "dashboard theo dõi hạn mức Firestore"]
+// Spark (gói miễn phí) giới hạn CỨNG 50K đọc/20K ghi/20K xoá MỖI NGÀY — vượt
+// là Firestore NGỪNG PHỤC VỤ tới hết ngày (giờ UTC), không phải trả phí thêm.
+// LƯU Ý hiển thị rõ cho Admin: đây CHỈ đếm được lệnh gọi Firestore từ PHÍA
+// APPS SCRIPT — lượt đọc realtime qua onSnapshot() chạy trực tiếp từ trình
+// duyệt (Thông báo hệ thống) KHÔNG đi qua đây, không đếm được — số liệu là
+// bức tranh MỘT PHẦN, không phải báo cáo chính thức của Google.
+// [SỬA LỖI THẬT — báo cáo kèm ảnh: 3 khối cùng báo "Không tải được" / "yêu cầu
+// admin cấp 1"] Menu Quản trị hiện cho MỌI tài khoản có role 'admin' — gồm cả
+// admin CẤP 2 (backend gán role:'admin' cho cả 2 cấp, phân biệt bằng trường
+// 'level' riêng). Nhưng 3 khối này gọi hàm backend chỉ cho CẤP 1
+// (_requireAdmin_(1)), nên admin cấp 2 mở ra là thấy lỗi đỏ ngay.
+// Không phải lỗi quyền sai — backend chặn đúng. Lỗi là giao diện KHÔNG kiểm
+// tra cấp trước khi gọi, để người dùng thấy thông báo lỗi kỹ thuật.
+// NAY: kiểm tra cấp ở client, cấp 2 thấy lời giải thích rõ ràng thay vì lỗi.
+function _azIsLevel1() {
+  var a = window.SPX_ACCESS || {};
+  if (String(a.role || '').trim() !== 'admin') return false;
+  var lv = parseInt(a.level, 10);
+  // Không có trường level (dữ liệu cũ) -> coi là cấp 1, backend vẫn chặn nếu sai.
+  return isNaN(lv) || lv === 1;
+}
+function _azLevel1Only(body) {
+  if (!body) return;
+  body.innerHTML =
+    '<div class="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">' +
+      '<i class="fas fa-lock text-slate-400"></i>' +
+      'Chỉ Admin cấp 1 dùng được mục này. Tài khoản của bạn là Admin cấp 2.' +
+    '</div>';
+}
+
+// ═══════════════════ HẠN MỨC AI (INSEA) ═══════════════════
+// [MỚI] Trả lời 3 câu hỏi vận hành: đã dùng bao nhiêu hôm nay, AI còn phản hồi
+// không, và đã có lượt nào bị chặn vì hết hạn mức chưa.
+// ═══════════════════ GÓP Ý / BÁO LỖI TỪ NGƯỜI DÙNG ═══════════════════
+// [MỚI] Xem góp ý kèm ảnh, đánh dấu đã xử lý. Góp ý MỚI hiện nổi bật để không bị
+// trôi mất giữa các mục đã xử lý.
+function azLoadFeedback(){
+  var body = document.getElementById('az-fb-body');
+  if (!body) return;
+  body.innerHTML = '<p class="text-[11px] text-slate-400"><i class="fas fa-circle-notch fa-spin mr-1"></i>' + azT('Đang tải...') + '</p>';
+  google.script.run
+    .withFailureHandler(function(e){ body.innerHTML = '<p class="text-[11px] text-rose-500">' + azT('Không tải được: ') + ((e && e.message) || '') + '</p>'; })
+    .withSuccessHandler(function(res){
+      var r; try { r = JSON.parse(res); } catch(e){ r = null; }
+      if (!r || !r.success) { body.innerHTML = '<p class="text-[11px] text-rose-500">' + ((r && r.error) || azT('Không tải được danh sách góp ý.')) + '</p>'; return; }
+      _azRenderFeedback(r);
+    })
+    .spx_getFeedbackList();
+}
+
+function _azRenderFeedback(r){
+  var body = document.getElementById('az-fb-body');
+  var cnt  = document.getElementById('az-fb-count');
+  if (cnt) cnt.textContent = (r.tong || 0) + ' ' + azT('góp ý') + ' · ' + (r.chuaXuLy || 0) + ' ' + azT('chưa xử lý');
+  if (!r.items || !r.items.length) {
+    body.innerHTML = '<p class="text-[11px] text-slate-400">' + azT('Chưa có góp ý nào.') + '</p>';
+    return;
+  }
+  var mauLoai = { 'Báo lỗi': 'rose', 'Góp ý': 'sky', 'Đề xuất tính năng': 'violet' };
+  body.innerHTML = r.items.map(function(it){
+    var moi = (it.trangThai || 'Mới') === 'Mới';
+    var mau = mauLoai[it.loai] || 'slate';
+    return '<div class="rounded-xl border ' + (moi ? 'border-orange-200 dark:border-orange-800 bg-orange-50/40 dark:bg-orange-900/10' : 'border-slate-100 dark:border-slate-800') + ' p-3 mb-2">' +
+      '<div class="flex items-center gap-2 flex-wrap mb-1">' +
+        '<span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-' + mau + '-100 dark:bg-' + mau + '-900/40 text-' + mau + '-700 dark:text-' + mau + '-300">' + _azEsc(it.loai) + '</span>' +
+        '<span class="text-[11px] font-bold text-slate-700 dark:text-slate-200">' + _azEsc(it.email) + '</span>' +
+        '<span class="text-[10px] text-slate-400">' + _azEsc(it.cap) + (it.tram ? ' · ' + _azEsc(it.tram) : '') + '</span>' +
+        '<span class="text-[10px] text-slate-400 ml-auto">' + _azEsc(it.thoiGian) + '</span>' +
+      '</div>' +
+      '<div class="text-[12px] text-slate-700 dark:text-slate-200 whitespace-pre-wrap">' + _azEsc(it.noiDung) + '</div>' +
+      '<div class="flex items-center gap-3 mt-2 flex-wrap">' +
+        (it.module ? '<span class="text-[10px] text-slate-400"><i class="fas fa-cube mr-1"></i>' + _azEsc(it.module) + '</span>' : '') +
+        (it.anh && it.anh.indexOf('http') === 0
+          ? '<a href="' + _azEsc(it.anh) + '" target="_blank" rel="noopener" class="text-[10px] font-bold text-sky-600"><i class="fas fa-image mr-1"></i>' + azT('Xem ảnh đính kèm') + '</a>'
+          : (it.anh ? '<span class="text-[10px] text-rose-500">' + _azEsc(it.anh) + '</span>' : '')) +
+        (moi
+          ? '<button onclick="azSetFeedbackStatus(' + it.dong + ')" class="ml-auto text-[10px] font-black px-2.5 py-1 rounded-lg bg-emerald-600 text-white"><i class="fas fa-check mr-1"></i>' + azT('Đánh dấu đã xử lý') + '</button>'
+          : '<span class="ml-auto text-[10px] font-bold text-emerald-600"><i class="fas fa-check mr-1"></i>' + azT('Đã xử lý') + '</span>') +
+      '</div></div>';
+  }).join('');
+}
+
+function azSetFeedbackStatus(dong){
+  google.script.run
+    .withFailureHandler(function(){ if (typeof showToast==='function') showToast(azT('Không cập nhật được'),'error'); })
+    .withSuccessHandler(function(res){
+      var r; try { r = JSON.parse(res); } catch(e){ r = null; }
+      if (r && r.success) { if (typeof showToast==='function') showToast(azT('Đã đánh dấu xử lý'),'success'); azLoadFeedback(); }
+      else if (typeof showToast==='function') showToast((r && r.error) || azT('Không cập nhật được'),'error');
+    })
+    .spx_setFeedbackStatus(dong, 'Đã xử lý');
+}
+
+function azLoadAiQuota(){
+  if (!_azIsLevel1()) { _azLevel1Only(document.getElementById('az-aiquota-body')); return; }
+  var body = document.getElementById('az-aiquota-body');
+  if (!body) return;
+  body.innerHTML = '<p class="text-[11px] text-slate-400"><i class="fas fa-circle-notch fa-spin mr-1"></i>' + azT('Đang tải...') + '</p>';
+  google.script.run
+    .withFailureHandler(function(e){ body.innerHTML = '<p class="text-[11px] text-rose-500">' + azT('Không tải được: ') + (e && e.message ? e.message : '') + '</p>'; })
+    .withSuccessHandler(function(res){
+      var r; try { r = JSON.parse(res); } catch(e){ r = null; }
+      if (!r || !r.success) { body.innerHTML = '<p class="text-[11px] text-rose-500">' + azT('Không tải được số liệu AI.') + '</p>'; return; }
+      _azRenderAiQuota(r);
+    })
+    .spx_getAiQuotaStats();
+}
+
+function _azRenderAiQuota(r){
+  var body = document.getElementById('az-aiquota-body');
+  if (!body) return;
+  var s = r.homNay || {};
+  var goi = s.goi || 0, ok = s.thanhCong || 0, cache = s.tuCache || 0, het = s.hetHanMuc || 0;
+  // "Còn phản hồi không" suy từ dữ liệu thật: có lượt gọi và chưa lần nào bị chặn
+  // trong ngày -> đang phản hồi; có lượt bị chặn -> đang hết hạn mức ở ít nhất 1 khoá.
+  var tinhTrang = het > 0
+    ? { mau:'rose',  chu: azT('ĐANG BỊ CHẶN HẠN MỨC'), phu: azT('Lần gần nhất lúc ') + (s.lanHetHanMucCuoi || '—') }
+    : (goi > 0
+        ? { mau:'emerald', chu: azT('AI ĐANG PHẢN HỒI BÌNH THƯỜNG'), phu: azT('Chưa lượt nào bị chặn hôm nay') }
+        : { mau:'slate', chu: azT('CHƯA CÓ LƯỢT GỌI NÀO HÔM NAY'), phu: azT('Số liệu tính theo ngày, giờ Việt Nam') });
+  function card(nhan, so, phu, mau){
+    return '<div class="rounded-xl border border-' + mau + '-100 dark:border-' + mau + '-900 bg-' + mau + '-50/60 dark:bg-' + mau + '-900/20 p-3">' +
+      '<div class="text-[10px] font-black uppercase tracking-wider text-' + mau + '-700 dark:text-' + mau + '-300">' + nhan + '</div>' +
+      '<div class="text-2xl font-black text-slate-800 dark:text-slate-100 mt-1">' + Number(so).toLocaleString('vi-VN') + '</div>' +
+      '<div class="text-[10px] text-slate-400 mt-0.5">' + phu + '</div></div>';
+  }
+  var html =
+    '<div class="rounded-xl border border-' + tinhTrang.mau + '-200 dark:border-' + tinhTrang.mau + '-800 bg-' + tinhTrang.mau + '-50 dark:bg-' + tinhTrang.mau + '-900/25 px-4 py-3 mb-4">' +
+      '<div class="text-xs font-black text-' + tinhTrang.mau + '-700 dark:text-' + tinhTrang.mau + '-300">' + tinhTrang.chu + '</div>' +
+      '<div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">' + tinhTrang.phu + '</div>' +
+    '</div>' +
+    '<div class="grid grid-cols-2 md:grid-cols-4 gap-3">' +
+      card(azT('Lượt gọi AI'), goi, azT('Hôm nay') + ' · ' + (r.ngay || ''), 'violet') +
+      card(azT('Dùng lại kết quả cũ'), cache, azT('Không tốn hạn mức'), 'sky') +
+      card(azT('Bị chặn hạn mức'), het, azT('Lượt bị từ chối (mã 429)'), het > 0 ? 'rose' : 'slate') +
+      card(azT('Số khoá cấu hình'), r.soKhoaCauHinh || 0, azT('Khoá đang dùng: #') + (s.khoaDangDung || 1), 'emerald') +
+    '</div>';
+  if (r.lichSu && r.lichSu.length > 1) {
+    html += '<div class="mt-4"><div class="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">' + azT('7 ngày gần nhất') + '</div>' +
+      r.lichSu.map(function(d){
+        return '<div class="flex justify-between items-center text-[11px] py-1 border-b border-slate-100 dark:border-slate-800">' +
+          '<span class="text-slate-500">' + d.ngay + '</span>' +
+          '<span class="font-bold text-slate-700 dark:text-slate-200">' + Number(d.goi).toLocaleString('vi-VN') + ' ' + azT('lượt') +
+          (d.hetHanMuc > 0 ? ' <span class="text-rose-500">· ' + d.hetHanMuc + ' ' + azT('bị chặn') + '</span>' : '') + '</span></div>';
+      }).join('') + '</div>';
+  }
+  html += '<p class="text-[10px] text-slate-400 mt-3"><i class="fas fa-circle-info mr-1"></i>' +
+    azT('Hết hạn mức chỉ ảnh hưởng phần phân tích AI. Số liệu các module lấy thẳng từ nguồn, KHÔNG bị ảnh hưởng.') + '</p>';
+  body.innerHTML = html;
+}
+
+function azLoadFirestoreQuota(){
+  if (!_azIsLevel1()) { _azLevel1Only(document.getElementById('az-fsquota-body')); return; }
+  var body = document.getElementById('az-fsquota-body');
+  body.innerHTML = '<p class="text-[11px] text-slate-400"><i class="fas fa-circle-notch fa-spin mr-1"></i>Đang tải...</p>';
+  google.script.run
+    .withFailureHandler(function(e){ body.innerHTML = '<p class="text-xs text-rose-500">Lỗi: '+(e&&e.message||e)+'</p>'; })
+    .withSuccessHandler(function(s){
+      var r; try { r = JSON.parse(s); } catch(e){ r = null; }
+      if (!r || !r.success) { body.innerHTML = '<p class="text-xs text-rose-500">Không tải được.</p>'; return; }
+      _azRenderFirestoreQuota(r);
+    })
+    .spx_adminGetFirestoreQuota();
+}
+
+function _azFsQuotaBar(label, used, cap){
+  var pct = cap > 0 ? Math.min(100, Math.round((used/cap)*100)) : 0;
+  var barClr = pct >= 90 ? 'bg-rose-500' : (pct >= 70 ? 'bg-amber-500' : 'bg-emerald-500');
+  var txtClr = pct >= 90 ? 'text-rose-600 dark:text-rose-400' : (pct >= 70 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400');
+  return '<div class="mb-3">'+
+    '<div class="flex justify-between items-center mb-1">'+
+      '<span class="text-[11px] font-black text-slate-700 dark:text-slate-200 uppercase">'+_azEsc(label)+'</span>'+
+      '<span class="text-[11px] font-black '+txtClr+'">'+used.toLocaleString('vi-VN')+' / '+cap.toLocaleString('vi-VN')+' ('+pct+'%)</span>'+
+    '</div>'+
+    '<div class="w-full h-2.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden"><div class="h-full '+barClr+' rounded-full" style="width:'+pct+'%"></div></div>'+
+  '</div>';
+}
+
+function _azRenderFirestoreQuota(r){
+  var body = document.getElementById('az-fsquota-body');
+  var maxPct = Math.max(
+    r.caps.reads > 0 ? (r.reads / r.caps.reads) : 0,
+    r.caps.writes > 0 ? (r.writesN / r.caps.writes) : 0,
+    r.caps.deletes > 0 ? (r.deletes / r.caps.deletes) : 0
+  ) * 100;
+  var warnHtml = maxPct >= 70
+    ? '<div class="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10 p-3 mb-3 text-[11px] text-amber-700 dark:text-amber-300 font-bold"><i class="fas fa-triangle-exclamation mr-1"></i>Đang gần chạm hạn mức ngày ('+Math.round(maxPct)+'%) — cân nhắc giảm tần suất đọc/ghi hoặc chờ sang ngày mới (reset theo giờ UTC).</div>'
+    : '';
+  body.innerHTML =
+    '<p class="text-[10px] text-slate-400 mb-3">Ngày (giờ VN): '+_azEsc(r.date)+'</p>'+
+    warnHtml+
+    _azFsQuotaBar('Đọc (reads)', r.reads, r.caps.reads)+
+    _azFsQuotaBar('Ghi (writes)', r.writesN, r.caps.writes)+
+    _azFsQuotaBar('Xoá (deletes)', r.deletes, r.caps.deletes)+
+    '<p class="text-[10px] text-slate-400 mt-2"><i class="fas fa-circle-info mr-1"></i>Chỉ đếm lệnh gọi Firestore từ phía Apps Script (Tồn/Trend/Archive/Thông báo hệ thống...) — KHÔNG đếm được lượt đọc realtime chạy trực tiếp từ trình duyệt (onSnapshot của tính năng Thông báo hệ thống), nên đây là số liệu một phần, không phải báo cáo chính thức từ Google.</p>';
+}
+
+// ═══════════════════ USER ĐANG ONLINE ═══════════════════
+// [MỚI — theo yêu cầu trực tiếp "biết bao nhiêu user đang online"] Ước lượng
+// qua lượt gọi định kỳ có sẵn (spx_getSystemAnnouncement — mọi user tự gọi
+// lúc tải trang + poll 120s/600s) — KHÔNG phải số kết nối tức thời tuyệt đối
+// kiểu WebSocket, có độ trễ tối đa ~15 phút (ngưỡng "online").
+function azLoadOnlineUsers(){
+  if (!_azIsLevel1()) { _azLevel1Only(document.getElementById('az-online-body')); return; }
+  var body = document.getElementById('az-online-body');
+  body.innerHTML = '<p class="text-[11px] text-slate-400"><i class="fas fa-circle-notch fa-spin mr-1"></i>Đang tải...</p>';
+  google.script.run
+    .withFailureHandler(function(e){ body.innerHTML = '<p class="text-xs text-rose-500">Lỗi: '+(e&&e.message||e)+'</p>'; })
+    .withSuccessHandler(function(s){
+      var r; try { r = JSON.parse(s); } catch(e){ r = null; }
+      if (!r || !r.success) { body.innerHTML = '<p class="text-xs text-rose-500">Không tải được.</p>'; return; }
+      _azRenderOnlineUsers(r);
+    })
+    .spx_adminGetOnlineUsers();
+}
+
+function _azRenderOnlineUsers(r){
+  var body = document.getElementById('az-online-body');
+  var countHtml = '<div class="flex items-baseline gap-2 mb-3"><span class="text-3xl font-black text-emerald-600 dark:text-emerald-400">'+r.count+'</span><span class="text-[11px] font-bold text-slate-400 uppercase">user (trong '+r.thresholdMin+' phút gần nhất)</span></div>';
+  if (!r.users.length) { body.innerHTML = countHtml + '<p class="text-[11px] text-slate-400">Chưa ghi nhận ai.</p>'; return; }
+  var rows = r.users.map(function(u){
+    var mins = Math.floor(u.lastSeenSec / 60), secs = u.lastSeenSec % 60;
+    var agoTxt = mins > 0 ? mins+' phút '+secs+' giây trước' : secs+' giây trước';
+    return '<div class="flex items-center justify-between py-1.5 border-b border-slate-50 dark:border-slate-800/60 text-[11px]">'+
+      '<span class="font-bold text-slate-700 dark:text-slate-200">'+_azEsc(u.email)+'</span>'+
+      '<span class="text-slate-400">'+agoTxt+'</span>'+
+    '</div>';
+  }).join('');
+  body.innerHTML = countHtml + '<div class="max-h-64 overflow-y-auto">'+rows+'</div>';
+}
+
+// ═══════════════════ TAB: QUẢN LÝ MODULE ═══════════════════
+// [MỚI — theo yêu cầu trực tiếp] Bật/tắt trạng thái khoá/ẩn RUNTIME cho từng
+// module đã hoàn thiện. 3 trạng thái: normal (bình thường) / locked (khoá —
+// vẫn thấy trên sidebar, bấm vào bị chặn kèm thông báo) / hidden (ẩn hẳn khỏi
+// sidebar với user thường). Admin luôn tự vào được (xem openModule() ở
+// index.html) để kiểm tra trong lúc sửa.
+// Nhãn TRẠNG THÁI đang áp dụng — khác hẳn chữ trên NÚT (hành động sẽ làm).
+var AZ_MODSTATUS_LABELS = { normal: 'Đang hoạt động', locked: 'Đang bảo trì', hidden: 'Đang ẩn' };
+// Chữ trên NÚT — cố ý khác nhãn trạng thái để không nhìn lẫn nút với trạng thái.
+// [SỬA] Khai báo này bị mất ở lượt trước (đoạn sửa lỗi giữa chừng, không ghi
+// file) trong khi nút đã dùng nó -> ReferenceError, cả tab Quản lý Module trắng.
+var AZ_MODACTION_LABELS = { normal: 'Mở lại', locked: 'Bảo trì', hidden: 'Ẩn đi' };
+var AZ_MODSTATUS_CLASS  = { normal: 'text-emerald-600 dark:text-emerald-400', locked: 'text-rose-600 dark:text-rose-400', hidden: 'text-slate-500 dark:text-slate-400' };
+
+function azLoadModuleStatus(){
+  if (!_azIsLevel1()) { _azLevel1Only(document.getElementById('az-modstatus-body')); return; }
+  var body = document.getElementById('az-modstatus-body');
+  body.innerHTML = '<p class="text-[11px] text-slate-400"><i class="fas fa-circle-notch fa-spin mr-1"></i>Đang tải...</p>';
+  google.script.run
+    .withFailureHandler(function(e){ body.innerHTML = '<p class="text-xs text-rose-500">Lỗi: '+(e&&e.message||e)+'</p>'; })
+    .withSuccessHandler(function(s){
+      var r; try { r = JSON.parse(s); } catch(e){ r = null; }
+      if (!r || !r.success) { body.innerHTML = '<p class="text-xs text-rose-500">'+((r&&r.error)||'Không tải được')+'</p>'; return; }
+      _azRenderModuleStatus(r.list || []);
+    })
+    .spx_adminListModuleStatus();
+}
+
+function _azRenderModuleStatus(list){
+  var body = document.getElementById('az-modstatus-body');
+  if (!list.length) { body.innerHTML = '<p class="text-[11px] text-slate-400">Không có module nào để quản lý.</p>'; return; }
+  // [MỚI — theo yêu cầu trực tiếp "hiện toàn bộ module kể cả WIP/RAW chưa
+  // xây"] Danh sách giờ dài (24 mục thay vì 11), nhóm theo section giống hệt
+  // cách sidebar nhóm (Kiểm soát vận hành, Quản lý hiệu suất...) cho dễ dò —
+  // giữ nguyên đúng thứ tự backend trả về (đã sắp theo section ở
+  // MODULE_LOCKABLE_KEYS, không tự sort lại ở đây để khỏi lệch với sidebar).
+  var groups = [], groupIdx = {};
+  // [MỚI] Ghi nhớ TÊN module theo mã, để hộp thoại xác nhận hiện tên tiếng Việt
+  // thay vì mã kỹ thuật ('pickup' / 'pick' nhìn gần giống nhau, dễ tưởng bấm nhầm).
+  window.AZ_MODULE_LABELS = window.AZ_MODULE_LABELS || {};
+  list.forEach(function(m){ if (m && m.key) window.AZ_MODULE_LABELS[m.key] = m.label || m.key; });
+
+  list.forEach(function(m){
+    var sec = m.section || 'Khác';
+    if (!(sec in groupIdx)) { groupIdx[sec] = groups.length; groups.push({ section: sec, items: [] }); }
+    groups[groupIdx[sec]].items.push(m);
+  });
+  // Chú thích khi di chuột — theo đúng yêu cầu "di chuột vào thì hiện đó là
+  // cái gì, bấm vào thì ra sao".
+  var TIP = {
+    // [SỬA] Rút gọn — nội dung cũ là cả đoạn văn nên trình duyệt vẽ hộp đen to
+
+    // che mất nội dung phía sau (đúng hiện tượng đã báo).
+
+    normal: 'Mọi người thấy và dùng bình thường',
+    locked: 'Vẫn hiện trong menu, bấm vào báo đang bảo trì',  // (dòng cũ dài đã rút gọn)
+    hidden: 'Biến mất khỏi menu với người dùng thường'
+  };
+  var html = groups.map(function(g){
+    var rows = g.items.map(function(m){
+      var stClass = AZ_MODSTATUS_CLASS[m.status] || AZ_MODSTATUS_CLASS.normal;
+      var stLabel = AZ_MODSTATUS_LABELS[m.status] || m.status;
+      var metaTxt = (m.status !== 'normal' && m.updatedBy)
+        ? '<div class="text-[9px] text-slate-400 mt-0.5">bởi '+_azEsc(m.updatedBy)+(m.updatedAt?' · '+_azEsc(new Date(m.updatedAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })):'')+'</div>'
+        : '';
+      return '<div class="border border-slate-100 dark:border-slate-800 rounded-xl p-3 mb-2.5" data-modrow="'+_azEsc(m.key)+'">'+
+        '<div class="flex items-center justify-between flex-wrap gap-2 mb-2">'+
+          '<div><span class="text-[12px] font-black text-slate-700 dark:text-slate-200">'+_azEsc(m.label)+'</span>'+
+            '<span class="ml-2 text-[10px] font-black uppercase '+stClass+'">● '+stLabel+'</span>'+metaTxt+'</div>'+
+        '</div>'+
+        '<div class="flex items-center gap-2 flex-wrap">'+
+          '<input type="text" class="flex-1 min-w-[180px] px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 dark:bg-[#151e2f] rounded-lg text-[11px]" placeholder="Thông báo tuỳ chỉnh khi khoá/ẩn (bỏ trống dùng mặc định)..." value="'+_azEsc(m.message)+'" data-modmsg="'+_azEsc(m.key)+'">'+
+          // [SỬA — theo phản hồi: nút trông như nhãn trạng thái, gây nhầm]
+          // Chữ trên nút nay là HÀNH ĐỘNG sẽ làm ('Mở lại' / 'Bảo trì' / 'Ẩn đi'),
+          // khác hẳn nhãn TRẠNG THÁI bên trên ('Đang hoạt động' / 'Đang bảo trì' /
+          // 'Đang ẩn'). Nút ứng với trạng thái HIỆN TẠI bị vô hiệu + mờ đi, để thấy
+          // ngay đang ở đâu và chỉ còn đường đi tiếp.
+          ['normal','locked','hidden'].map(function(act){
+            var cur = (m.status === act);
+            var ico = { normal:'fa-play', locked:'fa-wrench', hidden:'fa-eye-slash' }[act];
+            var tone = { normal:'emerald', locked:'amber', hidden:'slate' }[act];
+            var cls = cur
+              ? 'bg-' + tone + '-600 text-white opacity-60 cursor-default'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-' + tone + '-100 dark:hover:bg-' + tone + '-900/30';
+            return '<button ' + (cur ? 'disabled ' : 'onclick="azSetModuleStatus(\'' + m.key + '\',\'' + act + '\')" ') +
+              'title="' + _azEsc(TIP[act]) + '" ' +
+              'class="px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase transition-colors ' + cls + '">' +
+              '<i class="fas ' + ico + ' mr-1"></i>' + (cur ? 'Hiện tại' : AZ_MODACTION_LABELS[act]) + '</button>';
+          }).join('')+
+        '</div>'+
+      '</div>';
+    }).join('');
+    return '<div class="mb-4"><div class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 pb-1 border-b border-slate-100 dark:border-slate-800">'+_azEsc(g.section)+'</div>'+rows+'</div>';
+  }).join('');
+  // [SỬA] Thay dòng gợi ý chung chung bằng CHÚ GIẢI 3 trạng thái ngay tại chỗ —
+  // không bắt người dùng rê chuột từng nút mới biết mỗi trạng thái nghĩa là gì.
+  body.innerHTML = html +
+    '<div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap gap-x-5 gap-y-1.5 text-[10px] text-slate-500 dark:text-slate-400">' +
+      '<span><i class="fas fa-play text-emerald-600 mr-1"></i><b>Đang hoạt động</b> — mọi người dùng bình thường</span>' +
+      '<span><i class="fas fa-wrench text-amber-600 mr-1"></i><b>Đang bảo trì</b> — vẫn thấy trong menu, bấm vào báo bảo trì</span>' +
+      '<span><i class="fas fa-eye-slash text-slate-600 mr-1"></i><b>Đang ẩn</b> — biến mất khỏi menu (Admin vẫn thấy)</span>' +
+    '</div>';
+}
+
+function azSetModuleStatus(key, status){
+  var msgInput = document.querySelector('input[data-modmsg="'+key+'"]');
+  var message = msgInput ? msgInput.value.trim() : '';
+  // [SỬA — theo phản hồi: "bấm ẩn mà hiện lên như báo lỗi", và 2 module khác
+  // nhau lại trông giống nhau] TRƯỚC ĐÂY dùng confirm() của trình duyệt: hiện
+  // tên miền googleusercontent dài loằng ngoằng ở đầu, trông đúng như thông
+  // báo lỗi. Tệ hơn: in MÃ KỸ THUẬT ('pickup' / 'pick') thay vì tên tiếng Việt
+  // — 2 module khác nhau nhưng mã gần giống nên nhìn như bấm nhầm.
+  var _modLabel = (window.AZ_MODULE_LABELS && AZ_MODULE_LABELS[key]) ? AZ_MODULE_LABELS[key] : key;
+  if (status !== 'normal') {
+    azConfirmModal({
+      title:   'Chuyển "' + _modLabel + '" sang ' + (AZ_MODSTATUS_LABELS[status] || status) + '?',
+      message: 'Người dùng thường sẽ bị ảnh hưởng ngay lập tức.',
+      danger:  true,
+      okText:  AZ_MODSTATUS_LABELS[status] || status,
+      onOk:    function () { _azApplyModuleStatus(key, status, message); }
+    });
+    return;
+  }
+  _azApplyModuleStatus(key, status, message);
+}
+
+// [MỚI] Hộp thoại xác nhận riêng — thay confirm() của trình duyệt (vốn hiện
+// tên miền googleusercontent trông như lỗi, không đổi được chữ nút, không theo
+// giao diện sáng/tối).
+function azConfirmModal(opt) {
+  opt = opt || {};
+  var old = document.getElementById('az-confirm-overlay');
+  if (old) old.remove();
+  var tone = opt.danger ? 'rose' : 'indigo';
+  var wrap = document.createElement('div');
+  wrap.id = 'az-confirm-overlay';
+  wrap.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;padding:20px';
+  wrap.innerHTML =
+    '<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">' +
+      '<div class="px-5 pt-5 pb-3 flex items-start gap-3">' +
+        '<div class="shrink-0 w-9 h-9 rounded-full bg-' + tone + '-100 dark:bg-' + tone + '-900/40 flex items-center justify-center">' +
+          '<i class="fas fa-' + (opt.danger ? 'triangle-exclamation' : 'circle-question') + ' text-' + tone + '-600 dark:text-' + tone + '-400"></i>' +
+        '</div>' +
+        '<div class="flex-1">' +
+          '<div class="font-black text-sm text-slate-800 dark:text-slate-100 leading-snug">' + _azEsc(opt.title || 'Xác nhận') + '</div>' +
+          '<div class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">' + _azEsc(opt.message || '') + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="px-5 py-3 bg-slate-50 dark:bg-slate-900/40 flex justify-end gap-2">' +
+        '<button type="button" id="az-confirm-cancel" class="px-4 py-2 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700">Huỷ</button>' +
+        '<button type="button" id="az-confirm-ok" class="px-4 py-2 rounded-lg text-xs font-black text-white bg-' + tone + '-600 hover:bg-' + tone + '-700">' + _azEsc(opt.okText || 'Xác nhận') + '</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(wrap);
+  function close() { wrap.remove(); document.removeEventListener('keydown', onKey); }
+  function onKey(e) { if (e.key === 'Escape') close(); }
+  document.addEventListener('keydown', onKey);
+  wrap.addEventListener('click', function (e) { if (e.target === wrap) close(); });
+  wrap.querySelector('#az-confirm-cancel').onclick = close;
+  wrap.querySelector('#az-confirm-ok').onclick = function () {
+    close();
+    if (typeof opt.onOk === 'function') opt.onOk();
+  };
+  try { wrap.querySelector('#az-confirm-ok').focus(); } catch (e) {}
+}
+
+function _azApplyModuleStatus(key, status, message) {
+  google.script.run
+    .withFailureHandler(function(e){ if (typeof showToast==='function') showToast(azT('Lỗi: ')+(e&&e.message||e),'error'); })
+    .withSuccessHandler(function(s){
+      var r; try { r = JSON.parse(s); } catch(e){ r = null; }
+      if (!r || !r.success) { if (typeof showToast==='function') showToast(azT('Lỗi: ')+((r&&r.error)||'Không lưu được'),'error'); return; }
+      if (typeof showToast==='function') showToast(azT('Đã cập nhật'),'success');
+      _azRenderModuleStatus(r.list || []);
+    })
+    .spx_adminSetModuleStatus(key, status, message);
+}
+
+function _spxAdminZoneShowTab(tab) {
+  document.getElementById('adminzone-tab-adminroles').classList.toggle('hidden', tab !== 'adminroles');
+  document.getElementById('adminzone-tab-adminapproval').classList.toggle('hidden', tab !== 'adminapproval');
+  document.getElementById('adminzone-tab-adminusage').classList.toggle('hidden', tab !== 'adminusage');
+  document.getElementById('adminzone-tab-admincleanup').classList.toggle('hidden', tab !== 'admincleanup');
+  document.getElementById('adminzone-tab-adminstations').classList.toggle('hidden', tab !== 'adminstations');
+  if (tab === 'adminstations' && typeof azLoadHubList === 'function') azLoadHubList();
+  document.getElementById('adminzone-tab-adminmodules').classList.toggle('hidden', tab !== 'adminmodules');
+  if (tab === 'adminmodules' && typeof azLoadModuleStatus === 'function') azLoadModuleStatus();
+  if (tab === 'adminmodules' && typeof azLoadAnnouncement === 'function') azLoadAnnouncement();
+  if (tab === 'adminmodules' && typeof azLoadFirestoreQuota === 'function') azLoadFirestoreQuota();
+  if (tab === 'adminmodules' && typeof azLoadAiQuota === 'function') azLoadAiQuota();
+  if (tab === 'adminmodules' && typeof azLoadOnlineUsers === 'function') azLoadOnlineUsers();
+  document.getElementById('adminzone-tab-adminadvanced').classList.toggle('hidden', tab !== 'adminadvanced');
+  document.querySelectorAll('#view-adminzone .spx-admin-zone-tab').forEach(function(el){
+    el.classList.toggle('active', el.dataset.adminzoneTabbtn === tab);
+  });
+  if (typeof currentSpxNav !== 'undefined') currentSpxNav = tab;
+  if (typeof window !== 'undefined') window._spxAdminZoneDefaultTab = tab;
+  document.querySelectorAll('#spxNavRoot .nav-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.nav === tab); });
+  if (tab === 'adminroles' && typeof openAdminManageModal === 'function') {
+    openAdminManageModal();
+    // [MỚI] Cấu hình ROM nằm cùng tab phân quyền — tải luôn danh sách AOM và
+    // cấu hình hiện có. Bọc try/catch: lỗi ở đây không được làm gãy tab.
+    // [SỬA] Cấu hình ROM gọi toàn hàm backend CẤP 1. Admin cấp 2 vào được tab
+    // này (để quản admin khác) nhưng không được đụng ROM -> thay nội dung khối
+    // bằng lời giải thích thay vì để hiện rồi báo lỗi khi bấm.
+    if (typeof _azIsLevel1 === 'function' && !_azIsLevel1()) {
+      var _rl = document.getElementById('romAomList');
+      if (_rl && _rl.parentElement) _azLevel1Only(_rl.parentElement);
+    } else {
+      try { if (typeof romLoadAoms === 'function') romLoadAoms(); } catch (e) {}
+      try { if (typeof romLoadConfig === 'function') romLoadConfig(); } catch (e) {}
+    }
+  }
+  else if (tab === 'adminapproval' && typeof openAccessApprovalModal === 'function') openAccessApprovalModal();
+  else if (tab === 'adminusage' && typeof loadUsageStats === 'function') loadUsageStats();
+  else if (tab === 'adminadvanced' && typeof loadAdvancedDiagnostics === 'function') loadAdvancedDiagnostics();
+  if (tab === 'adminadvanced' && typeof azLoadFeedback === 'function') azLoadFeedback();
+}
+
+
+
+// [SỬA — chuyển từ modal popup sang view toàn trang thật, theo đúng yêu cầu
+// "phân vùng riêng trên sidebar — mở vào thì duyệt bên trong module đó"] Trước
+// đây phải gỡ class 'hidden' của overlay + modal content mới hiện được; giờ
+// view đã tự hiện đúng qua openModule()'s cơ chế chuẩn (view-{toolKey}), hàm
+// này chỉ còn cần tải dữ liệu — gọi khi vào module (xem hook mới trong
+// openModule() ở index.html).
+function openAdminManageModal() {
+  loadAdminList();
+}
+
+// ── Tải danh sách admin từ backend ──
+function loadAdminList() {
+  var container = document.getElementById('adminListContainer');
+  if (!container) return;
+  container.innerHTML = '<p class="text-xs text-slate-400 font-semibold flex items-center gap-2"><i class="fas fa-spinner fa-spin"></i> Đang tải...</p>';
+
+  if (typeof google === 'undefined' || !google.script) return;
+  google.script.run
+    .withFailureHandler(function(err) {
+      container.innerHTML = '<p class="text-xs text-rose-500 dark:text-rose-400 font-semibold">Lỗi tải danh sách: ' + (err && err.message ? err.message : err) + '</p>';
+    })
+    .withSuccessHandler(function(resStr) {
+      var res = typeof resStr === 'string' ? JSON.parse(resStr) : resStr;
+      if (!res.success) {
+        container.innerHTML = '<p class="text-xs text-rose-500 dark:text-rose-400 font-semibold">' + (res.error || 'Không có quyền xem.') + '</p>';
+        return;
+      }
+      renderAdminList(res.list || [], res.myEmail || '');
+    })
+    .spx_getAdminList();
+}
+
+function renderAdminList(list, myEmail) {
+  var container = document.getElementById('adminListContainer');
+  if (!container) return;
+  if (!list.length) {
+    container.innerHTML = '<p class="text-xs text-slate-400 font-semibold">Chưa có admin nào trong danh sách.</p>';
+    return;
+  }
+  // Cấp 1 lên trước, cấp 2 sau; cùng cấp thì sắp theo email
+  list.sort(function(a, b) {
+    if (a.level !== b.level) return a.level - b.level;
+    return (a.email || '').localeCompare(b.email || '');
+  });
+
+  var html = '';
+  list.forEach(function(item) {
+    var levelBadge = item.level === 1
+      ? '<span style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;" class="px-1.5 py-0.5 rounded text-[9px] font-black">CẤP 1</span>'
+      : '<span style="background:#e0e7ff;color:#4338ca;border:1px solid #c7d2fe;" class="px-1.5 py-0.5 rounded text-[9px] font-black">CẤP 2</span>';
+    var isMe = item.email.toLowerCase() === (myEmail || '').toLowerCase();
+    var canRemove = !item.isFailsafe && !isMe;
+
+    html += '<div class="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#151e2f] border border-slate-200 dark:border-slate-700">';
+    html += '  <div class="flex flex-col min-w-0">';
+    html += '    <div class="flex items-center gap-1.5 flex-wrap">';
+    html += '      <span class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">' + escAdminHtml(item.email) + '</span>';
+    html += levelBadge;
+    if (item.isFailsafe) html += '<span title="Bảo vệ trong code, không xoá được" class="text-[9px] text-amber-500 dark:text-amber-400"><i class="fas fa-lock"></i></span>';
+    if (isMe) html += '<span class="text-[9px] text-slate-400 font-bold">(bạn)</span>';
+    html += '    </div>';
+    if (item.note) html += '<span class="text-[10px] text-slate-400 mt-0.5">' + escAdminHtml(item.note) + '</span>';
+    html += '  </div>';
+    if (canRemove) {
+      html += '  <button onclick="adminManageRemove(\'' + item.email.replace(/'/g, "\\'") + '\')" class="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-rose-400 dark:text-rose-300 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-900/20 transition-colors" title="Xoá admin này"><i class="fas fa-trash text-xs"></i></button>';
+    }
+    html += '</div>';
+  });
+  container.innerHTML = html;
+}
+
+function escAdminHtml(s) {
+  return (s || '').toString()
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function adminManageAddSubmit() {
+  var emailInput = document.getElementById('adminNewEmailInput');
+  var noteInput  = document.getElementById('adminNewNoteInput');
+  var msg        = document.getElementById('adminAddMsg');
+  var btn        = document.getElementById('btnAdminAddSubmit');
+  var email = (emailInput.value || '').trim();
+  var note  = (noteInput.value || '').trim();
+
+  if (!email || email.indexOf('@') < 0) {
+    if (msg) { msg.textContent = azT('Vui lòng nhập email hợp lệ.'); msg.className = 'text-[10px] font-bold text-rose-500'; msg.classList.remove('hidden'); }
+    return;
+  }
+  if (typeof google === 'undefined' || !google.script) return;
+
+  btn.disabled = true;
+  btn.classList.add('opacity-60');
+  if (msg) { msg.textContent = azT('Đang thêm...'); msg.className = 'text-[10px] font-bold text-slate-400'; msg.classList.remove('hidden'); }
+
+  google.script.run
+    .withFailureHandler(function(err) {
+      btn.disabled = false; btn.classList.remove('opacity-60');
+      if (msg) { msg.textContent = azT('Lỗi: ') + (err && err.message ? err.message : err); msg.className = 'text-[10px] font-bold text-rose-500'; }
+    })
+    .withSuccessHandler(function(resStr) {
+      btn.disabled = false; btn.classList.remove('opacity-60');
+      var res = typeof resStr === 'string' ? JSON.parse(resStr) : resStr;
+      if (!res.success) {
+        if (msg) { msg.textContent = res.error || 'Không thể thêm.'; msg.className = 'text-[10px] font-bold text-rose-500'; }
+        return;
+      }
+      if (msg) { msg.textContent = azT('Đã thêm admin cấp 2 thành công.'); msg.className = 'text-[10px] font-bold text-emerald-600'; }
+      emailInput.value = '';
+      noteInput.value = '';
+      loadAdminList();
+    })
+    .spx_addAdmin(email, note);
+}
+
+function adminManageRemove(email) {
+  spxConfirmDialog(
+    'Xoá quyền admin của "' + email + '"? Người này sẽ mất toàn bộ quyền admin ngay lập tức.',
+    function() { _adminManageRemoveApply(email); },
+    { title: 'Xoá quyền admin', confirmLabel: 'Xoá quyền', danger: true }
+  );
+}
+function _adminManageRemoveApply(email) {
+  if (typeof google === 'undefined' || !google.script) return;
+
+  google.script.run
+    .withFailureHandler(function(err) {
+      showToast(azT('Lỗi xoá admin: ') + (err && err.message ? err.message : err), 'error');
+    })
+    .withSuccessHandler(function(resStr) {
+      var res = typeof resStr === 'string' ? JSON.parse(resStr) : resStr;
+      if (!res.success) { showToast(res.error || 'Không thể xoá.', 'error'); return; }
+      loadAdminList();
+    })
+    .spx_removeAdmin(email);
+}
+
+
+/** Cập nhật badge đỏ số lượng yêu cầu "Chờ" trên nút Duyệt đăng nhập */
+function _spxRefreshAccessApprovalBadge() {
+  var badge = document.getElementById('spx-access-approve-badge');
+  if (!badge) return;
+  if (typeof google === 'undefined' || !google.script) return;
+  google.script.run
+    .withFailureHandler(function() {})
+    .withSuccessHandler(function(resStr) {
+      try {
+        var res = typeof resStr === 'string' ? JSON.parse(resStr) : resStr;
+        if (!res.success) return;
+        var pending = (res.list || []).filter(function(it) {
+          return !it.statusLogin || it.statusLogin === 'Chờ';
+        }).length;
+        if (pending > 0) {
+          badge.textContent = pending > 99 ? '99+' : String(pending);
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      } catch(e) {}
+    })
+    .spx_getPendingAccessList();
+}
+
+// ── State: tab đang chọn + cache danh sách đã tải (để chuyển tab không cần gọi lại backend) ──
+var _spxAccessApprovalTab  = 'pending';
+var _spxAccessApprovalData = [];
+
+// [SỬA — cùng lý do như trên] Chỉ còn cần reset tab về mặc định + tải dữ liệu.
+function openAccessApprovalModal() {
+  _spxAccessApprovalTab = 'pending';
+  var search = document.getElementById('accessApprovalSearchInput');
+  if (search) search.value = '';
+  loadAccessApprovalList();
+}
+
+/** Chuyển giữa tab "Chờ duyệt" và "Đã duyệt" — dùng lại dữ liệu đã tải, không gọi lại backend */
+function switchAccessApprovalTab(tab) {
+  _spxAccessApprovalTab = tab;
+  var btnPending  = document.getElementById('accessTabBtn-pending');
+  var btnApproved = document.getElementById('accessTabBtn-approved');
+  if (btnPending)  btnPending.classList.toggle('active-tab', tab === 'pending');
+  if (btnApproved) btnApproved.classList.toggle('active-tab', tab === 'approved');
+
+  // Chỉ hiện khối "cấp quyền trước" ở tab Chờ duyệt — ở tab Đã duyệt việc cần làm là
+  // duyệt Lương / thu hồi, không phải thêm mới.
+  var addBlock = document.getElementById('accessAddNewBlock');
+  if (addBlock) addBlock.classList.toggle('hidden', tab !== 'pending');
+
+  renderAccessApprovalList(_spxAccessApprovalData);
+}
+
+/**
+ * spxConfirmDialog(message, onConfirm, opts)
+ * Modal confirm dùng chung, thay cho confirm() gốc trình duyệt (xấu, không đồng
+ * bộ dark mode/style, không tuỳ biến được). Style theo đúng các modal khác trong
+ * app. opts: { title, confirmLabel, danger } — danger=true đổi nút xác nhận sang
+ * đỏ (dùng cho hành động xoá/thu hồi), mặc định màu hổ phách (cảnh báo nhẹ).
+ * onConfirm chỉ chạy khi user bấm nút xác nhận, không chạy nếu Huỷ/đóng ngoài.
+ */
+var _spxConfirmActiveHandler = null;
+function spxConfirmDialog(message, onConfirm, opts) {
+  opts = opts || {};
+  var modal   = document.getElementById('spxConfirmModal');
+  var content = document.getElementById('spxConfirmModalContent');
+  if (!modal || !content) { if (window.confirm(message)) onConfirm(); return; } // fallback an toàn nếu modal chưa kịp render
+
+  document.getElementById('spxConfirmTitle').textContent   = opts.title || 'Xác nhận';
+  document.getElementById('spxConfirmMessage').textContent = message || '';
+  var okBtn     = document.getElementById('spxConfirmOkBtn');
+  var iconWrap  = document.getElementById('spxConfirmIconWrap');
+  var icon      = iconWrap ? iconWrap.querySelector('i') : null;
+  okBtn.textContent = opts.confirmLabel || 'Xác nhận';
+
+  if (opts.danger) {
+    okBtn.className = 'px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-lg text-[10px] uppercase transition-colors shadow-md active:scale-95';
+    if (iconWrap) iconWrap.className = 'shrink-0 w-9 h-9 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center';
+    if (icon) icon.className = 'fas fa-triangle-exclamation text-rose-500 text-sm';
+  } else {
+    okBtn.className = 'px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-lg text-[10px] uppercase transition-colors shadow-md active:scale-95';
+    if (iconWrap) iconWrap.className = 'shrink-0 w-9 h-9 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center';
+    if (icon) icon.className = 'fas fa-triangle-exclamation text-amber-500 text-sm';
+  }
+
+  modal.classList.remove('hidden');
+  requestAnimationFrame(function() { content.classList.remove('scale-95'); });
+
+  function cleanup() {
+    content.classList.add('scale-95');
+    setTimeout(function() { modal.classList.add('hidden'); }, 150);
+    document.removeEventListener('keydown', escHandler);
+  }
+  function escHandler(e) { if (e.key === 'Escape') cleanup(); }
+  document.addEventListener('keydown', escHandler);
+
+  // Gỡ bỏ listener cũ (nếu confirm trước đó chưa được dọn vì user bấm liên tiếp) trước khi gắn mới
+  if (_spxConfirmActiveHandler) {
+    okBtn.removeEventListener('click', _spxConfirmActiveHandler);
+    _spxConfirmActiveHandler = null;
+  }
+  _spxConfirmActiveHandler = function() { cleanup(); onConfirm(); };
+  okBtn.addEventListener('click', _spxConfirmActiveHandler, { once: true });
+
+  var cancelBtn = document.getElementById('spxConfirmCancelBtn');
+  cancelBtn.onclick = cleanup;
+  modal.onclick = function(e) { if (e.target === modal) cleanup(); };
+}
+
+// ── Tải danh sách yêu cầu đăng nhập từ backend ──
+function loadAccessApprovalList() {
+  var container = document.getElementById('accessApprovalListContainer');
+  if (!container) return;
+  container.innerHTML = '<p class="text-xs text-slate-400 font-semibold flex items-center gap-2"><i class="fas fa-spinner fa-spin"></i> Đang tải...</p>';
+
+  if (typeof google === 'undefined' || !google.script) return;
+  google.script.run
+    .withFailureHandler(function(err) {
+      container.innerHTML = '<p class="text-xs text-rose-500 dark:text-rose-400 font-semibold">Lỗi tải danh sách: ' + (err && err.message ? err.message : err) + '</p>';
+    })
+    .withSuccessHandler(function(resStr) {
+      var res = typeof resStr === 'string' ? JSON.parse(resStr) : resStr;
+      if (!res.success) {
+        container.innerHTML = '<p class="text-xs text-rose-500 dark:text-rose-400 font-semibold">' + (res.error || 'Không có quyền xem.') + '</p>';
+        return;
+      }
+      _spxAccessApprovalData = res.list || [];
+      switchAccessApprovalTab(_spxAccessApprovalTab || 'pending');
+      _spxRefreshAccessApprovalBadge();
+    })
+    .spx_getPendingAccessList();
+}
+
+function renderAccessApprovalList(list) {
+  var container = document.getElementById('accessApprovalListContainer');
+  if (!container) return;
+
+  var isPendingTab = (_spxAccessApprovalTab !== 'approved');
+  var pendingList  = list.filter(function(it) { return !it.statusLogin || it.statusLogin === 'Chờ'; });
+  var approvedList = list.filter(function(it) { return it.statusLogin === 'Duyệt'; });
+
+  // Cập nhật số đếm trên 2 tab
+  var cP = document.getElementById('accessTabCount-pending');
+  var cA = document.getElementById('accessTabCount-approved');
+  if (cP) cP.textContent = pendingList.length;
+  if (cA) cA.textContent = approvedList.length;
+
+  var shown = isPendingTab ? pendingList : approvedList;
+
+  // ── Sắp theo thời gian gần nhất lên đầu (không còn A-Z) ──
+  // Tab "Đã duyệt": sắp theo lastActionTs (lần admin bấm duyệt/thu hồi gần nhất) giảm dần,
+  //   nhờ vậy tài khoản vừa mới duyệt luôn nổi lên đầu danh sách, dễ tìm để duyệt tiếp Lương.
+  // Tab "Chờ duyệt": sắp theo requestedTs (lúc user gửi yêu cầu) giảm dần — yêu cầu mới nhất lên đầu.
+  // Thiếu timestamp (dữ liệu cũ trước khi có cột F) → rơi xuống cuối, sắp phụ theo email.
+  shown.sort(function(a, b) {
+    var ta = isPendingTab ? (a.requestedTs || 0) : (a.lastActionTs || 0);
+    var tb = isPendingTab ? (b.requestedTs || 0) : (b.lastActionTs || 0);
+    if (tb !== ta) return tb - ta;
+    return (a.email || '').localeCompare(b.email || '');
+  });
+
+  // ── Lọc theo ô tìm kiếm (nếu có nhập) ──
+  var searchInput = document.getElementById('accessApprovalSearchInput');
+  var q = searchInput ? searchInput.value.trim().toLowerCase() : '';
+  if (q) {
+    shown = shown.filter(function(it) { return (it.email || '').toLowerCase().indexOf(q) >= 0; });
+  }
+
+  if (!shown.length) {
+    var emptyMsg = q
+      ? 'Không tìm thấy email nào khớp với "' + escAdminHtml(q) + '".'
+      : (isPendingTab ? 'Không có yêu cầu nào đang chờ duyệt.' : 'Chưa có ai được duyệt đăng nhập.');
+    container.innerHTML = '<p class="text-xs text-slate-400 font-semibold">' + emptyMsg + '</p>';
+    return;
+  }
+
+  var html = '';
+  shown.forEach(function(item) {
+    var emailEsc = item.email.replace(/'/g, "\\'");
+
+    html += '<div class="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#151e2f] border border-slate-200 dark:border-slate-700">';
+    html += '  <div class="flex flex-col min-w-0">';
+    html += '    <div class="flex items-center gap-1.5 flex-wrap">';
+    html += '      <span class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">' + escAdminHtml(item.email) + '</span>';
+    if (item.assignedHub) html += '<span class="text-[9px] text-slate-400 font-semibold">· ' + escAdminHtml(item.assignedHub) + '</span>';
+    html += '    </div>';
+
+    if (isPendingTab) {
+      if (item.requestedDate) html += '<span class="text-[10px] text-slate-400 mt-0.5">Yêu cầu lúc: ' + escAdminHtml(item.requestedDate) + '</span>';
+    } else {
+      var luongOn = item.statusLuong === 'Duyệt';
+      html += '<span class="text-[10px] mt-0.5 font-bold' + (luongOn ? 'text-emerald-600' : 'text-slate-400') + '">Quyền Lương: ' + (luongOn ? 'Đã duyệt' : 'Chưa duyệt') + '</span>';
+      if (item.lastActionDate) html += '<span class="text-[9px] text-slate-300 dark:text-slate-500 mt-0.5">Thao tác gần nhất: ' + escAdminHtml(item.lastActionDate) + '</span>';
+    }
+    html += '  </div>';
+
+    html += '  <div class="flex items-center gap-2 shrink-0">';
+    if (isPendingTab) {
+      html += '<button onclick="accessApprovalSetLoginStatus(\'' + emailEsc + '\',\'Duyệt\',this)" class="px-2.5 h-8 flex items-center gap-1 justify-center rounded-lg text-emerald-600 dark:text-emerald-400 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/30 transition-colors text-[10px] font-black" title="Chỉ duyệt đăng nhập, chưa cấp quyền xem Lương"><i class="fas fa-check text-xs"></i> Duyệt</button>';
+      html += '<button onclick="accessApprovalSetLoginAndLuong(\'' + emailEsc + '\',this)" class="px-2.5 h-8 flex items-center gap-1 justify-center rounded-lg text-white bg-indigo-500 hover:bg-indigo-600 transition-colors text-[10px] font-black" title="Duyệt đăng nhập và cấp luôn quyền xem Lương"><i class="fas fa-check-double text-xs"></i> + Lương</button>';
+    } else {
+      var luongOn2 = item.statusLuong === 'Duyệt';
+      if (luongOn2) {
+        html += '<button onclick="accessApprovalSetLuongStatus(\'' + emailEsc + '\',\'Chờ\',this)" class="px-2.5 h-9 flex items-center gap-1.5 justify-center rounded-lg text-amber-600 dark:text-amber-400 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/20 dark:hover:bg-amber-900/30 transition-colors text-[10px] font-black active:scale-95" title="Thu hồi quyền Lương"><i class="fas fa-money-bill-wave text-xs"></i> Thu hồi Lương</button>';
+      } else {
+        html += '<button onclick="accessApprovalSetLuongStatus(\'' + emailEsc + '\',\'Duyệt\',this)" class="px-2.5 h-9 flex items-center gap-1.5 justify-center rounded-lg text-emerald-600 dark:text-emerald-400 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/30 transition-colors text-[10px] font-black active:scale-95" title="Duyệt quyền xem Lương"><i class="fas fa-money-bill-wave text-xs"></i> Duyệt Lương</button>';
+      }
+      html += '<button onclick="accessApprovalSetLoginStatus(\'' + emailEsc + '\',\'Chờ\',this)" class="w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-rose-500 dark:hover:bg-slate-700 transition-colors active:scale-95 shrink-0" title="Thu hồi quyền đăng nhập (chuyển về Chờ duyệt)"><i class="fas fa-lock text-sm"></i></button>';
+    }
+    html += '  </div>';
+    html += '</div>';
+  });
+  container.innerHTML = html;
+}
+
+/** Duyệt / thu hồi trạng thái đăng nhập cho 1 email (cột B) */
+function accessApprovalSetLoginStatus(email, status, btnEl) {
+  if (typeof google === 'undefined' || !google.script) return;
+  // [FIX 2026-07-24] TRƯỚC ĐÂY nút không hề bị khoá trong lúc chờ phản hồi — user
+  // không thấy phản hồi gì (đặc biệt khi lock server bị nghẽn, có thể mất vài giây)
+  // nên bấm lại liên tục, mỗi cú bấm lại tạo thêm 1 request cạnh tranh CÙNG 1 khoá,
+  // càng bấm nhiều càng nghẽn thêm (vòng lặp tự làm nặng thêm chính nó). Khoá nút +
+  // hiện spinner ngay khi bấm để user biết "đã ghi nhận, đang xử lý", không cần bấm lại.
+  if (btnEl) { btnEl.disabled = true; btnEl.dataset.origHtml = btnEl.innerHTML; btnEl.innerHTML = '<i class="fas fa-spinner fa-spin text-xs"></i>'; btnEl.classList.add('opacity-60','cursor-wait'); }
+  function restoreBtn() { if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = btnEl.dataset.origHtml || btnEl.innerHTML; btnEl.classList.remove('opacity-60','cursor-wait'); } }
+  google.script.run
+    .withFailureHandler(function(err) {
+      restoreBtn();
+      showToast(azT('Lỗi cập nhật: ') + (err && err.message ? err.message : err), 'error');
+    })
+    .withSuccessHandler(function(resStr) {
+      var res = typeof resStr === 'string' ? JSON.parse(resStr) : resStr;
+      console.log('[accessApprovalSetLoginStatus]', email, status, '→', res); // debug: F12 xem chính xác lỗi backend trả về nếu vẫn không ăn
+      if (!res.success) { restoreBtn(); showToast(res.error || 'Không thể cập nhật.', 'error'); return; }
+      loadAccessApprovalList(); // render lại danh sách -> nút cũ (kể cả đang disabled) bị thay mới hoàn toàn, không cần restoreBtn()
+    })
+    .spx_setAccessLoginStatus(email, status);
+}
+
+/** Duyệt / thu hồi quyền xem Lương cho 1 email (cột D) — chỉ áp dụng cho user đã duyệt đăng nhập.
+ *  Thu hồi (status='Chờ') phải xác nhận trước — tránh bấm nhầm mất quyền của user đang dùng thật. */
+function accessApprovalSetLuongStatus(email, status, btnEl) {
+  if (status === 'Chờ') {
+    spxConfirmDialog(
+      'Thu hồi quyền xem Lương của "' + email + '"? User này sẽ không xem được dữ liệu Lương ngay lập tức.',
+      function() { _accessApprovalSetLuongStatusApply(email, status, btnEl); },
+      { title: 'Thu hồi quyền Lương', confirmLabel: 'Thu hồi', danger: true }
+    );
+    return;
+  }
+  _accessApprovalSetLuongStatusApply(email, status, btnEl);
+}
+function _accessApprovalSetLuongStatusApply(email, status, btnEl) {
+  if (typeof google === 'undefined' || !google.script) return;
+  if (btnEl) { btnEl.disabled = true; btnEl.dataset.origHtml = btnEl.innerHTML; btnEl.innerHTML = '<i class="fas fa-spinner fa-spin text-xs"></i>'; btnEl.classList.add('opacity-60','cursor-wait'); }
+  function restoreBtn() { if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = btnEl.dataset.origHtml || btnEl.innerHTML; btnEl.classList.remove('opacity-60','cursor-wait'); } }
+  google.script.run
+    .withFailureHandler(function(err) {
+      restoreBtn();
+      showToast(azT('Lỗi cập nhật quyền Lương: ') + (err && err.message ? err.message : err), 'error');
+    })
+    .withSuccessHandler(function(resStr) {
+      var res = typeof resStr === 'string' ? JSON.parse(resStr) : resStr;
+      if (!res.success) { restoreBtn(); showToast(res.error || 'Không thể cập nhật quyền Lương.', 'error'); return; }
+      loadAccessApprovalList();
+    })
+    .spx_setAccessLuongStatus(email, status);
+}
+
+/** Duyệt CÙNG LÚC đăng nhập + quyền xem Lương cho 1 email (nút "Duyệt + Lương" ở tab Chờ duyệt) */
+function accessApprovalSetLoginAndLuong(email, btnEl) {
+  if (typeof google === 'undefined' || !google.script) return;
+  if (btnEl) { btnEl.disabled = true; btnEl.dataset.origHtml = btnEl.innerHTML; btnEl.innerHTML = '<i class="fas fa-spinner fa-spin text-xs"></i>'; btnEl.classList.add('opacity-60','cursor-wait'); }
+  function restoreBtn() { if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = btnEl.dataset.origHtml || btnEl.innerHTML; btnEl.classList.remove('opacity-60','cursor-wait'); } }
+  google.script.run
+    .withFailureHandler(function(err) {
+      restoreBtn();
+      showToast(azT('Lỗi cập nhật: ') + (err && err.message ? err.message : err), 'error');
+    })
+    .withSuccessHandler(function(resStr) {
+      var res = typeof resStr === 'string' ? JSON.parse(resStr) : resStr;
+      console.log('[accessApprovalSetLoginAndLuong]', email, '→', res); // debug: F12 xem chính xác lỗi backend trả về nếu vẫn không ăn
+      if (!res.success) { restoreBtn(); showToast(res.error || 'Không thể cập nhật.', 'error'); return; }
+      loadAccessApprovalList();
+    })
+    .spx_setLoginAndLuongStatus(email);
+}
+
+/** Cấp quyền đăng nhập trước cho 1 email mới chưa từng gửi yêu cầu */
+function accessApprovalAddNew() {
+  var emailInput = document.getElementById('accessNewEmailInput');
+  var msg        = document.getElementById('accessAddMsg');
+  var btn        = document.getElementById('btnAccessAddSubmit');
+  var email = (emailInput.value || '').trim();
+
+  if (!email || email.indexOf('@') < 0) {
+    if (msg) { msg.textContent = azT('Vui lòng nhập email hợp lệ.'); msg.className = 'text-[10px] font-bold text-rose-500'; msg.classList.remove('hidden'); }
+    return;
+  }
+  if (typeof google === 'undefined' || !google.script) return;
+
+  btn.disabled = true;
+  btn.classList.add('opacity-60');
+  if (msg) { msg.textContent = azT('Đang duyệt...'); msg.className = 'text-[10px] font-bold text-slate-400'; msg.classList.remove('hidden'); }
+
+  google.script.run
+    .withFailureHandler(function(err) {
+      btn.disabled = false; btn.classList.remove('opacity-60');
+      if (msg) { msg.textContent = azT('Lỗi: ') + (err && err.message ? err.message : err); msg.className = 'text-[10px] font-bold text-rose-500'; }
+    })
+    .withSuccessHandler(function(resStr) {
+      btn.disabled = false; btn.classList.remove('opacity-60');
+      var res = typeof resStr === 'string' ? JSON.parse(resStr) : resStr;
+      if (!res.success) {
+        if (msg) { msg.textContent = res.error || 'Không thể duyệt.'; msg.className = 'text-[10px] font-bold text-rose-500'; }
+        return;
+      }
+      if (msg) { msg.textContent = azT('Đã duyệt đăng nhập cho ') + res.email + '.'; msg.className = 'text-[10px] font-bold text-emerald-600'; }
+      emailInput.value = '';
+      loadAccessApprovalList();
+    })
+    .spx_setAccessLoginStatus(email, 'Duyệt');
+}
+
+// [MỚI — tab "Tần suất sử dụng module", chỉ admin xem được] Gọi backend đã có
+// sẵn phần ghi (tracking tự động ở mọi lần mở module, đã hoạt động từ trước) —
+// hàm này chỉ lo phần đọc + hiển thị, phần còn thiếu duy nhất trước đây.
+// ════════════════════════════════════════════════════════════════════════
+// [MỚI] PHÂN CẤP ROM — ROM > AOM > SUP > Lead/Staff
+// ROM không có trong sheet nguồn nên cấu hình tại đây. Gán AOM nào cho ROM thì
+// ROM thấy toàn bộ trạm của AOM đó; AOM đổi trạm -> ROM tự cập nhật theo.
+// ════════════════════════════════════════════════════════════════════════
+// [BỔ SUNG] azT() bị dùng trong romSetup/romRevoke nhưng chưa từng được khai
+// báo -> mọi lời gọi ném ReferenceError, nút Thiết lập sẽ không chạy.
+// Uỷ quyền spxUiLabel() dùng chung — CÙNG PATTERN với fmsT/qhT/pickT.
+function azT(viText){ return (typeof spxUiLabel === 'function') ? spxUiLabel(viText) : viText; }
+
+function romLoadAoms() {
+  var box = document.getElementById('romAomList');
+  if (!box) return;
+  google.script.run
+    .withFailureHandler(function (e) {
+      box.innerHTML = '<div class="text-xs text-rose-500 p-2">Lỗi tải danh sách AOM: ' + _azEsc(e && e.message ? e.message : e) + '</div>';
+    })
+    .withSuccessHandler(function (s) {
+      var r; try { r = JSON.parse(s); } catch (e) { r = null; }
+      if (!r || !r.success || !r.data || !r.data.length) {
+        box.innerHTML = '<div class="text-xs text-slate-400 p-2">Không đọc được AOM nào từ dữ liệu nhân viên.</div>';
+        return;
+      }
+      var html = '';
+      r.data.forEach(function (a, i) {
+        html += '<label class="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-900/20 cursor-pointer">' +
+          '<input type="checkbox" class="rom-aom-cb accent-indigo-600" value="' + _azEsc(a.email) + '" onchange="romUpdateCount()">' +
+          '<span class="text-xs text-slate-700 dark:text-slate-200 font-bold">' + _azEsc(a.name || a.email) + '</span>' +
+          '<span class="text-[10px] text-slate-400">' + _azEsc(a.email) + '</span>' +
+          '</label>';
+      });
+      box.innerHTML = html;
+      romUpdateCount();
+    })
+    .rom_listAvailableAoms();
+}
+
+function romToggleAllAoms(on) {
+  document.querySelectorAll('.rom-aom-cb').forEach(function (cb) { cb.checked = !!on; });
+  romUpdateCount();
+}
+
+function romUpdateCount() {
+  var n = document.querySelectorAll('.rom-aom-cb:checked').length;
+  var el = document.getElementById('romPickCount');
+  if (el) el.textContent = n ? ('Đang chọn ' + n + ' AOM') : 'Chưa chọn AOM nào';
+}
+
+// [SỬA — theo phản hồi: "1 ROM quản NHIỀU AOM mà chỉ chọn được 1, lại không có
+// nút thiết lập"] Nay gán NHIỀU AOM trong 1 lần bấm. Gọi backend lần lượt cho
+// từng AOM (backend tự chống trùng), rồi tổng kết 1 thông báo duy nhất thay vì
+// bắn toast liên tiếp.
+function romSetup() {
+  var em = (document.getElementById('romEmailInput') || {}).value || '';
+  em = em.trim();
+  if (!em || em.indexOf('@') < 0) { showToast(azT('Nhập email ROM hợp lệ'), 'error', 'az'); return; }
+
+  var picked = [];
+  document.querySelectorAll('.rom-aom-cb:checked').forEach(function (cb) { picked.push(cb.value); });
+  if (!picked.length) { showToast(azT('Chọn ít nhất 1 AOM'), 'error', 'az'); return; }
+
+  showToast(azT('Đang thiết lập ') + picked.length + ' AOM...', 'success', 'az');
+  var done = 0, ok = 0, dup = 0, lastCount = 0, errs = [];
+
+  function finish() {
+    var msg = ok ? ('✓ Đã gán ' + ok + ' AOM') : '';
+    if (dup) msg += (msg ? ' · ' : '') + dup + ' AOM đã có sẵn';
+    if (errs.length) msg += (msg ? ' · ' : '') + errs.length + ' lỗi';
+    if (lastCount) msg += ' — ROM này quản ' + lastCount + ' trạm';
+    showToast(msg || azT('Không có thay đổi'), errs.length ? 'error' : 'success', 'az');
+    romLoadConfig();
+  }
+
+  picked.forEach(function (aom) {
+    google.script.run
+      .withFailureHandler(function (e) {
+        errs.push(aom); done++; if (done === picked.length) finish();
+      })
+      .withSuccessHandler(function (s) {
+        var r; try { r = JSON.parse(s); } catch (e) { r = null; }
+        if (r && r.success) { ok++; lastCount = r.stationCount || lastCount; }
+        else if (r && r.error && r.error.indexOf('đã có') >= 0) dup++;
+        else errs.push(aom);
+        done++; if (done === picked.length) finish();
+      })
+      .rom_assignAom(em, aom);
+  });
+}
+
+// [KHÔI PHỤC] Hàm này bị xoá nhầm khi thay khối logic sang chọn-nhiều-AOM,
+// trong khi 3 nơi vẫn gọi -> danh sách "ROM đã cấu hình" treo mãi ở dòng
+// "Đang tải cấu hình..." vì không hàm nào chạy để thay nội dung đó.
+function romLoadConfig() {
+  var box = document.getElementById('romConfigBody');
+  if (!box) return;
+  box.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tải cấu hình...';
+  google.script.run
+    .withFailureHandler(function (e) {
+      box.innerHTML = '<span class="text-rose-500">Lỗi tải cấu hình: ' + _azEsc(e && e.message ? e.message : e) + '</span>';
+    })
+    .withSuccessHandler(function (s) {
+      var r; try { r = JSON.parse(s); } catch (e) { r = null; }
+      if (!r || !r.success) {
+        box.innerHTML = '<span class="text-rose-500">' + _azEsc(r && r.error ? r.error : 'Không đọc được cấu hình') + '</span>';
+        return;
+      }
+      if (!r.data || !r.data.length) {
+        box.innerHTML = '<div class="text-center py-4 text-slate-400">Chưa có ROM nào được cấu hình.</div>';
+        return;
+      }
+      var html = '';
+      r.data.forEach(function (row) {
+        html += '<div class="border border-slate-100 dark:border-slate-700 rounded-xl p-3 mb-2">' +
+          '<div class="flex items-center gap-2 flex-wrap mb-2">' +
+            '<span class="font-black text-slate-700 dark:text-slate-200 text-xs">' + _azEsc(row.romEmail) + '</span>' +
+            '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300">' +
+              row.aomEmails.length + ' AOM · ' + row.stationCount + ' trạm</span>' +
+          '</div>' +
+          '<div class="flex flex-wrap gap-1.5">';
+        row.aomEmails.forEach(function (a) {
+          html += '<span class="inline-flex items-center gap-1.5 text-[10px] bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1">' +
+            _azEsc(a) +
+            '<button type="button" title="Gỡ AOM này khỏi ROM" onclick="romRevoke(\'' + _azEscJs(row.romEmail) + '\',\'' + _azEscJs(a) + '\')" ' +
+              'class="text-rose-500 hover:text-rose-700 font-black">&times;</button>' +
+            '</span>';
+        });
+        html += '</div></div>';
+      });
+      box.innerHTML = html;
+    })
+    .rom_listConfig();
+}
+
+function romRevoke(romEmail, aomEmail, _ok) {
+  if (!_ok) {  // [SỬA — rà soát UI/UX] hộp thoại hệ thống thay confirm() của trình duyệt
+    spxConfirm({ title: 'Gỡ AOM "' + aomEmail + '" khỏi ROM "' + romEmail + '"?', message: '', danger: true,
+      onOk: function () { romRevoke(romEmail, aomEmail, true); } });
+    return;
+  }
+  google.script.run
+    .withFailureHandler(function (e) { showToast('Lỗi: ' + (e && e.message ? e.message : e), 'error', 'az'); })
+    .withSuccessHandler(function (s) {
+      var r; try { r = JSON.parse(s); } catch (e) { r = null; }
+      if (!r || !r.success) { showToast(r && r.error ? r.error : azT('Gỡ thất bại'), 'error', 'az'); return; }
+      showToast(azT('Đã gỡ'), 'success', 'az');
+      romLoadConfig();
+    })
+    .rom_revokeAom(romEmail, aomEmail);
+}
+
+function azT_attr(s) { return String(s == null ? '' : s).replace(/"/g, '&quot;'); }
+function _azEsc(s) {
+  return (typeof spxEscHtml === 'function') ? spxEscHtml(s)
+    : String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function _azEscJs(s) { return String(s == null ? '' : s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+function loadUsageStats(daysBack) {
+  daysBack = daysBack || (document.getElementById('usageStatsRangeSelect') || {}).value || 7;
+  var summaryEl = document.getElementById('usageStatsSummary');
+  var byModuleEl = document.getElementById('usageStatsByModule');
+  var byUserEl = document.getElementById('usageStatsByUser');
+  var warningEl = document.getElementById('usageStatsTriggerWarning');
+  if (!byModuleEl) return;
+
+  // [MỚI] Nút "Xoá lịch sử" chỉ hiện cho admin cấp 1, khớp đúng điều kiện
+  // backend đã chặn (_requireAdmin_(1)) — tránh admin cấp 2 bấm rồi gặp lỗi.
+  var clearBtn = document.getElementById('usageStatsClearBtn');
+  if (clearBtn) {
+    var isLevel1 = window.SPX_ACCESS && String(window.SPX_ACCESS.role || '').trim() === 'admin' && Number(window.SPX_ACCESS.level) === 1;
+    clearBtn.classList.toggle('hidden', !isLevel1);
+  }
+
+  byModuleEl.innerHTML = '<p class="text-xs text-slate-400 font-semibold flex items-center gap-2"><i class="fas fa-spinner fa-spin"></i> Đang tải...</p>';
+  byUserEl.innerHTML = '';
+  var _nuL = document.getElementById('usageStatsNeverUsed');
+  if (_nuL) _nuL.innerHTML = '<p class="text-xs text-slate-400 font-semibold flex items-center gap-2"><i class="fas fa-spinner fa-spin"></i> Đang tải...</p>';
+  if (typeof google === 'undefined' || !google.script) return;
+
+  // [MỚI — phát hiện qua câu hỏi trực tiếp "có sai lệch gì không?"] Kiểm tra
+  // NGAY mỗi lần mở tab xem trigger flush có thật sự đang chạy hay không — nếu
+  // chưa từng cài đặt, dữ liệu tracking sẽ mất VĨNH VIỄN sau mỗi 2 tiếng (cache
+  // hết hạn trước khi kịp ghi vào sheet), không phải chỉ "trễ vài giờ".
+  if (warningEl) {
+    google.script.run.withFailureHandler(function(){}).withSuccessHandler(function (resStr) {
+      var res; try { res = JSON.parse(resStr); } catch(e) { res = null; }
+      if (res && res.success && !res.installed) {
+        warningEl.classList.remove('hidden');
+        warningEl.innerHTML = '<div class="flex items-start gap-2">'
+          + '<i class="fas fa-triangle-exclamation text-rose-500 dark:text-rose-400 mt-0.5"></i>'
+          + '<div class="flex-1"><b class="text-rose-700 dark:text-rose-300">Trigger ghi dữ liệu CHƯA được cài đặt.</b>'
+          + ' Dữ liệu tần suất sử dụng đang bị mất sau mỗi 2 tiếng, không được lưu lại. Bấm để cài đặt ngay (chỉ cần làm 1 lần).</div>'
+          + '<button onclick="_spxInstallUsageTrigger(this)" class="shrink-0 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-lg text-[10px] uppercase transition-colors">Cài đặt ngay</button>'
+          + '</div>';
+      } else if (res && res.success && res.installed) {
+        warningEl.classList.add('hidden');
+      }
+    }).spx_checkUsageStatsTriggerStatus();
+  }
+
+  google.script.run
+    .withFailureHandler(function (err) {
+      byModuleEl.innerHTML = '<p class="text-xs text-rose-500 dark:text-rose-400 font-semibold">Lỗi tải dữ liệu: ' + (err && err.message ? err.message : err) + '</p>';
+    })
+    .withSuccessHandler(function (resStr) {
+      var res;
+      try { res = typeof resStr === 'string' ? JSON.parse(resStr) : resStr; } catch (e) { res = null; }
+      if (!res || !res.success) {
+        byModuleEl.innerHTML = '<p class="text-xs text-rose-500 dark:text-rose-400 font-semibold">' + escAdminHtml((res && res.error) || 'Không tải được dữ liệu') + '</p>';
+        return;
+      }
+      if (summaryEl) {
+        var _used = res.byUser.length, _tot = res.approvedTotal || 0;
+        summaryEl.innerHTML = '<i class="fas fa-circle-info text-sky-500 dark:text-sky-400"></i> Tổng <b>' + res.totalOpens.toLocaleString('vi-VN') + '</b> lượt mở module trong ' + res.daysBack + ' ngày gần nhất, từ <b>' + _used + '</b>'
+          + (_tot ? '/<b>' + _tot + '</b> người được duyệt (' + Math.round(_used / _tot * 100) + '%)' : ' user khác nhau')
+          + '. Chưa từng dùng: <b class="text-amber-600 dark:text-amber-400">' + (res.neverUsed || []).length + '</b>.';
+      }
+      var maxModuleOpens = Math.max.apply(null, res.byModule.map(function (m) { return m.opens; }).concat([1]));
+      byModuleEl.innerHTML = res.byModule.length ? res.byModule.map(function (m) {
+        var pct = Math.round((m.opens / maxModuleOpens) * 100);
+        return '<div class="relative rounded-lg overflow-hidden bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700">'
+          + '<div class="absolute inset-y-0 left-0 bg-sky-100 dark:bg-sky-900/40" style="width:' + pct + '%"></div>'
+          + '<div class="relative px-3 py-2 flex justify-between items-center text-xs">'
+          + '<span class="font-bold text-slate-700 dark:text-slate-200">' + escAdminHtml(m.module) + '</span>'
+          + '<span class="text-slate-500 dark:text-slate-400 font-semibold">' + m.opens.toLocaleString('vi-VN') + ' lượt · ' + m.uniqueUsers + ' user</span>'
+          + '</div></div>';
+      }).join('') : '<p class="text-xs text-slate-400 font-semibold">Chưa có dữ liệu trong khoảng thời gian này.</p>';
+
+      var maxUserOpens = Math.max.apply(null, res.byUser.map(function (u) { return u.opens; }).concat([1]));
+      byUserEl.innerHTML = res.byUser.length ? res.byUser.slice(0, 30).map(function (u) {
+        var pct = Math.round((u.opens / maxUserOpens) * 100);
+        return '<div class="relative rounded-lg overflow-hidden bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700">'
+          + '<div class="absolute inset-y-0 left-0 bg-emerald-100 dark:bg-emerald-900/40" style="width:' + pct + '%"></div>'
+          + '<div class="relative px-3 py-2 flex justify-between items-center text-xs gap-2">'
+          + '<span class="font-bold text-slate-700 dark:text-slate-200 truncate">' + escAdminHtml(u.email) + '</span>'
+          + '<span class="text-slate-500 dark:text-slate-400 font-semibold shrink-0">' + u.opens.toLocaleString('vi-VN') + ' lượt · ' + escAdminHtml(u.topModule) + '</span>'
+          + '</div></div>';
+      }).join('') : '';
+
+      _spxRenderUsageGroups(res);
+    })
+    .spx_getUsageStats(Number(daysBack));
+}
+
+// [MỚI — theo yêu cầu "người được duyệt mà chưa bao giờ sử dụng"] Vẽ 2 phân vùng
+// từ kết quả spx_getUsageStats(): chưa từng dùng + từng dùng nhưng im lặng trong kỳ.
+function _spxRenderUsageGroups(res) {
+  var nuEl = document.getElementById('usageStatsNeverUsed');
+  if (!nuEl) return;
+  var nu = res.neverUsed || [], ia = res.inactive || [];
+  var nowMs = Date.now();
+  function rowHtml(u, cls) {
+    var d = u.approvedTs ? Math.floor((nowMs - u.approvedTs) / 86400000) : null;
+    var meta = escAdminHtml(u.hub || u.kind || '') + (d != null ? ' · thao tác duyệt ' + d + ' ngày trước' : '');
+    return '<div class="px-3 py-2 flex justify-between items-center gap-2 text-xs rounded-lg border ' + cls + '">'
+      + '<span class="font-bold text-slate-700 dark:text-slate-200 truncate">' + escAdminHtml(u.email) + '</span>'
+      + '<span class="text-slate-500 dark:text-slate-400 font-semibold shrink-0">' + meta + '</span></div>';
+  }
+  var nuCls = 'bg-white dark:bg-slate-800/60 border-amber-100 dark:border-amber-900/50';
+  var iaCls = 'bg-white dark:bg-slate-800/60 border-slate-100 dark:border-slate-700';
+
+  var cntEl = document.getElementById('usageStatsNeverUsedCount');
+  if (cntEl) cntEl.textContent = nu.length;
+  var noteEl = document.getElementById('usageStatsNeverUsedNote');
+  if (noteEl) {
+    noteEl.textContent = 'Đối chiếu Admin_Access (đã duyệt) và admin với toàn bộ Usage_Stats'
+      + (res.dataSince ? ' — dữ liệu ghi nhận từ ' + res.dataSince : ' — chưa có dữ liệu nào được ghi')
+      + '. Người mới duyệt gần đây chưa dùng là bình thường; người duyệt lâu mà chưa dùng nằm trên cùng.';
+  }
+  nuEl.innerHTML = nu.length
+    ? nu.map(function (u) { return rowHtml(u, nuCls); }).join('')
+    : '<p class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold"><i class="fas fa-circle-check"></i> Mọi người được duyệt đều đã từng sử dụng.</p>';
+
+  var iaZone = document.getElementById('usageStatsInactiveZone');
+  var iaEl = document.getElementById('usageStatsInactive');
+  var iaCnt = document.getElementById('usageStatsInactiveCount');
+  if (iaZone && iaEl) {
+    iaZone.classList.toggle('hidden', !ia.length);
+    if (iaCnt) iaCnt.textContent = ia.length;
+    iaEl.innerHTML = ia.map(function (u) { return rowHtml(u, iaCls); }).join('');
+  }
+}
+
+// [MỚI] Xử lý nút "Cài đặt ngay" — gọi backend cài trigger, rồi tự kiểm tra
+// lại trạng thái để cập nhật đúng giao diện, không cần tải lại trang.
+function _spxInstallUsageTrigger(btnEl) {
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = azT('Đang cài...'); }
+  google.script.run
+    .withFailureHandler(function (err) {
+      if (btnEl) { btnEl.disabled = false; btnEl.textContent = azT('Cài đặt ngay'); }
+      showToast(azT('Lỗi cài đặt trigger: ') + (err && err.message ? err.message : err), 'error');
+    })
+    .withSuccessHandler(function (resStr) {
+      var res; try { res = JSON.parse(resStr); } catch (e) { res = null; }
+      if (res && res.success) {
+        showToast(azT('Đã cài đặt trigger thành công — dữ liệu sẽ được lưu đúng từ giờ.'), 'success');
+        loadUsageStats();
+      } else {
+        if (btnEl) { btnEl.disabled = false; btnEl.textContent = azT('Cài đặt ngay'); }
+        showToast(azT('Lỗi: ') + ((res && res.error) || 'không rõ nguyên nhân'), 'error');
+      }
+    })
+    .spx_installUsageStatsTrigger();
+}
+
+// [MỚI — theo yêu cầu "export ra file toàn bộ lịch sử theo khung thời gian"]
+// Lấy dữ liệu THÔ (không tổng hợp) từ backend, dựng CSV ở client — đúng pattern
+// đã có sẵn ở kpifailExportCSV()/Rider Plan, không tạo cách riêng.
+function exportUsageStatsCSV() {
+  var daysBack = (document.getElementById('usageStatsRangeSelect') || {}).value || 7;
+  if (typeof google === 'undefined' || !google.script) return;
+  showToast(azT('Đang chuẩn bị file xuất...'), 'loading');
+  google.script.run
+    .withFailureHandler(function (err) {
+      showToast(azT('Lỗi xuất file: ') + (err && err.message ? err.message : err), 'error');
+    })
+    .withSuccessHandler(function (resStr) {
+      var res; try { res = JSON.parse(resStr); } catch (e) { res = null; }
+      if (!res || !res.success) {
+        showToast(azT('Lỗi: ') + ((res && res.error) || 'không rõ nguyên nhân'), 'error');
+        return;
+      }
+      var nuList = res.neverUsed || [], iaList = res.inactive || [];
+      if (!res.rows.length && !nuList.length && !iaList.length) { showToast(azT('Không có dữ liệu trong khoảng thời gian này'), 'error'); return; }
+      var headers = ['Ngày', 'Giờ', 'Module', 'Vai trò', 'Trạm', 'Email', 'Số lượt mở'];
+      var escCsv = function (v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; };
+      var lines = [headers.map(escCsv).join(',')];
+      res.rows.forEach(function (r) { lines.push(r.map(escCsv).join(',')); });
+      // [MỚI] Phần 2: người được duyệt nhưng KHÔNG có lượt mở — cùng file để không phải ghép tay
+      if (nuList.length || iaList.length) {
+        var nowMs = Date.now();
+        lines.push('');
+        lines.push(escCsv('NGƯỜI ĐƯỢC DUYỆT NHƯNG KHÔNG CÓ LƯỢT MỞ — đối chiếu Admin_Access/admin với Usage_Stats, dữ liệu ghi nhận từ ' + (res.dataSince || 'không rõ') + '. Ngày thao tác = lần duyệt/thu hồi gần nhất, không phải ngày duyệt gốc.'));
+        lines.push(['Nhóm', 'Email', 'Loại tài khoản', 'Trạm gán', 'Thao tác duyệt gần nhất', 'Số ngày kể từ thao tác'].map(escCsv).join(','));
+        var addGroup = function (list, label) {
+          list.forEach(function (u) {
+            var d = u.approvedTs ? Math.floor((nowMs - u.approvedTs) / 86400000) : '';
+            lines.push([label, u.email, u.kind || '', u.hub || '', u.approvedDate || '', d].map(escCsv).join(','));
+          });
+        };
+        addGroup(nuList, 'Chưa từng sử dụng');
+        addGroup(iaList, 'Từng dùng, không hoạt động trong ' + (res.daysBack || daysBack) + ' ngày');
+      }
+      // BOM \uFEFF để Excel mở tiếng Việt không bị lỗi font
+      var blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      var stamp = (typeof spxVnDateStr === 'function') ? spxVnDateStr() : new Date().toISOString().slice(0, 10);
+      a.href = url; a.download = 'Usage_Stats_' + daysBack + 'ngay_' + stamp + '.csv';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast(azT('✓ Đã xuất ') + res.rows.length + ' dòng' + (nuList.length ? ' + ' + nuList.length + ' người chưa dùng' : '') + ' ra CSV', 'success');
+    })
+    .spx_exportUsageStatsRaw(Number(daysBack));
+}
+
+// [MỚI — theo yêu cầu "thêm phần xoá lịch sử để recheck lại"] Xác nhận qua
+// dialog cảnh báo (opts.danger) trước khi gọi backend — hành động không thể
+// hoàn tác. Nút chỉ hiện với admin cấp 1 (xem loadUsageStats()).
+function clearUsageStatsHistory() {
+  spxConfirmDialog(
+    'Toàn bộ lịch sử tần suất sử dụng sẽ bị xoá VĨNH VIỄN, không thể khôi phục. Chỉ dùng khi cần kiểm tra lại từ đầu (VD sau khi vừa sửa lỗi tracking). Tiếp tục?',
+    function () {
+      google.script.run
+        .withFailureHandler(function (err) {
+          showToast(azT('Lỗi xoá lịch sử: ') + (err && err.message ? err.message : err), 'error');
+        })
+        .withSuccessHandler(function (resStr) {
+          var res; try { res = JSON.parse(resStr); } catch (e) { res = null; }
+          if (res && res.success) {
+            showToast(azT('✓ Đã xoá toàn bộ lịch sử — bắt đầu ghi lại từ giờ.'), 'success');
+            loadUsageStats();
+          } else {
+            showToast(azT('Lỗi: ') + ((res && res.error) || 'không rõ nguyên nhân'), 'error');
+          }
+        })
+        .spx_clearUsageStatsHistory();
+    },
+    { title: 'Xoá toàn bộ lịch sử?', confirmLabel: 'Xoá vĩnh viễn', danger: true }
+  );
+}
+
+// [MỚI — theo yêu cầu trực tiếp "tách 2 luồng dọn dẹp cache: user thường ở
+// header, admin thì chuyển vào Quản trị hệ thống"] Đây là hành động XOÁ CACHE
+// SERVER-WIDE (spx_refreshSystem() ở backend), ảnh hưởng MỌI user đang dùng
+// app cùng lúc — KHÁC HẲN 2 nút "Dọn dẹp bộ nhớ đệm"/"Dọn toàn bộ" ở header
+// (giờ chỉ xoá đúng trình duyệt của riêng người bấm, không đụng server nữa).
+// Backend đã thêm _requireAdmin_(2) — chặn cứng ở cả 2 phía, không chỉ ẩn nút.
+function spxAdminCleanupSystemWide() {
+  spxConfirmDialog(
+    'Toàn bộ cache nghiệp vụ phía server (quyền truy cập, Quá Hạn, KPI Fail, FMS Live, danh sách Admin...) sẽ bị xoá NGAY LẬP TỨC. Mọi user đang dùng app sẽ phải tải lại dữ liệu từ Sheet thật ở lần gọi tiếp theo — có thể chậm tạm thời cho TẤT CẢ mọi người, không chỉ riêng bạn. Tiếp tục?',
+    function () {
+      var btn = document.getElementById('btnSystemCleanupFull');
+      var msg = document.getElementById('systemCleanupMsg');
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang dọn...'; }
+      google.script.run
+        .withFailureHandler(function (err) {
+          if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-server text-xs"></i> Dọn cache hệ thống ngay'; }
+          if (msg) { msg.classList.remove('hidden'); msg.className = 'text-[10px] font-bold mt-2 text-rose-600 dark:text-rose-400'; msg.textContent = azT('Lỗi: ') + (err && err.message ? err.message : err); }
+        })
+        .withSuccessHandler(function (resStr) {
+          if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-server text-xs"></i> Dọn cache hệ thống ngay'; }
+          var res; try { res = JSON.parse(resStr); } catch (e) { res = null; }
+          if (msg) {
+            msg.classList.remove('hidden');
+            if (res && res.success) {
+              msg.className = 'text-[10px] font-bold mt-2 text-emerald-600 dark:text-emerald-400';
+              msg.textContent = azT('✓ Đã dọn xong cache hệ thống lúc ') + new Date().toLocaleTimeString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+            } else {
+              msg.className = 'text-[10px] font-bold mt-2 text-amber-600 dark:text-amber-400';
+              msg.textContent = azT('Hoàn tất nhưng có lỗi ở vài bước — xem chi tiết trong nhật ký hệ thống.');
+            }
+          }
+        })
+        .spx_refreshSystem();
+    },
+    { title: 'Dọn cache hệ thống?', confirmLabel: 'Dọn ngay', danger: true }
+  );
+}
+
+// ═══════════════════ TAB: TUỲ CHỌN NÂNG CAO ═══════════════════
+
+// ── Khối 1: Kiểm soát hệ thống & chẩn đoán ──
+function loadAdvancedDiagnostics() {
+  var triggerEl = document.getElementById('advTriggerList');
+  var errorEl = document.getElementById('advErrorList');
+  renderOrgMapTable();
+  loadAdvancedConfigForm();
+  if (!triggerEl || typeof google === 'undefined' || !google.script) return;
+
+  triggerEl.innerHTML = '<p class="text-xs text-slate-400 font-semibold flex items-center gap-2"><i class="fas fa-spinner fa-spin"></i> Đang tải...</p>';
+  google.script.run.withFailureHandler(function(err){
+    triggerEl.innerHTML = '<p class="text-xs text-rose-500 dark:text-rose-400 font-semibold">Lỗi: ' + (err && err.message ? err.message : err) + '</p>';
+  }).withSuccessHandler(function(resStr){
+    var res; try { res = JSON.parse(resStr); } catch(e) { res = null; }
+    if (!res || !res.success) { triggerEl.innerHTML = '<p class="text-xs text-rose-500 dark:text-rose-400 font-semibold">' + escAdminHtml((res && res.error) || 'Lỗi không rõ') + '</p>'; return; }
+    if (!res.triggers.length) { triggerEl.innerHTML = '<p class="text-xs text-amber-600 dark:text-amber-400 font-semibold"><i class="fas fa-triangle-exclamation"></i> Không có trigger nào đang chạy.</p>'; return; }
+    triggerEl.innerHTML = res.triggers.map(function(t){
+      return '<div class="flex justify-between items-center px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 text-xs">'
+        + '<span class="font-bold text-slate-700 dark:text-slate-200">' + escAdminHtml(t.handlerFunction) + '</span>'
+        + '<span class="text-slate-400 font-semibold">' + escAdminHtml(t.triggerSourceDetail) + '</span></div>';
+    }).join('');
+  }).spx_listAllTriggers();
+
+  if (!errorEl) return;
+  errorEl.innerHTML = '<p class="text-xs text-slate-400 font-semibold flex items-center gap-2"><i class="fas fa-spinner fa-spin"></i> Đang tải...</p>';
+  google.script.run.withFailureHandler(function(err){
+    errorEl.innerHTML = '<p class="text-xs text-rose-500 dark:text-rose-400 font-semibold">Lỗi: ' + (err && err.message ? err.message : err) + '</p>';
+  }).withSuccessHandler(function(resStr){
+    var res; try { res = JSON.parse(resStr); } catch(e) { res = null; }
+    if (!res || !res.success) { errorEl.innerHTML = '<p class="text-xs text-rose-500 dark:text-rose-400 font-semibold">' + escAdminHtml((res && res.error) || 'Lỗi không rõ') + '</p>'; return; }
+    if (!res.errors.length) { errorEl.innerHTML = '<p class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold"><i class="fas fa-circle-check"></i> Không có lỗi nào trong 6 tiếng qua.</p>'; return; }
+    errorEl.innerHTML = res.errors.map(function(e){
+      var t = new Date(e.ts).toLocaleTimeString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+      return '<div class="px-3 py-2 rounded-lg bg-rose-50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-800/50 text-[11px]">'
+        + '<span class="font-black text-rose-600 dark:text-rose-400">' + t + '</span> '
+        + '<span class="text-slate-600 dark:text-slate-300">' + escAdminHtml(e.msg) + '</span></div>';
+    }).join('');
+  }).spx_getRecentErrors();
+}
+
+// ── Khối 2: Quản lý dữ liệu nền ──
+// [MỚI] Đối chiếu tên Hub lệch giữa 2 nguồn dữ liệu — tái dùng đúng dữ liệu
+// ĐÃ CÓ SẴN trong phiên (allData của Quá Hạn, RUNTIME_CACHE.fmsData của FMS),
+// không tự ý gọi thêm backend chỉ để phục vụ công cụ này (giữ đúng tinh thần
+// đã áp dụng cho chuông cảnh báo — chỉ dùng dữ liệu đã tải, trung thực về
+// phạm vi nếu module chưa từng được mở trong phiên).
+function runHubReconciliation() {
+  var el = document.getElementById('advHubMismatchList');
+  if (!el) return;
+  var qhHubs = {}, fmsHubs = {};
+  (typeof allData !== 'undefined' ? allData : []).forEach(function(r){
+    var h = (typeof getHubVal === 'function') ? getHubVal(r) : (r.hubName || r.Hub || r.hub || '');
+    h = (h || '').toString().trim();
+    if (h) qhHubs[typeof cleanHubString === 'function' ? cleanHubString(h) : h.toLowerCase()] = h;
+  });
+  var fmsData = (window.RUNTIME_CACHE && RUNTIME_CACHE.fmsData) || [];
+  fmsData.forEach(function(r){
+    var h = (r.hubName || r.Hub || r.hub || '').toString().trim();
+    if (h) fmsHubs[typeof cleanHubString === 'function' ? cleanHubString(h) : h.toLowerCase()] = h;
+  });
+  if (!Object.keys(qhHubs).length && !Object.keys(fmsHubs).length) {
+    el.innerHTML = '<p class="text-xs text-amber-600 dark:text-amber-400 font-semibold"><i class="fas fa-triangle-exclamation"></i> Chưa có dữ liệu — cần mở Quá Hạn và Tồn Đọng LastMile ít nhất 1 lần trong phiên này trước.</p>';
+    return;
+  }
+  var onlyInQh = Object.keys(qhHubs).filter(function(k){ return !fmsHubs[k]; }).map(function(k){ return qhHubs[k]; });
+  var onlyInFms = Object.keys(fmsHubs).filter(function(k){ return !qhHubs[k]; }).map(function(k){ return fmsHubs[k]; });
+  if (!onlyInQh.length && !onlyInFms.length) {
+    el.innerHTML = '<p class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold"><i class="fas fa-circle-check"></i> Không phát hiện lệch tên Hub nào giữa 2 nguồn.</p>';
+    return;
+  }
+  var html = '';
+  if (onlyInQh.length) html += '<p class="text-[10px] font-black uppercase text-slate-400 mb-1">Chỉ có ở Quá Hạn (' + onlyInQh.length + ')</p>' + onlyInQh.map(function(h){ return '<div class="px-2 py-1 text-[11px] text-slate-600 dark:text-slate-300">' + escAdminHtml(h) + '</div>'; }).join('');
+  if (onlyInFms.length) html += '<p class="text-[10px] font-black uppercase text-slate-400 mb-1 mt-2">Chỉ có ở FMS (' + onlyInFms.length + ')</p>' + onlyInFms.map(function(h){ return '<div class="px-2 py-1 text-[11px] text-slate-600 dark:text-slate-300">' + escAdminHtml(h) + '</div>'; }).join('');
+  el.innerHTML = html;
+}
+
+function renderOrgMapTable() {
+  var el = document.getElementById('advOrgMapTable');
+  if (!el) return;
+  if (typeof spxGetHubOrgMap !== 'function') { el.innerHTML = '<p class="text-xs text-rose-500 dark:text-rose-400 font-semibold">Không tìm thấy dữ liệu mapping.</p>'; return; }
+  var map = spxGetHubOrgMap();
+  var keys = Object.keys(map);
+  if (!keys.length) { el.innerHTML = '<p class="text-xs text-amber-600 dark:text-amber-400 font-semibold"><i class="fas fa-triangle-exclamation"></i> Chưa có dữ liệu — cần mở module Quá Hạn ít nhất 1 lần trong phiên này trước.</p>'; return; }
+  var q = ((document.getElementById('advOrgMapSearch') || {}).value || '').trim().toLowerCase();
+  var filtered = keys.filter(function(h){ return !q || h.toLowerCase().indexOf(q) !== -1; }).sort();
+  if (!filtered.length) { el.innerHTML = '<p class="text-xs text-slate-400 font-semibold">Không tìm thấy Hub khớp.</p>'; return; }
+  el.innerHTML = filtered.slice(0, 200).map(function(h){
+    var info = map[h];
+    return '<div class="flex justify-between items-center px-2 py-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[11px]">'
+      + '<span class="font-bold text-slate-700 dark:text-slate-200 truncate">' + escAdminHtml(h) + '</span>'
+      + '<span class="text-slate-400 font-semibold shrink-0 ml-2">' + escAdminHtml(info.aom) + ' · ' + escAdminHtml(info.sup) + '</span></div>';
+  }).join('') + (filtered.length > 200 ? '<p class="text-[10px] text-slate-400 mt-1">... và ' + (filtered.length - 200) + ' Hub khác, thu hẹp tìm kiếm để xem.</p>' : '');
+}
+
+// ── Khối 3: Cấu hình vận hành ──
+function loadAdvancedConfigForm() {
+  if (typeof google === 'undefined' || !google.script) return;
+  google.script.run.withFailureHandler(function(){}).withSuccessHandler(function(resStr){
+    var res; try { res = JSON.parse(resStr); } catch(e) { res = null; }
+    if (res && res.config) {
+      var b = document.getElementById('cfgBadgeDays'), a = document.getElementById('cfgAutoCleanDays'), m = document.getElementById('cfgAutoCleanMB');
+      if (b) b.value = res.config.badgeDays;
+      if (a) a.value = res.config.autoCleanDays;
+      if (m) m.value = res.config.autoCleanMB;
+    }
+  }).spx_getSystemConfig();
+}
+
+function saveAdvancedConfig() {
+  var config = {
+    badgeDays: Number(document.getElementById('cfgBadgeDays').value),
+    autoCleanDays: Number(document.getElementById('cfgAutoCleanDays').value),
+    autoCleanMB: Number(document.getElementById('cfgAutoCleanMB').value)
+  };
+  var msg = document.getElementById('cfgSaveMsg');
+  google.script.run.withFailureHandler(function(err){
+    if (msg) { msg.classList.remove('hidden'); msg.className = 'text-[10px] font-bold mt-2 text-rose-600 dark:text-rose-400'; msg.textContent = azT('Lỗi: ') + (err && err.message ? err.message : err); }
+  }).withSuccessHandler(function(resStr){
+    var res; try { res = JSON.parse(resStr); } catch(e) { res = null; }
+    if (msg) {
+      msg.classList.remove('hidden');
+      if (res && res.success) {
+        msg.className = 'text-[10px] font-bold mt-2 text-emerald-600 dark:text-emerald-400';
+        msg.textContent = azT('✓ Đã lưu — áp dụng ngay cho mọi user từ giờ.');
+      } else {
+        msg.className = 'text-[10px] font-bold mt-2 text-rose-600 dark:text-rose-400';
+        msg.textContent = azT('Lỗi: ') + ((res && res.error) || 'không rõ nguyên nhân');
+      }
+    }
+  }).spx_setSystemConfig(config);
+}
+</script>

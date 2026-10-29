@@ -1,0 +1,1840 @@
+<style id="spx-vp-styles-static">
+/* =========================================================================
+   SPX VI PHAM — HIGH-CONTRAST STRUCTURED ENTERPRISE DESIGN SYSTEM
+   Injected into document.head to guarantee permanence across all renders
+   ========================================================================= */
+
+.vp-workspace {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #1e293b;
+}
+.dark .vp-workspace {
+  color: #f1f5f9;
+}
+
+/* 1. TOP CONTROL BAR */
+.vp-topbar {
+  background: #ffffff;
+  border-bottom: 1.5px solid #e2e8f0;
+  padding: 14px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.dark .vp-topbar {
+  background: #111927;
+  border-bottom-color: #1e293b;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* 2. CATEGORY TABS (Distinct Boxed Pill Buttons) */
+.vp-tab-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 4px 0 12px 0;
+}
+.vp-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  background: #ffffff;
+  color: #334155;
+  border: 1.5px solid #cbd5e1;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+.dark .vp-tab-btn {
+  background: #182234;
+  color: #cbd5e1;
+  border-color: #334155;
+}
+.vp-tab-btn:hover {
+  background: #f8fafc;
+  border-color: #ee4d2d;
+  color: #ee4d2d;
+  transform: translateY(-1px);
+}
+.dark .vp-tab-btn:hover {
+  background: #202d42;
+  border-color: #ee4d2d;
+  color: #ffffff;
+}
+.vp-tab-btn.active {
+  background: linear-gradient(135deg, #f97316 0%, #ee4d2d 100%) !important;
+  color: #ffffff !important;
+  border-color: #ea580c !important;
+  box-shadow: 0 3px 10px rgba(238, 77, 45, 0.35) !important;
+}
+.vp-tab-count {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: #e2e8f0;
+  color: #1e293b;
+}
+.dark .vp-tab-count {
+  background: #2a374a;
+  color: #f1f5f9;
+}
+.vp-tab-btn.active .vp-tab-count {
+  background: rgba(255, 255, 255, 0.28) !important;
+  color: #ffffff !important;
+}
+
+/* 3. CARD CONTAINER (Rõ ràng theo ô riêng biệt) */
+.vp-card {
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.dark .vp-card {
+  background: #131c2e;
+  border-color: #2a374a;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.vp-card-header {
+  padding: 12px 18px;
+  background: #f8fafc;
+  border-bottom: 1.5px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.dark .vp-card-header {
+  background: #172236;
+  border-bottom-color: #243247;
+}
+
+.vp-card-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dark .vp-card-title {
+  color: #f1f5f9;
+}
+
+.vp-card-body {
+  padding: 16px 18px;
+}
+
+/* 4. EXECUTIVE VERDICT BANNER (High-contrast Gradient + Boxed Metrics) */
+.vp-verdict-banner-ok {
+  background: linear-gradient(135deg, #065f46 0%, #0f766e 100%) !important;
+  color: #ffffff !important;
+  border-radius: 14px;
+  padding: 20px;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 16px rgba(6, 95, 70, 0.25);
+  margin-bottom: 16px;
+}
+.vp-verdict-banner-critical {
+  background: linear-gradient(135deg, #9f1239 0%, #9a3412 100%) !important;
+  color: #ffffff !important;
+  border-radius: 14px;
+  padding: 20px;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 16px rgba(159, 18, 57, 0.25);
+  margin-bottom: 16px;
+}
+.vp-verdict-badge {
+  background: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-block;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+.vp-verdict-sub {
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-size: 13px;
+  line-height: 1.55;
+  font-weight: 500;
+  margin-top: 6px;
+}
+.vp-verdict-chips-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (min-width: 768px) {
+  .vp-verdict-chips-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.vp-verdict-chip-card {
+  background: rgba(0, 0, 0, 0.35) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+  border-radius: 12px;
+  padding: 10px 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.vp-verdict-chip-card:hover {
+  background: rgba(0, 0, 0, 0.5) !important;
+  border-color: rgba(255, 255, 255, 0.45) !important;
+  transform: translateY(-2px);
+}
+.vp-verdict-chip-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.88) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+.vp-verdict-chip-val {
+  font-size: 19px;
+  font-weight: 900;
+  color: #ffffff !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+.vp-verdict-chip-val.amber {
+  color: #fde047 !important;
+}
+
+/* 5. 6 CORE KPI CARDS (Always Visible & Boxed) */
+.vp-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+@media (min-width: 768px) {
+  .vp-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 1024px) {
+  .vp-kpi-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+.vp-kpi-card {
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 14px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.dark .vp-kpi-card {
+  background: #182234;
+  border-color: #2a374a;
+}
+.vp-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+.vp-kpi-orange { border-color: #fed7aa; background: #fffaf5; }
+.vp-kpi-sky { border-color: #bae6fd; background: #f0f9ff; }
+.vp-kpi-violet { border-color: #ddd6fe; background: #fbf9ff; }
+.vp-kpi-emerald { border-color: #a7f3d0; background: #f0fdf4; }
+.vp-kpi-indigo { border-color: #c7d2fe; background: #f5f7ff; }
+.vp-kpi-rose { border-color: #fecdd3; background: #fff5f7; }
+
+.dark .vp-kpi-orange { background: rgba(124, 45, 18, 0.15); border-color: rgba(234, 88, 12, 0.35); }
+.dark .vp-kpi-sky { background: rgba(12, 74, 110, 0.15); border-color: rgba(14, 165, 233, 0.35); }
+.dark .vp-kpi-violet { background: rgba(76, 29, 149, 0.15); border-color: rgba(139, 92, 246, 0.35); }
+.dark .vp-kpi-emerald { background: rgba(6, 78, 59, 0.15); border-color: rgba(16, 185, 129, 0.35); }
+.dark .vp-kpi-indigo { background: rgba(49, 46, 129, 0.15); border-color: rgba(99, 102, 241, 0.35); }
+.dark .vp-kpi-rose { background: rgba(136, 19, 55, 0.15); border-color: rgba(244, 63, 94, 0.35); }
+
+/* 6. WEEKLY & MONTHLY TREND */
+.vp-chart-bar-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 18px;
+  position: relative;
+  cursor: pointer;
+  padding-bottom: 2px;
+}
+.vp-chart-bar {
+  width: 100%;
+  max-width: 24px;
+  border-radius: 5px 5px 0 0;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.vp-chart-bar.recent {
+  background: linear-gradient(180deg, #ef4444 0%, #f97316 100%) !important;
+}
+.vp-chart-bar.normal {
+  background: #cbd5e1 !important;
+}
+.dark .vp-chart-bar.normal {
+  background: #475569 !important;
+}
+.vp-chart-bar-container:hover .vp-chart-bar {
+  transform: scaleY(1.08);
+  filter: brightness(1.15);
+}
+
+.vp-month-grid {
+  display: flex;
+  border-top: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+}
+.dark .vp-month-grid {
+  border-top-color: #243247;
+  background: #172236;
+}
+.vp-month-card {
+  flex: 1;
+  padding: 12px 14px;
+  text-align: center;
+  border-right: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.dark .vp-month-card {
+  border-right-color: #243247;
+}
+.vp-month-card:last-child {
+  border-right: none;
+}
+.vp-month-card:hover {
+  background: #fff7ed;
+}
+.dark .vp-month-card:hover {
+  background: rgba(30, 41, 59, 0.6);
+}
+
+/* 7. STRUCTURED TABLE WITH VISIBLE BORDERS */
+.vp-table-wrap {
+  overflow-x: auto;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  background: #ffffff;
+}
+.dark .vp-table-wrap {
+  border-color: #2a374a;
+  background: #131c2e;
+}
+.vp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.vp-table th {
+  background: #f1f5f9;
+  color: #0f172a !important;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 12px 14px;
+  border-bottom: 2px solid #cbd5e1;
+  text-align: left;
+}
+.dark .vp-table th {
+  background: #172236;
+  color: #f1f5f9 !important;
+  border-bottom-color: #2a374a;
+}
+.vp-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #1e293b;
+}
+.dark .vp-table td {
+  border-bottom-color: #243247;
+  color: #cbd5e1;
+}
+.vp-table tr:last-child td {
+  border-bottom: none;
+}
+.vp-table tr:hover td {
+  background: #fff7ed;
+}
+.dark .vp-table tr:hover td {
+  background: rgba(30, 41, 59, 0.6);
+}
+
+/* 8. PROGRESS BARS */
+.vp-progress-track {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 9999px;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+.dark .vp-progress-track {
+  background: #334155;
+}
+.vp-progress-bar {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.4s ease;
+}
+.vp-bar-critical { background: linear-gradient(90deg, #f97316 0%, #ef4444 100%) !important; }
+.vp-bar-warning { background: linear-gradient(90deg, #f59e0b 0%, #ea580c 100%) !important; }
+.vp-bar-rose { background: linear-gradient(90deg, #fb7185 0%, #e11d48 100%) !important; }
+.vp-bar-emerald { background: linear-gradient(90deg, #34d399 0%, #059669 100%) !important; }
+.vp-bar-indigo { background: linear-gradient(90deg, #818cf8 0%, #4f46e5 100%) !important; }
+.vp-bar-amber { background: linear-gradient(90deg, #fbbf24 0%, #d97706 100%) !important; }
+
+/* 9. PILL BADGES */
+.vp-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.vp-pill-badge-rose {
+  background: #fff1f2 !important;
+  color: #e11d48 !important;
+  border: 1px solid #fecdd3 !important;
+}
+.dark .vp-pill-badge-rose {
+  background: rgba(136, 19, 55, 0.35) !important;
+  color: #fb7185 !important;
+  border-color: rgba(244, 63, 94, 0.4) !important;
+}
+.vp-pill-badge-slate {
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+.dark .vp-pill-badge-slate {
+  background: #1e293b !important;
+  color: #cbd5e1 !important;
+  border-color: #334155 !important;
+}
+.vp-pill-badge-amber {
+  background: #fef3c7 !important;
+  color: #92400e !important;
+  border: 1px solid #fcd34d !important;
+}
+.dark .vp-pill-badge-amber {
+  background: rgba(120, 53, 15, 0.35) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+.vp-pill-badge-emerald {
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+  border: 1px solid #a7f3d0 !important;
+}
+.dark .vp-pill-badge-emerald {
+  background: rgba(6, 78, 59, 0.35) !important;
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+}
+.vp-pill-badge-sky {
+  background: #f0f9ff !important;
+  color: #0369a1 !important;
+  border: 1px solid #bae6fd !important;
+}
+.dark .vp-pill-badge-sky {
+  background: rgba(12, 74, 110, 0.35) !important;
+  color: #38bdf8 !important;
+  border-color: rgba(14, 165, 233, 0.4) !important;
+}
+.vp-pill-badge-violet {
+  background: #f5f3ff !important;
+  color: #6d28d9 !important;
+  border: 1px solid #ddd6fe !important;
+}
+.dark .vp-pill-badge-violet {
+  background: rgba(76, 29, 149, 0.35) !important;
+  color: #c084fc !important;
+  border-color: rgba(139, 92, 246, 0.4) !important;
+}
+
+/* 10. ACTION RECOMMENDATION BOX */
+.vp-action-box {
+  background: #fffbeb !important;
+  border: 1.5px solid #fde68a !important;
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+.dark .vp-action-box {
+  background: rgba(120, 53, 15, 0.2) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+.vp-action-title {
+  color: #78350f !important;
+  font-weight: 900;
+  font-size: 13px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dark .vp-action-title {
+  color: #fde68a !important;
+}
+.vp-action-card {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1.5px solid #fde68a;
+  background: #ffffff;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+.vp-action-card:last-child {
+  margin-bottom: 0;
+}
+.vp-action-card:hover {
+  background: #fff7ed;
+  border-color: #f97316;
+  transform: translateX(3px);
+}
+.dark .vp-action-card {
+  background: #1e293b;
+  border-color: #334155;
+}
+.dark .vp-action-card:hover {
+  background: #253349;
+  border-color: #f97316;
+}
+
+.vp-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  animation: vpPulse 1.8s infinite;
+}
+@keyframes vpPulse {
+  0% { transform: scale(0.95); opacity: 0.9; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+  100% { transform: scale(0.95); opacity: 0.9; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.vp-custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.vp-custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.vp-custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.dark .vp-custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
+/* 11. SKELETON SHIMMER & REFINED LOADING SYSTEM */
+@keyframes vpShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.vp-shimmer {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: vpShimmer 1.8s ease-in-out infinite;
+  border-radius: 8px;
+}
+.dark .vp-shimmer {
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 200% 100%;
+}
+
+.vp-loading-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 44px 20px;
+  gap: 12px;
+  text-align: center;
+  width: 100%;
+}
+
+.vp-loading-spinner {
+  width: 38px;
+  height: 38px;
+  border: 3.5px solid rgba(238, 77, 45, 0.18);
+  border-top-color: #ee4d2d;
+  border-radius: 50%;
+  animation: vpSpin 0.85s linear infinite;
+  display: block;
+  margin: 0 auto;
+}
+.dark .vp-loading-spinner {
+  border-color: rgba(238, 77, 45, 0.25);
+  border-top-color: #ee4d2d;
+}
+
+@keyframes vpSpin {
+  to { transform: rotate(360deg); }
+}
+
+.vp-loading-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.4;
+}
+.dark .vp-loading-title {
+  color: #f1f5f9;
+}
+
+.vp-loading-subtitle {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+  margin: 0;
+  line-height: 1.4;
+}
+.dark .vp-loading-subtitle {
+  color: #94a3b8;
+}
+
+.vp-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 44px 20px;
+  gap: 10px;
+  text-align: center;
+  width: 100%;
+}
+
+</style>
+<script>
+var VP_STYLES_CSS = "/* =========================================================================\n   SPX VI PHAM — HIGH-CONTRAST STRUCTURED ENTERPRISE DESIGN SYSTEM\n   Injected into document.head to guarantee permanence across all renders\n   ========================================================================= */\n\n.vp-workspace {\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif;\n  color: #1e293b;\n}\n.dark .vp-workspace {\n  color: #f1f5f9;\n}\n\n/* 1. TOP CONTROL BAR */\n.vp-topbar {\n  background: #ffffff;\n  border-bottom: 1.5px solid #e2e8f0;\n  padding: 14px 24px;\n  position: sticky;\n  top: 0;\n  z-index: 30;\n  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);\n}\n.dark .vp-topbar {\n  background: #111927;\n  border-bottom-color: #1e293b;\n  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);\n}\n\n/* 2. CATEGORY TABS (Distinct Boxed Pill Buttons) */\n.vp-tab-bar {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n  overflow-x: auto;\n  padding: 4px 0 12px 0;\n}\n.vp-tab-btn {\n  display: inline-flex;\n  align-items: center;\n  gap: 8px;\n  padding: 8px 16px;\n  border-radius: 12px;\n  font-size: 12px;\n  font-weight: 700;\n  white-space: nowrap;\n  background: #ffffff;\n  color: #334155;\n  border: 1.5px solid #cbd5e1;\n  box-shadow: 0 1px 2px rgba(0,0,0,0.03);\n  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);\n  cursor: pointer;\n}\n.dark .vp-tab-btn {\n  background: #182234;\n  color: #cbd5e1;\n  border-color: #334155;\n}\n.vp-tab-btn:hover {\n  background: #f8fafc;\n  border-color: #ee4d2d;\n  color: #ee4d2d;\n  transform: translateY(-1px);\n}\n.dark .vp-tab-btn:hover {\n  background: #202d42;\n  border-color: #ee4d2d;\n  color: #ffffff;\n}\n.vp-tab-btn.active {\n  background: linear-gradient(135deg, #f97316 0%, #ee4d2d 100%) !important;\n  color: #ffffff !important;\n  border-color: #ea580c !important;\n  box-shadow: 0 3px 10px rgba(238, 77, 45, 0.35) !important;\n}\n.vp-tab-count {\n  font-size: 11px;\n  font-weight: 800;\n  padding: 2px 8px;\n  border-radius: 9999px;\n  background: #e2e8f0;\n  color: #1e293b;\n}\n.dark .vp-tab-count {\n  background: #2a374a;\n  color: #f1f5f9;\n}\n.vp-tab-btn.active .vp-tab-count {\n  background: rgba(255, 255, 255, 0.28) !important;\n  color: #ffffff !important;\n}\n\n/* 3. CARD CONTAINER (Rõ ràng theo ô riêng biệt) */\n.vp-card {\n  background: #ffffff;\n  border: 1.5px solid #cbd5e1;\n  border-radius: 14px;\n  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);\n  margin-bottom: 16px;\n  overflow: hidden;\n  transition: box-shadow 0.2s ease, border-color 0.2s ease;\n}\n.dark .vp-card {\n  background: #131c2e;\n  border-color: #2a374a;\n  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);\n}\n\n.vp-card-header {\n  padding: 12px 18px;\n  background: #f8fafc;\n  border-bottom: 1.5px solid #e2e8f0;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  flex-wrap: wrap;\n  gap: 10px;\n}\n.dark .vp-card-header {\n  background: #172236;\n  border-bottom-color: #243247;\n}\n\n.vp-card-title {\n  font-size: 13px;\n  font-weight: 800;\n  color: #0f172a;\n  text-transform: uppercase;\n  letter-spacing: 0.03em;\n  display: flex;\n  align-items: center;\n  gap: 8px;\n}\n.dark .vp-card-title {\n  color: #f1f5f9;\n}\n\n.vp-card-body {\n  padding: 16px 18px;\n}\n\n/* 4. EXECUTIVE VERDICT BANNER (High-contrast Gradient + Boxed Metrics) */\n.vp-verdict-banner-ok {\n  background: linear-gradient(135deg, #065f46 0%, #0f766e 100%) !important;\n  color: #ffffff !important;\n  border-radius: 14px;\n  padding: 20px;\n  border: 1.5px solid rgba(255, 255, 255, 0.25);\n  box-shadow: 0 4px 16px rgba(6, 95, 70, 0.25);\n  margin-bottom: 16px;\n}\n.vp-verdict-banner-critical {\n  background: linear-gradient(135deg, #9f1239 0%, #9a3412 100%) !important;\n  color: #ffffff !important;\n  border-radius: 14px;\n  padding: 20px;\n  border: 1.5px solid rgba(255, 255, 255, 0.25);\n  box-shadow: 0 4px 16px rgba(159, 18, 57, 0.25);\n  margin-bottom: 16px;\n}\n.vp-verdict-badge {\n  background: rgba(255, 255, 255, 0.25) !important;\n  color: #ffffff !important;\n  padding: 4px 12px;\n  border-radius: 9999px;\n  font-size: 11px;\n  font-weight: 800;\n  text-transform: uppercase;\n  letter-spacing: 0.05em;\n  display: inline-block;\n  border: 1px solid rgba(255, 255, 255, 0.35);\n}\n.vp-verdict-sub {\n  color: rgba(255, 255, 255, 0.95) !important;\n  font-size: 13px;\n  line-height: 1.55;\n  font-weight: 500;\n  margin-top: 6px;\n}\n.vp-verdict-chips-grid {\n  display: grid;\n  grid-template-columns: repeat(2, minmax(0, 1fr));\n  gap: 10px;\n}\n@media (min-width: 768px) {\n  .vp-verdict-chips-grid {\n    grid-template-columns: repeat(4, minmax(0, 1fr));\n  }\n}\n.vp-verdict-chip-card {\n  background: rgba(0, 0, 0, 0.35) !important;\n  border: 1.5px solid rgba(255, 255, 255, 0.25) !important;\n  border-radius: 12px;\n  padding: 10px 14px;\n  text-align: center;\n  cursor: pointer;\n  transition: all 0.2s ease;\n}\n.vp-verdict-chip-card:hover {\n  background: rgba(0, 0, 0, 0.5) !important;\n  border-color: rgba(255, 255, 255, 0.45) !important;\n  transform: translateY(-2px);\n}\n.vp-verdict-chip-label {\n  font-size: 10px;\n  font-weight: 800;\n  color: rgba(255, 255, 255, 0.88) !important;\n  text-transform: uppercase;\n  letter-spacing: 0.04em;\n  margin-bottom: 2px;\n}\n.vp-verdict-chip-val {\n  font-size: 19px;\n  font-weight: 900;\n  color: #ffffff !important;\n  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;\n}\n.vp-verdict-chip-val.amber {\n  color: #fde047 !important;\n}\n\n/* 5. 6 CORE KPI CARDS (Always Visible & Boxed) */\n.vp-kpi-grid {\n  display: grid;\n  grid-template-columns: repeat(2, minmax(0, 1fr));\n  gap: 12px;\n  margin-bottom: 16px;\n}\n@media (min-width: 768px) {\n  .vp-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }\n}\n@media (min-width: 1024px) {\n  .vp-kpi-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }\n}\n.vp-kpi-card {\n  background: #ffffff;\n  border: 1.5px solid #cbd5e1;\n  border-radius: 12px;\n  padding: 14px;\n  cursor: pointer;\n  box-shadow: 0 1px 3px rgba(0,0,0,0.04);\n  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);\n}\n.dark .vp-kpi-card {\n  background: #182234;\n  border-color: #2a374a;\n}\n.vp-kpi-card:hover {\n  transform: translateY(-2px);\n  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);\n}\n.vp-kpi-orange { border-color: #fed7aa; background: #fffaf5; }\n.vp-kpi-sky { border-color: #bae6fd; background: #f0f9ff; }\n.vp-kpi-violet { border-color: #ddd6fe; background: #fbf9ff; }\n.vp-kpi-emerald { border-color: #a7f3d0; background: #f0fdf4; }\n.vp-kpi-indigo { border-color: #c7d2fe; background: #f5f7ff; }\n.vp-kpi-rose { border-color: #fecdd3; background: #fff5f7; }\n\n.dark .vp-kpi-orange { background: rgba(124, 45, 18, 0.15); border-color: rgba(234, 88, 12, 0.35); }\n.dark .vp-kpi-sky { background: rgba(12, 74, 110, 0.15); border-color: rgba(14, 165, 233, 0.35); }\n.dark .vp-kpi-violet { background: rgba(76, 29, 149, 0.15); border-color: rgba(139, 92, 246, 0.35); }\n.dark .vp-kpi-emerald { background: rgba(6, 78, 59, 0.15); border-color: rgba(16, 185, 129, 0.35); }\n.dark .vp-kpi-indigo { background: rgba(49, 46, 129, 0.15); border-color: rgba(99, 102, 241, 0.35); }\n.dark .vp-kpi-rose { background: rgba(136, 19, 55, 0.15); border-color: rgba(244, 63, 94, 0.35); }\n\n/* 6. WEEKLY & MONTHLY TREND */\n.vp-chart-bar-container {\n  display: flex;\n  flex-direction: column;\n  justify-content: flex-end;\n  align-items: center;\n  gap: 4px;\n  flex: 1;\n  min-width: 18px;\n  position: relative;\n  cursor: pointer;\n  padding-bottom: 2px;\n}\n.vp-chart-bar {\n  width: 100%;\n  max-width: 24px;\n  border-radius: 5px 5px 0 0;\n  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);\n}\n.vp-chart-bar.recent {\n  background: linear-gradient(180deg, #ef4444 0%, #f97316 100%) !important;\n}\n.vp-chart-bar.normal {\n  background: #cbd5e1 !important;\n}\n.dark .vp-chart-bar.normal {\n  background: #475569 !important;\n}\n.vp-chart-bar-container:hover .vp-chart-bar {\n  transform: scaleY(1.08);\n  filter: brightness(1.15);\n}\n\n.vp-month-grid {\n  display: flex;\n  border-top: 1.5px solid #e2e8f0;\n  background: #f8fafc;\n}\n.dark .vp-month-grid {\n  border-top-color: #243247;\n  background: #172236;\n}\n.vp-month-card {\n  flex: 1;\n  padding: 12px 14px;\n  text-align: center;\n  border-right: 1px solid #e2e8f0;\n  cursor: pointer;\n  transition: background 0.2s;\n}\n.dark .vp-month-card {\n  border-right-color: #243247;\n}\n.vp-month-card:last-child {\n  border-right: none;\n}\n.vp-month-card:hover {\n  background: #fff7ed;\n}\n.dark .vp-month-card:hover {\n  background: rgba(30, 41, 59, 0.6);\n}\n\n/* 7. STRUCTURED TABLE WITH VISIBLE BORDERS */\n.vp-table-wrap {\n  overflow-x: auto;\n  border: 1.5px solid #cbd5e1;\n  border-radius: 12px;\n  background: #ffffff;\n}\n.dark .vp-table-wrap {\n  border-color: #2a374a;\n  background: #131c2e;\n}\n.vp-table {\n  width: 100%;\n  border-collapse: collapse;\n  font-size: 12px;\n}\n.vp-table th {\n  background: #f1f5f9;\n  color: #0f172a !important;\n  font-size: 11px;\n  font-weight: 800;\n  text-transform: uppercase;\n  letter-spacing: 0.04em;\n  padding: 12px 14px;\n  border-bottom: 2px solid #cbd5e1;\n  text-align: left;\n}\n.dark .vp-table th {\n  background: #172236;\n  color: #f1f5f9 !important;\n  border-bottom-color: #2a374a;\n}\n.vp-table td {\n  padding: 12px 14px;\n  border-bottom: 1px solid #e2e8f0;\n  color: #1e293b;\n}\n.dark .vp-table td {\n  border-bottom-color: #243247;\n  color: #cbd5e1;\n}\n.vp-table tr:last-child td {\n  border-bottom: none;\n}\n.vp-table tr:hover td {\n  background: #fff7ed;\n}\n.dark .vp-table tr:hover td {\n  background: rgba(30, 41, 59, 0.6);\n}\n\n/* 8. PROGRESS BARS */\n.vp-progress-track {\n  height: 8px;\n  background: #e2e8f0;\n  border-radius: 9999px;\n  overflow: hidden;\n  position: relative;\n  width: 100%;\n}\n.dark .vp-progress-track {\n  background: #334155;\n}\n.vp-progress-bar {\n  height: 100%;\n  border-radius: 9999px;\n  transition: width 0.4s ease;\n}\n.vp-bar-critical { background: linear-gradient(90deg, #f97316 0%, #ef4444 100%) !important; }\n.vp-bar-warning { background: linear-gradient(90deg, #f59e0b 0%, #ea580c 100%) !important; }\n.vp-bar-rose { background: linear-gradient(90deg, #fb7185 0%, #e11d48 100%) !important; }\n.vp-bar-emerald { background: linear-gradient(90deg, #34d399 0%, #059669 100%) !important; }\n.vp-bar-indigo { background: linear-gradient(90deg, #818cf8 0%, #4f46e5 100%) !important; }\n.vp-bar-amber { background: linear-gradient(90deg, #fbbf24 0%, #d97706 100%) !important; }\n\n/* 9. PILL BADGES */\n.vp-pill-badge {\n  display: inline-flex;\n  align-items: center;\n  gap: 5px;\n  padding: 3px 9px;\n  border-radius: 9999px;\n  font-size: 11px;\n  font-weight: 700;\n  line-height: 1.2;\n}\n.vp-pill-badge-rose {\n  background: #fff1f2 !important;\n  color: #e11d48 !important;\n  border: 1px solid #fecdd3 !important;\n}\n.dark .vp-pill-badge-rose {\n  background: rgba(136, 19, 55, 0.35) !important;\n  color: #fb7185 !important;\n  border-color: rgba(244, 63, 94, 0.4) !important;\n}\n.vp-pill-badge-slate {\n  background: #f1f5f9 !important;\n  color: #334155 !important;\n  border: 1px solid #e2e8f0 !important;\n}\n.dark .vp-pill-badge-slate {\n  background: #1e293b !important;\n  color: #cbd5e1 !important;\n  border-color: #334155 !important;\n}\n.vp-pill-badge-amber {\n  background: #fef3c7 !important;\n  color: #92400e !important;\n  border: 1px solid #fcd34d !important;\n}\n.dark .vp-pill-badge-amber {\n  background: rgba(120, 53, 15, 0.35) !important;\n  color: #fbbf24 !important;\n  border-color: rgba(245, 158, 11, 0.4) !important;\n}\n.vp-pill-badge-emerald {\n  background: #ecfdf5 !important;\n  color: #047857 !important;\n  border: 1px solid #a7f3d0 !important;\n}\n.dark .vp-pill-badge-emerald {\n  background: rgba(6, 78, 59, 0.35) !important;\n  color: #34d399 !important;\n  border-color: rgba(16, 185, 129, 0.4) !important;\n}\n.vp-pill-badge-sky {\n  background: #f0f9ff !important;\n  color: #0369a1 !important;\n  border: 1px solid #bae6fd !important;\n}\n.dark .vp-pill-badge-sky {\n  background: rgba(12, 74, 110, 0.35) !important;\n  color: #38bdf8 !important;\n  border-color: rgba(14, 165, 233, 0.4) !important;\n}\n.vp-pill-badge-violet {\n  background: #f5f3ff !important;\n  color: #6d28d9 !important;\n  border: 1px solid #ddd6fe !important;\n}\n.dark .vp-pill-badge-violet {\n  background: rgba(76, 29, 149, 0.35) !important;\n  color: #c084fc !important;\n  border-color: rgba(139, 92, 246, 0.4) !important;\n}\n\n/* 10. ACTION RECOMMENDATION BOX */\n.vp-action-box {\n  background: #fffbeb !important;\n  border: 1.5px solid #fde68a !important;\n  border-radius: 14px;\n  padding: 16px 18px;\n  margin-bottom: 16px;\n}\n.dark .vp-action-box {\n  background: rgba(120, 53, 15, 0.2) !important;\n  border-color: rgba(245, 158, 11, 0.35) !important;\n}\n.vp-action-title {\n  color: #78350f !important;\n  font-weight: 900;\n  font-size: 13px;\n  text-transform: uppercase;\n  display: flex;\n  align-items: center;\n  gap: 8px;\n}\n.dark .vp-action-title {\n  color: #fde68a !important;\n}\n.vp-action-card {\n  padding: 12px 14px;\n  border-radius: 12px;\n  border: 1.5px solid #fde68a;\n  background: #ffffff;\n  transition: all 0.2s ease;\n  cursor: pointer;\n  margin-bottom: 8px;\n}\n.vp-action-card:last-child {\n  margin-bottom: 0;\n}\n.vp-action-card:hover {\n  background: #fff7ed;\n  border-color: #f97316;\n  transform: translateX(3px);\n}\n.dark .vp-action-card {\n  background: #1e293b;\n  border-color: #334155;\n}\n.dark .vp-action-card:hover {\n  background: #253349;\n  border-color: #f97316;\n}\n\n.vp-pulse-dot {\n  width: 7px;\n  height: 7px;\n  border-radius: 50%;\n  display: inline-block;\n  animation: vpPulse 1.8s infinite;\n}\n@keyframes vpPulse {\n  0% { transform: scale(0.95); opacity: 0.9; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }\n  70% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }\n  100% { transform: scale(0.95); opacity: 0.9; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }\n}\n\n.vp-custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }\n.vp-custom-scrollbar::-webkit-scrollbar-track { background: transparent; }\n.vp-custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }\n.dark .vp-custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }\n/* 11. SKELETON SHIMMER & REFINED LOADING SYSTEM */\n@keyframes vpShimmer {\n  0% { background-position: -200% 0; }\n  100% { background-position: 200% 0; }\n}\n\n.vp-shimmer {\n  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);\n  background-size: 200% 100%;\n  animation: vpShimmer 1.8s ease-in-out infinite;\n  border-radius: 8px;\n}\n.dark .vp-shimmer {\n  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);\n  background-size: 200% 100%;\n}\n\n.vp-loading-panel {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  padding: 44px 20px;\n  gap: 12px;\n  text-align: center;\n  width: 100%;\n}\n\n.vp-loading-spinner {\n  width: 38px;\n  height: 38px;\n  border: 3.5px solid rgba(238, 77, 45, 0.18);\n  border-top-color: #ee4d2d;\n  border-radius: 50%;\n  animation: vpSpin 0.85s linear infinite;\n  display: block;\n  margin: 0 auto;\n}\n.dark .vp-loading-spinner {\n  border-color: rgba(238, 77, 45, 0.25);\n  border-top-color: #ee4d2d;\n}\n\n@keyframes vpSpin {\n  to { transform: rotate(360deg); }\n}\n\n.vp-loading-title {\n  font-size: 13px;\n  font-weight: 800;\n  color: #1e293b;\n  margin: 0;\n  line-height: 1.4;\n}\n.dark .vp-loading-title {\n  color: #f1f5f9;\n}\n\n.vp-loading-subtitle {\n  font-size: 11px;\n  color: #64748b;\n  font-weight: 500;\n  margin: 0;\n  line-height: 1.4;\n}\n.dark .vp-loading-subtitle {\n  color: #94a3b8;\n}\n\n.vp-empty-state {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  padding: 44px 20px;\n  gap: 10px;\n  text-align: center;\n  width: 100%;\n}\n\n";
+
+function _vpEnsureStyles() {
+  var id = 'spx-vp-styles-head';
+  var existing = document.getElementById(id);
+  if (!existing) {
+    var styleEl = document.createElement('style');
+    styleEl.id = id;
+    styleEl.textContent = VP_STYLES_CSS;
+    document.head.appendChild(styleEl);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SPX VI PHAM — CLIENT CONTROLLER & RENDER ENGINE
+// ═══════════════════════════════════════════════════════════════════════════
+var VP_allCases = [];
+var VP_selectedStation = null;
+var VP_previewEntityLabel = null;
+var VP_previewRole = null;
+var VP_previewAllowedStations = null;
+var VP_previewAllowedSet = null;
+var VP_activeLevel1 = 'ALL';
+var VP_filters = {
+  month: 'ALL',
+  week: 'ALL',
+  aom: 'ALL',
+  order_type: 'ALL',
+  orderType: 'ALL',
+  last_onhold_reason: 'ALL',
+  reason: 'ALL',
+  driver_name: 'ALL',
+  driver: 'ALL',
+  ticket_status: 'ALL',
+  hasTicket: false
+};
+var VP_page = 1;
+var VP_PAGE_SIZE = 20;
+var VP_dataInfo = null;
+var VP_loadedAt = 0;
+var VP_isLoading = false;
+var VP_freshInstalled = false;
+var VP_AUTO_REFRESH_MS = 10 * 60 * 1000;
+var VP_showDetail = false;
+var VP_searchText = '';
+
+function _vpEsc(s){
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+function _vpEscAttr(s){ return _vpEsc(s); }
+function vpT(s){ return (typeof spxUiLabel === 'function') ? spxUiLabel(s) : s; }
+function _vpReadHeaderHub(){
+  return (typeof spxReadHeaderHub === 'function') ? spxReadHeaderHub() : null;
+}
+
+function vpInit(){
+  _vpEnsureStyles();
+  VP_selectedStation = _vpReadHeaderHub();
+  var main = document.getElementById('view-violation');
+  if (!main) return;
+  var isCurrentlyActive = (typeof currentActiveModule !== 'undefined' && currentActiveModule === 'violation') ||
+                          (typeof currentSpxNav !== 'undefined' && currentSpxNav === 'violation');
+  main.className = 'module-view absolute inset-0 w-full h-full flex flex-col bg-slate-100 dark:bg-[#0b1121] overflow-y-auto vp-custom-scrollbar vp-workspace' + (isCurrentlyActive ? '' : ' hidden');
+  if (main.setAttribute) main.setAttribute('data-scroll-root', 'true');
+  main.dataset.spxScrollBound = '1';
+  main.addEventListener('scroll', function() {
+    if (typeof _spxHandleScrollRootEvent === 'function') _spxHandleScrollRootEvent(main);
+  }, { passive: true });
+  main.innerHTML = ''
+    + '<div class="vp-topbar flex items-center justify-between gap-3 shrink-0 flex-wrap">'
+    + '  <div class="flex items-center gap-3">'
+    + '    <div class="w-9 h-9 rounded-xl bg-orange-500 text-white flex items-center justify-center font-bold text-sm shadow-sm">'
+    + '      <i class="fas fa-shield-halved"></i>'
+    + '    </div>'
+    + '    <div>'
+    + '      <div class="flex items-center gap-2">'
+    + '        <span class="text-base font-black text-slate-900 dark:text-slate-100" id="vp-scope-title">' + (VP_selectedStation ? _vpEsc(VP_selectedStation) : vpT('Tất cả trạm')) + '</span>'
+    + '        <span id="vp-active-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-orange-100 dark:bg-orange-950/40 text-[#ee4d2d] border border-orange-300 dark:border-orange-800">KHIẾU NẠI & VI PHẠM</span>'
+    + '      </div>'
+    + '      <div class="text-xs text-slate-500 dark:text-slate-400 font-medium" id="vp-scope-subtitle">' + vpT('Đang đồng bộ dữ liệu...') + '</div>'
+    + '    </div>'
+    + '  </div>'
+    + '  <div class="flex items-center gap-2.5 ml-auto flex-wrap">'
+    + '    <div class="relative">'
+    + '      <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>'
+    + '      <input type="text" id="vp-search-input" oninput="vpOnSearch(this.value)" placeholder="' + vpT('Tìm mã đơn, tài xế, trạm, case...') + '" class="pl-8 pr-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:border-[#ee4d2d] w-48 md:w-64 transition-all outline-none">'
+    + '    </div>'
+    + '    <button onclick="vpLoadData(true)" title="' + vpT('Làm mới dữ liệu (bỏ cache)') + '" class="h-9 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer">'
+    + '      <i class="fas fa-rotate text-xs" id="vp-refresh-icon"></i>'
+    + '      <span class="hidden sm:inline">' + vpT('Làm mới') + '</span>'
+    + '    </button>'
+    + '  </div>'
+    + '</div>'
+    + '<div class="p-5 max-w-7xl w-full mx-auto space-y-4">'
+    + '  <div id="vp-fresh-banner"></div>'
+    + '  <div id="vp-scope-banner"></div>'
+    + '  <div class="vp-tab-bar" id="vp-level1-tabs"></div>'
+    + '  <div class="vp-kpi-grid" id="vp-kpi-grid"></div>'
+    + '  <div id="vp-bigpicture"></div>'
+    + '  <div class="vp-card" id="vp-detail-zone">'
+    + '    <div class="vp-card-header">'
+    + '      <div class="vp-card-title">'
+    + '        <i class="fas fa-table-list text-[#ee4d2d]"></i>'
+    + '        <span>' + vpT('Danh Sách Chi Tiết Vụ Việc & Bộ Lọc Nâng Cao') + '</span>'
+    + '      </div>'
+    + '      <span class="text-xs font-bold text-slate-500 dark:text-slate-400 font-mono" id="vp-table-count-badge"></span>'
+    + '    </div>'
+    + '    <div class="vp-card-body">'
+    + '      <div id="vp-filter-bar" class="mb-4"></div>'
+    + '      <div class="vp-table-wrap" id="vp-table-wrap"></div>'
+    + '    </div>'
+    + '  </div>'
+    + '</div>';
+
+  vpLoadData(false);
+  vpInstallAutoRefresh();
+}
+
+function vpOnSearch(val){
+  VP_searchText = (val || '').toLowerCase().trim();
+  VP_page = 1;
+  if (VP_searchText && !VP_showDetail && !VP_selectedStation) {
+    VP_showDetail = true;
+    vpRenderMain();
+  } else {
+    vpRenderTable();
+    vpRenderKPI();
+  }
+}
+
+// ── Tải dữ liệu ───────────────────────────────────────────────────────────
+
+function vpRenderLoadingSkeletons(){
+  var tabsEl = document.getElementById('vp-level1-tabs');
+  if (tabsEl) {
+    tabsEl.innerHTML = ''
+      + '<div class="vp-shimmer" style="height:36px;width:105px;border-radius:12px;display:inline-block;margin-right:8px;"></div>'
+      + '<div class="vp-shimmer" style="height:36px;width:130px;border-radius:12px;display:inline-block;margin-right:8px;"></div>'
+      + '<div class="vp-shimmer" style="height:36px;width:145px;border-radius:12px;display:inline-block;margin-right:8px;"></div>'
+      + '<div class="vp-shimmer" style="height:36px;width:125px;border-radius:12px;display:inline-block;margin-right:8px;"></div>'
+      + '<div class="vp-shimmer" style="height:36px;width:115px;border-radius:12px;display:inline-block;"></div>';
+  }
+
+  var kpiGrid = document.getElementById('vp-kpi-grid');
+  if (kpiGrid) {
+    var kpiSkeletonCards = '';
+    for (var k = 0; k < 6; k++) {
+      kpiSkeletonCards += ''
+        + '<div class="vp-card p-4" style="margin-bottom:0;">'
+        + '  <div class="flex items-center justify-between mb-3">'
+        + '    <div class="vp-shimmer" style="height:12px;width:55%;"></div>'
+        + '    <div class="vp-shimmer" style="height:26px;width:26px;border-radius:8px;"></div>'
+        + '  </div>'
+        + '  <div class="vp-shimmer mb-2" style="height:26px;width:40%;"></div>'
+        + '  <div class="vp-shimmer" style="height:10px;width:75%;"></div>'
+        + '</div>';
+    }
+    kpiGrid.innerHTML = kpiSkeletonCards;
+  }
+
+  var bigPic = document.getElementById('vp-bigpicture');
+  if (bigPic) {
+    bigPic.innerHTML = ''
+      + '<div class="vp-card p-5 mb-4">'
+      + '  <div class="flex items-center gap-2 mb-3">'
+      + '    <div class="vp-shimmer" style="height:20px;width:100px;border-radius:9999px;"></div>'
+      + '    <div class="vp-shimmer" style="height:14px;width:160px;"></div>'
+      + '  </div>'
+      + '  <div class="vp-shimmer mb-3" style="height:18px;width:70%;"></div>'
+      + '  <div class="vp-shimmer mb-4" style="height:13px;width:90%;"></div>'
+      + '  <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">'
+      + '    <div class="vp-shimmer" style="height:44px;border-radius:10px;"></div>'
+      + '    <div class="vp-shimmer" style="height:44px;border-radius:10px;"></div>'
+      + '    <div class="vp-shimmer" style="height:44px;border-radius:10px;"></div>'
+      + '    <div class="vp-shimmer" style="height:44px;border-radius:10px;"></div>'
+      + '  </div>'
+      + '</div>'
+      + '<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">'
+      + '  <div class="vp-card p-4">'
+      + '    <div class="vp-shimmer mb-4" style="height:16px;width:50%;"></div>'
+      + '    <div class="space-y-3">'
+      + '      <div class="vp-shimmer" style="height:22px;width:100%;"></div>'
+      + '      <div class="vp-shimmer" style="height:22px;width:100%;"></div>'
+      + '      <div class="vp-shimmer" style="height:22px;width:100%;"></div>'
+      + '    </div>'
+      + '  </div>'
+      + '  <div class="vp-card p-4">'
+      + '    <div class="vp-shimmer mb-4" style="height:16px;width:50%;"></div>'
+      + '    <div class="space-y-3">'
+      + '      <div class="vp-shimmer" style="height:22px;width:100%;"></div>'
+      + '      <div class="vp-shimmer" style="height:22px;width:100%;"></div>'
+      + '      <div class="vp-shimmer" style="height:22px;width:100%;"></div>'
+      + '    </div>'
+      + '  </div>'
+      + '</div>';
+  }
+
+  var wrap = document.getElementById('vp-table-wrap');
+  if (wrap) {
+    wrap.innerHTML = ''
+      + '<div class="vp-loading-panel">'
+      + '  <div class="vp-loading-spinner"></div>'
+      + '  <div class="vp-loading-title">' + vpT('Đang nạp dữ liệu khiếu nại & vi phạm...') + '</div>'
+      + '  <div class="vp-loading-subtitle">' + vpT('Hệ thống đang đồng bộ danh sách sự vụ từ máy chủ SPX...') + '</div>'
+      + '</div>'
+      + '<div class="p-4 border-t border-slate-200 dark:border-slate-800 space-y-3">'
+      + '  <div class="vp-shimmer" style="height:16px;width:100%;"></div>'
+      + '  <div class="vp-shimmer" style="height:16px;width:100%;"></div>'
+      + '  <div class="vp-shimmer" style="height:16px;width:100%;"></div>'
+      + '  <div class="vp-shimmer" style="height:16px;width:80%;"></div>'
+      + '</div>';
+  }
+}
+
+function vpLoadData(force, silent){
+  if (VP_isLoading) return;
+  VP_isLoading = true;
+  var spin = document.getElementById('vp-refresh-icon');
+  if (spin) spin.classList.add('fa-spin');
+  if (!silent) {
+    var subtitleEl = document.getElementById('vp-scope-subtitle');
+    if (subtitleEl) subtitleEl.textContent = vpT('Đang đồng bộ dữ liệu...');
+    vpRenderLoadingSkeletons();
+  }
+  google.script.run
+    .withSuccessHandler(function(res){
+      VP_isLoading = false;
+      if (spin) spin.classList.remove('fa-spin');
+      if (res && res.error) {
+        var wrap = document.getElementById('vp-table-wrap');
+        if (wrap && !silent) {
+          wrap.innerHTML = '<div class="vp-loading-panel text-rose-500 dark:text-rose-400">' +
+            '<i class="fas fa-circle-exclamation text-2xl text-rose-500 mb-1"></i>' +
+            '<div class="vp-loading-title text-rose-600 dark:text-rose-400">' + vpT('Lỗi tải dữ liệu') + ': ' + _vpEsc(res.error) + '</div>' +
+            '<button onclick="vpLoadData(true)" class="mt-2 px-3 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-100 cursor-pointer">' + vpT('Thử lại') + '</button>' +
+            '</div>';
+        }
+        return;
+      }
+      var next = vpSortNewestFirst(Array.isArray(res) ? res : []);
+      VP_loadedAt = Date.now();
+      if (silent && next.length === VP_allCases.length &&
+          (next.length === 0 || (next[next.length-1].case_id === VP_allCases[VP_allCases.length-1].case_id &&
+                                 next[0].case_id === VP_allCases[0].case_id))) {
+        vpRenderFreshness();
+        return;
+      }
+      VP_allCases = next;
+      if (!silent) VP_page = 1;
+      vpRenderFreshness();
+      vpRenderFilterBar();
+      vpRenderLevel1Tabs();
+      vpRenderMain();
+    })
+    .withFailureHandler(function(err){
+      VP_isLoading = false;
+      if (spin) spin.classList.remove('fa-spin');
+      var wrap = document.getElementById('vp-table-wrap');
+      if (wrap && !silent) {
+        wrap.innerHTML = '<div class="vp-loading-panel text-rose-500 dark:text-rose-400">' +
+          '<i class="fas fa-circle-exclamation text-2xl text-rose-500 mb-1"></i>' +
+          '<div class="vp-loading-title text-rose-600 dark:text-rose-400">' + vpT('Lỗi tải dữ liệu') + ': ' + _vpEsc(err.message || String(err)) + '</div>' +
+          '<button onclick="vpLoadData(true)" class="mt-2 px-3 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-100 cursor-pointer">' + vpT('Thử lại') + '</button>' +
+          '</div>';
+      }
+    })
+    .getComplaintData(!!force);
+}
+
+function vpCaseSortKey(c){
+  var d = String(c.case_create_date || '').slice(0, 10);
+  var tm = String(c.case_create_time || '');
+  return d + 'T' + (tm.length >= 19 ? tm.slice(11, 19) : '');
+}
+function vpSortNewestFirst(arr){
+  return arr.map(function(c, i){ return { c: c, i: i, k: vpCaseSortKey(c) }; })
+    .sort(function(a, b){ return a.k < b.k ? 1 : (a.k > b.k ? -1 : a.i - b.i); })
+    .map(function(x){ return x.c; });
+}
+
+function vpComputeDataInfo(){
+  var perDay = {}, max = '';
+  for (var i = 0; i < VP_allCases.length; i++) {
+    var d = String(VP_allCases[i].case_create_date || '').slice(0, 10);
+    if (!/^d{4}-d{2}-d{2}$/.test(d)) continue;
+    perDay[d] = (perDay[d] || 0) + 1;
+    if (d > max) max = d;
+  }
+  if (!max) return null;
+  var days = Object.keys(perDay).sort();
+  var prev = days.slice(Math.max(0, days.length - 8), days.length - 1).map(function(k){ return perDay[k]; }).sort(function(a, b){ return a - b; });
+  var median = prev.length ? prev[Math.floor(prev.length / 2)] : 0;
+  return { max: max, cnt: perDay[max], total: VP_allCases.length, partial: !!(median && perDay[max] < median * 0.4) };
+}
+
+function vpRenderFreshness(){
+  var el = document.getElementById('vp-fresh-banner');
+  if (!el) return;
+  var info = vpComputeDataInfo();
+  VP_dataInfo = info;
+  if (!info) { el.innerHTML = ''; return; }
+  var p = info.max.split('-');
+  var todayVn = (typeof spxVnDateStr === 'function') ? spxVnDateStr() : new Date().toISOString().slice(0, 10);
+  var behind = Math.round((Date.parse(todayVn + 'T00:00:00Z') - Date.parse(info.max + 'T00:00:00Z')) / 86400000);
+  var stale = behind >= 3;
+  var ltTxt = VP_loadedAt ? ((typeof spxFmtTimeVN === 'function') ? spxFmtTimeVN(new Date(VP_loadedAt), { hour: '2-digit', minute: '2-digit', hour12: false }) : '') : '';
+
+  el.innerHTML = '<div class="vp-card p-3.5 flex items-center justify-between gap-3 flex-wrap ' +
+    (stale ? 'border-amber-200 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/20' : '') + '">'
+    + '<div class="flex items-center gap-3">'
+    + '  <div class="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm ' + (stale ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500') + '">'
+    + '    <i class="fas ' + (stale ? 'fa-triangle-exclamation' : 'fa-clock') + '"></i>'
+    + '  </div>'
+    + '  <div>'
+    + '    <div class="text-xs font-bold text-slate-700 dark:text-slate-200">'
+    + '      ' + vpT('Dữ liệu sheet nguồn tới ngày') + ' <b class="text-slate-900 dark:text-white">' + p[2] + '/' + p[1] + '/' + p[0] + '</b>'
+    + '      · <span class="font-mono font-bold text-[#ee4d2d]">' + info.cnt.toLocaleString() + '</span> ' + vpT('vụ trong ngày đó')
+    + (info.partial ? ' <span class="text-amber-600 dark:text-amber-400 font-normal">(' + vpT('ngày này có vẻ chưa đủ') + ')</span>' : '')
+    + (stale ? ' · <span class="text-rose-600 dark:text-rose-400 font-bold">' + behind + ' ' + vpT('ngày trước') + '</span>' : '')
+    + '    </div>'
+    + '    <div class="text-[10px] text-slate-400 mt-0.5">'
+    + (ltTxt ? vpT('Đồng bộ gần nhất') + ': ' + ltTxt + ' • ' : '')
+    + vpT('Nguồn: sheet "complaint raw"')
+    + (stale ? ' — ' + vpT('Nếu cần số liệu mới hơn, vui lòng liên hệ người cập nhật sheet nguồn.') : '')
+    + '    </div>'
+    + '  </div>'
+    + '</div>'
+    + '<button onclick="vpLoadData(true)" class="ml-auto shrink-0 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 shadow-xs transition-all flex items-center gap-1.5 cursor-pointer">'
+    + '  <i class="fas fa-rotate text-[11px]"></i><span>' + vpT('Làm mới') + '</span>'
+    + '</button>'
+    + '</div>';
+}
+
+function vpInstallAutoRefresh(){
+  if (VP_freshInstalled) return;
+  VP_freshInstalled = true;
+  var tick = function(){
+    try {
+      if (document.hidden || VP_isLoading) return;
+      var main = document.getElementById('view-violation');
+      if (!main || main.offsetParent === null) return;
+      if (VP_loadedAt && Date.now() - VP_loadedAt < VP_AUTO_REFRESH_MS) return;
+      vpLoadData(false, true);
+    } catch (e) {}
+  };
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden) tick(); });
+  setInterval(tick, 5 * 60 * 1000);
+}
+
+function vpSelectStation(name){
+  VP_selectedStation = (name === 'ALL') ? '' : (name || '');
+  VP_page = 1;
+  vpRenderMain();
+}
+
+function _vpStationScoped(){
+  var base = VP_selectedStation ? VP_allCases.filter(function(c){ return c.station_name === VP_selectedStation; }) : VP_allCases;
+  return VP_previewAllowedSet ? base.filter(function(c){ return VP_previewAllowedSet[c.station_name] === 1; }) : base;
+}
+
+function vpApplyPreviewLevel(level) {
+  if (typeof VP_allCases === 'undefined' || !VP_allCases.length) return;
+  var isRealAdmin = !!(window.SPX_ACCESS && window.SPX_ACCESS.role === 'admin');
+  var directEntity = (typeof window.SPX_PREVIEW_ENTITY === 'string' && window.SPX_PREVIEW_ENTITY) ? window.SPX_PREVIEW_ENTITY : '';
+
+  if (!isRealAdmin || !level || level === 'admin') {
+    if (VP_previewAllowedStations !== null || VP_previewEntityLabel !== null) {
+      VP_previewAllowedStations = null; VP_previewAllowedSet = null; VP_previewEntityLabel = null; VP_page = 1; vpRenderMain();
+    }
+    return;
+  }
+
+  if (level === 'lead' || level === 'staff') {
+    VP_previewAllowedStations = null;
+    VP_previewAllowedSet = null;
+    VP_previewEntityLabel = null;
+    VP_selectedStation = _vpReadHeaderHub();
+    VP_page = 1;
+    vpRenderMain();
+    return;
+  }
+
+  if ((level === 'aom' || level === 'sup' || level === 'rom') && directEntity && typeof spxGetHubsInOrgScope === 'function') {
+    var sc = (typeof spxResolvePreviewScope === 'function')
+      ? spxResolvePreviewScope(level, directEntity, VP_allCases, function(c){ return c.station_name; }) : null;
+    if (!sc) return;
+    VP_previewEntityLabel = (level === 'aom' ? 'AOM ' : level === 'rom' ? 'ROM ' : 'SUP ') + directEntity;
+    VP_previewAllowedStations = sc.list; VP_previewAllowedSet = sc.set;
+    VP_page = 1;
+    vpRenderMain();
+    return;
+  }
+}
+
+function _vpFilteredRows(){
+  var f = VP_filters || {};
+  var q = (VP_searchText || '').toLowerCase().trim();
+  var targetOrderType = f.order_type || f.orderType || 'ALL';
+  var targetReason = f.last_onhold_reason || f.reason || 'ALL';
+  var targetDriver = f.driver_name || f.driver || 'ALL';
+  var targetAom = f.aom || 'ALL';
+  var targetMonth = (f.month != null && f.month !== 'ALL') ? String(f.month) : 'ALL';
+  var targetWeek = (f.week != null && f.week !== 'ALL') ? String(f.week) : 'ALL';
+
+  return _vpStationScoped().filter(function(c){
+    if (VP_activeLevel1 !== 'ALL' && (c.level1_case_category_name || 'Không rõ') !== VP_activeLevel1) return false;
+    if (targetMonth !== 'ALL' && String(c.month) !== targetMonth) return false;
+    if (targetWeek !== 'ALL' && String(c.week) !== targetWeek) return false;
+    if (targetAom !== 'ALL' && (c.aom || 'Không rõ') !== targetAom) return false;
+    if (targetOrderType !== 'ALL' && (c.order_type || 'Không rõ') !== targetOrderType) return false;
+    if (targetReason !== 'ALL' && (c.last_onhold_reason || 'Không rõ') !== targetReason) return false;
+    if (targetDriver !== 'ALL' && (c.driver_name || 'Không rõ') !== targetDriver) return false;
+    if (f.hasTicket && !c.ticket_no) return false;
+    if (q) {
+      var match = (c.case_id && c.case_id.toLowerCase().indexOf(q) !== -1) ||
+                  (c.order_shipping_id && c.order_shipping_id.toLowerCase().indexOf(q) !== -1) ||
+                  (c.station_name && c.station_name.toLowerCase().indexOf(q) !== -1) ||
+                  (c.driver_name && c.driver_name.toLowerCase().indexOf(q) !== -1) ||
+                  (c.driver_id && String(c.driver_id).toLowerCase().indexOf(q) !== -1) ||
+                  (c.ticket_no && c.ticket_no.toLowerCase().indexOf(q) !== -1) ||
+                  (c.last_onhold_reason && c.last_onhold_reason.toLowerCase().indexOf(q) !== -1) ||
+                  (c.level2_case_category_name && c.level2_case_category_name.toLowerCase().indexOf(q) !== -1) ||
+                  (c.level3_case_category_name && c.level3_case_category_name.toLowerCase().indexOf(q) !== -1);
+      if (!match) return false;
+    }
+    return true;
+  });
+}
+
+function _vpUniqueSorted(list){
+  var seen = {}, out = [];
+  list.forEach(function(v){ var k = v || 'Không rõ'; if (!seen[k]) { seen[k] = true; out.push(k); } });
+  return out.sort();
+}
+
+// ── DRILL-DOWN INTERACTION HANDLERS ───────────────────────────────────────
+// [MỚI] Tương tác sâu (Drill-down UX): bấm vào bất kỳ chỉ số, biểu đồ, bưu cục,
+// nguyên nhân hay tài xế nào trên dashboard toàn cảnh sẽ TỰ ĐỘNG lọc dữ liệu,
+// mở rộng bảng chi tiết và cuộn mượt tới danh sách các vụ việc tương ứng.
+function vpDrillDownWeek(w){
+  VP_filters.week = String(w);
+  VP_showDetail = true;
+  vpRenderFilterBar();
+  vpRenderMain();
+  _vpScrollToDetail(vpT('Đang lọc các vụ trong Tuần') + ' ' + w);
+}
+
+function vpDrillDownMonth(m){
+  VP_filters.month = String(m);
+  VP_showDetail = true;
+  vpRenderFilterBar();
+  vpRenderMain();
+  _vpScrollToDetail(vpT('Đang lọc các vụ trong Tháng') + ' ' + m);
+}
+
+function vpDrillDownStation(stationName){
+  if (!stationName) return;
+  VP_searchText = stationName;
+  var searchInput = document.getElementById('vp-search-input');
+  if (searchInput) searchInput.value = stationName;
+  VP_showDetail = true;
+  VP_page = 1;
+  vpRenderMain();
+  _vpScrollToDetail(vpT('Đang xem chi tiết các vụ của bưu cục:') + ' ' + stationName);
+}
+
+function vpDrillDownReason(reason){
+  if (!reason || reason === 'Không rõ') return;
+  VP_filters.reason = reason;
+  VP_filters.last_onhold_reason = reason;
+  VP_showDetail = true;
+  VP_page = 1;
+  vpRenderFilterBar();
+  vpRenderMain();
+  _vpScrollToDetail(vpT('Đang lọc theo nguyên nhân:') + ' ' + reason);
+}
+
+function vpDrillDownDriver(driverName){
+  if (!driverName || driverName === 'Không rõ') return;
+  VP_filters.driver = driverName;
+  VP_filters.driver_name = driverName;
+  VP_showDetail = true;
+  VP_page = 1;
+  vpRenderFilterBar();
+  vpRenderMain();
+  _vpScrollToDetail(vpT('Đang lọc các vụ của tài xế:') + ' ' + driverName);
+}
+
+function vpDrillDownTicket(hasTicket){
+  VP_filters.hasTicket = !!hasTicket;
+  VP_showDetail = true;
+  VP_page = 1;
+  vpRenderFilterBar();
+  vpRenderMain();
+  _vpScrollToDetail(hasTicket ? vpT('Đang lọc các vụ ĐÃ CÓ mã Ticket') : vpT('Đang xem tất cả vụ việc'));
+}
+
+function vpDrillDownAOM(aomName){
+  if (!aomName) return;
+  VP_filters.aom = aomName;
+  VP_showDetail = true;
+  VP_page = 1;
+  vpRenderFilterBar();
+  vpRenderMain();
+  _vpScrollToDetail(vpT('Đang lọc các vụ của AOM:') + ' ' + aomName);
+}
+
+function _vpScrollToDetail(toastMsg){
+  if (toastMsg && typeof showToast === 'function') {
+    showToast('🔍 ' + toastMsg, 'info');
+  }
+  setTimeout(function(){
+    var target = document.getElementById('vp-detail-zone');
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+}
+
+// ── Bộ lọc dữ liệu nâng cao ──────────────────────────────────────────────
+
+
+function vpRenderFilterBar(){
+  var bar = document.getElementById('vp-filter-bar');
+  if (!bar) return;
+  var scoped = _vpStationScoped();
+  var opt = function(list, current){
+    return '<option value="ALL">-- ' + vpT('Tất cả') + ' --</option>' + list.map(function(v){
+      return '<option value="' + _vpEscAttr(v) + '" ' + (current === v ? 'selected' : '') + '>' + _vpEsc(v) + '</option>';
+    }).join('');
+  };
+  var months = _vpUniqueSorted(scoped.map(function(c){ return c.month; }).filter(Boolean));
+  var weeks = _vpUniqueSorted(scoped.map(function(c){ return c.week; }).filter(Boolean));
+  var aoms = _vpUniqueSorted(scoped.map(function(c){ return c.aom; }).filter(Boolean));
+  var orderTypes = _vpUniqueSorted(scoped.map(function(c){ return c.order_type; }).filter(Boolean));
+  var reasons = _vpUniqueSorted(scoped.map(function(c){ return c.last_onhold_reason; }).filter(Boolean));
+  var drivers = _vpUniqueSorted(scoped.map(function(c){ return c.driver_name; }).filter(Boolean));
+
+  var curOrderType = VP_filters.order_type || VP_filters.orderType || 'ALL';
+  var curReason = VP_filters.last_onhold_reason || VP_filters.reason || 'ALL';
+  var curDriver = VP_filters.driver_name || VP_filters.driver || 'ALL';
+
+  var selCls = 'w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-100 outline-none focus:border-[#ee4d2d] transition-all cursor-pointer';
+  bar.innerHTML = '<div class="flex items-center justify-between gap-2 mb-3 pb-2.5 border-b border-slate-200 dark:border-slate-800">'
+    + '  <div class="flex items-center gap-2">'
+    + '    <i class="fas fa-sliders text-[#ee4d2d] text-xs"></i>'
+    + '    <span class="text-xs font-black uppercase text-slate-800 dark:text-slate-100">' + vpT('Bộ lọc dữ liệu nâng cao') + '</span>'
+    + '  </div>'
+    + '  <button onclick="vpResetFilters()" class="text-xs font-bold text-slate-600 hover:text-[#ee4d2d] transition-colors flex items-center gap-1 cursor-pointer">'
+    + '    <i class="fas fa-arrow-rotate-left text-[10px]"></i><span>' + vpT('Đặt lại bộ lọc') + '</span>'
+    + '  </button>'
+    + '</div>'
+    + '<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 items-end">'
+    + '<div><label class="block text-[10px] font-black uppercase text-slate-500 mb-1"><i class="fas fa-calendar mr-1"></i>' + vpT('Tháng') + '</label><select class="' + selCls + '" onchange="vpSetFilter(\'month\', this.value)">' + opt(months, VP_filters.month) + '</select></div>'
+    + '<div><label class="block text-[10px] font-black uppercase text-slate-500 mb-1"><i class="fas fa-calendar-week mr-1"></i>' + vpT('Tuần') + '</label><select class="' + selCls + '" onchange="vpSetFilter(\'week\', this.value)">' + opt(weeks, VP_filters.week) + '</select></div>'
+    + '<div><label class="block text-[10px] font-black uppercase text-slate-500 mb-1"><i class="fas fa-user-tie mr-1"></i>' + vpT('AOM') + '</label><select class="' + selCls + '" onchange="vpSetFilter(\'aom\', this.value)">' + opt(aoms, VP_filters.aom) + '</select></div>'
+    + '<div><label class="block text-[10px] font-black uppercase text-slate-500 mb-1"><i class="fas fa-box mr-1"></i>' + vpT('Loại đơn') + '</label><select class="' + selCls + '" onchange="vpSetFilter(\'order_type\', this.value)">' + opt(orderTypes, curOrderType) + '</select></div>'
+    + '<div><label class="block text-[10px] font-black uppercase text-slate-500 mb-1"><i class="fas fa-triangle-exclamation mr-1"></i>' + vpT('Lý do') + '</label><select class="' + selCls + '" onchange="vpSetFilter(\'reason\', this.value)">' + opt(reasons, curReason) + '</select></div>'
+    + '<div><label class="block text-[10px] font-black uppercase text-slate-500 mb-1"><i class="fas fa-motorcycle mr-1"></i>' + vpT('Tài xế') + '</label><select class="' + selCls + '" onchange="vpSetFilter(\'driver\', this.value)">' + opt(drivers, curDriver) + '</select></div>'
+    + '</div>';
+}
+
+function vpSetFilter(key, val){
+  VP_filters[key] = val;
+  if (key === 'order_type') VP_filters.orderType = val;
+  if (key === 'orderType') VP_filters.order_type = val;
+  if (key === 'last_onhold_reason') VP_filters.reason = val;
+  if (key === 'reason') VP_filters.last_onhold_reason = val;
+  if (key === 'driver_name') VP_filters.driver = val;
+  if (key === 'driver') VP_filters.driver_name = val;
+  VP_page = 1;
+  vpRenderMain();
+}
+function vpResetFilters(){
+  VP_filters = {
+    month: 'ALL',
+    week: 'ALL',
+    aom: 'ALL',
+    order_type: 'ALL',
+    orderType: 'ALL',
+    last_onhold_reason: 'ALL',
+    reason: 'ALL',
+    driver_name: 'ALL',
+    driver: 'ALL',
+    ticket_status: 'ALL',
+    hasTicket: false
+  };
+  VP_searchText = '';
+  var searchInput = document.getElementById('vp-search-input');
+  if (searchInput) searchInput.value = '';
+  VP_page = 1;
+  vpRenderFilterBar();
+  vpRenderMain();
+}
+
+// ── Cấp 1 (Pill tabs hiện đại) ────────────────────────────────────────────
+
+
+function vpRenderLevel1Tabs(){
+  var tabsEl = document.getElementById('vp-level1-tabs');
+  if (!tabsEl) return;
+  var scoped = _vpStationScoped();
+  var byLevel1 = {};
+  scoped.forEach(function(c){ var l1 = c.level1_case_category_name || 'Không rõ'; byLevel1[l1] = (byLevel1[l1]||0) + 1; });
+  var levels = ['ALL'].concat(Object.keys(byLevel1).sort(function(a,b){ return byLevel1[b]-byLevel1[a]; }));
+  
+  var iconMap = {
+    'ALL': 'fa-layer-group',
+    'Logistics': 'fa-truck-fast',
+    'SPX - non Shopee': 'fa-box-open',
+    'SPX - Shopee': 'fa-bag-shopping',
+    'Return/Refund': 'fa-rotate-left'
+  };
+
+  tabsEl.innerHTML = levels.map(function(l1){
+    var active = VP_activeLevel1 === l1;
+    var label = l1 === 'ALL' ? vpT('Tất cả') : l1;
+    var count = l1 === 'ALL' ? scoped.length : byLevel1[l1];
+    var icon = iconMap[l1] || 'fa-tag';
+    return '<button onclick="vpSetLevel1(\'' + _vpEscAttr(l1) + '\')" class="vp-tab-btn ' + (active ? 'active' : '') + '">' +
+      '<i class="fas ' + icon + ' text-xs"></i>' +
+      '<span>' + _vpEsc(label) + '</span>' +
+      '<span class="vp-tab-count">' + count.toLocaleString() + '</span>' +
+      '</button>';
+  }).join('');
+}
+
+function vpRenderKPI(){
+  var kpiGrid = document.getElementById('vp-kpi-grid');
+  if (!kpiGrid) return;
+  var rows = _vpFilteredRows();
+  var stations = new Set(rows.map(function(r){ return r.station_name; }).filter(Boolean));
+  var drivers = new Set(rows.map(function(r){ return r.driver_id; }).filter(Boolean));
+  var withTicket = rows.filter(function(r){ return !!r.ticket_no; }).length;
+  var ticketPct = rows.length ? Math.round(withTicket / rows.length * 100) : 0;
+  
+  var byLevel1 = {}, byAom = {}, byStation2 = {}, byDriver = {}, byWeek = {};
+  rows.forEach(function(c){
+    byLevel1[c.level1_case_category_name || 'Không rõ'] = (byLevel1[c.level1_case_category_name || 'Không rõ']||0) + 1;
+    byAom[c.aom || 'Không rõ'] = (byAom[c.aom || 'Không rõ']||0) + 1;
+    if (c.station_name) byStation2[c.station_name] = (byStation2[c.station_name]||0) + 1;
+    if (c.driver_name) byDriver[c.driver_name] = (byDriver[c.driver_name]||0) + 1;
+    if (c.week) byWeek[c.week] = (byWeek[c.week]||0) + 1;
+  });
+
+  // Trend tuần gần nhất vs tuần trước
+  var wks = Object.keys(byWeek).map(Number).sort(function(a,b){ return a-b; });
+  var lastW = wks.length ? wks[wks.length - 1] : 0;
+  var prevW = wks.length > 1 ? wks[wks.length - 2] : 0;
+  var cntLast = lastW ? (byWeek[lastW] || 0) : 0;
+  var cntPrev = prevW ? (byWeek[prevW] || 0) : cntLast;
+  var dWeek = cntPrev ? Math.round((cntLast - cntPrev) / cntPrev * 100) : 0;
+  var weekWorse = dWeek > 0;
+
+  // Danh sách tài xế lặp lại (>=3 vụ)
+  var repeatDriversList = Object.keys(byDriver).filter(function(d){ return byDriver[d] >= 3; });
+
+  // Nhóm Cấp 1
+  var topL1 = Object.keys(byLevel1).sort(function(a,b){ return byLevel1[b]-byLevel1[a]; })[0];
+  var topL1Count = topL1 ? byLevel1[topL1] : 0;
+  var topL1Pct = (rows.length && topL1Count) ? Math.round(topL1Count / rows.length * 100) : 0;
+  
+  // Card 6: Trạm nhiều vụ nhất (hoặc AOM nhiều vụ nhất)
+  var lastCardLabel, lastCardVal, lastCardSub, lastCardAction;
+  if (VP_previewEntityLabel) {
+    var topStation2 = Object.keys(byStation2).sort(function(a,b){ return byStation2[b]-byStation2[a]; })[0];
+    var topStCount = topStation2 ? byStation2[topStation2] : 0;
+    var topStPct = (rows.length && topStCount) ? Math.round(topStCount / rows.length * 100) : 0;
+    lastCardLabel = vpT('Trạm nhiều vụ nhất');
+    lastCardVal = topStation2 || '—';
+    lastCardSub = topStation2 ? (topStCount.toLocaleString() + ' ' + vpT('vụ') + ' (' + topStPct + '% ' + vpT('toàn cụm') + ')') : '';
+    lastCardAction = topStation2 ? 'vpDrillDownStation(\'' + _vpEscAttr(topStation2) + '\')' : '';
+  } else {
+    var topAom = Object.keys(byAom).sort(function(a,b){ return byAom[b]-byAom[a]; })[0];
+    var topAomCount = topAom ? byAom[topAom] : 0;
+    var topAomPct = (rows.length && topAomCount) ? Math.round(topAomCount / rows.length * 100) : 0;
+    lastCardLabel = vpT('AOM nhiều vụ nhất');
+    lastCardVal = topAom || '—';
+    lastCardSub = topAom ? (topAomCount.toLocaleString() + ' ' + vpT('vụ') + ' (' + topAomPct + '% ' + vpT('toàn miền') + ')') : '';
+    lastCardAction = topAom ? 'vpDrillDownAOM(\'' + _vpEscAttr(topAom) + '\')' : '';
+  }
+
+  // Subtitle & Badges tích hợp dữ liệu nhận định
+  var card1Sub = lastW 
+    ? ('T' + lastW + ': ' + cntLast + ' ' + vpT('vụ') + ' (' + (weekWorse ? '▲ +' + dWeek : '▼ ' + dWeek) + '%)')
+    : vpT('Bấm để xem tất cả');
+  var card1Badge = lastW 
+    ? (weekWorse ? '<span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400">▲ +' + dWeek + '%</span>' 
+                 : '<span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400">▼ ' + dWeek + '%</span>')
+    : '';
+
+  var card2Sub = stations.size ? (stations.size + ' ' + vpT('bưu cục trong phạm vi')) : vpT('Bấm để lọc theo trạm');
+
+  var card3Sub = repeatDriversList.length 
+    ? ('<span class="text-amber-600 dark:text-amber-400 font-bold">' + repeatDriversList.length + ' ' + vpT('rider lặp lại ≥3 vụ') + '</span>')
+    : vpT('Rider có khiếu nại');
+  var card3Badge = repeatDriversList.length 
+    ? '<span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">≥3: ' + repeatDriversList.length + '</span>'
+    : '';
+
+  var card4Sub = rows.length ? (withTicket.toLocaleString() + '/' + rows.length.toLocaleString() + ' ' + vpT('vụ có Ticket')) : vpT('0 vụ có Ticket');
+
+  var card5Sub = topL1 ? (topL1Count.toLocaleString() + ' ' + vpT('vụ') + ' (' + topL1Pct + '%)') : '';
+
+  var cards = [
+    { label: vpT('Tổng vụ việc'), val: rows.length.toLocaleString(), sub: card1Sub, badge: card1Badge, icon: 'fa-layer-group', color: 'orange', action: 'vpResetFilters()' },
+    { label: vpT('Bưu cục liên quan'), val: stations.size.toLocaleString(), sub: card2Sub, badge: '', icon: 'fa-warehouse', color: 'sky', action: 'document.getElementById(\'vp-breakdown-card\')?.scrollIntoView({behavior:\'smooth\'})' },
+    { label: vpT('Tài xế liên quan'), val: drivers.size.toLocaleString(), sub: card3Sub, badge: card3Badge, icon: 'fa-motorcycle', color: 'violet', action: 'document.getElementById(\'vp-drivers-card\')?.scrollIntoView({behavior:\'smooth\'})' },
+    { label: vpT('Tỉ lệ có Ticket'), val: ticketPct + '%', sub: card4Sub, badge: '', icon: 'fa-ticket', color: 'emerald', action: 'vpDrillDownTicket(true)' },
+    { label: vpT('Nhóm Cấp 1 lớn nhất'), val: topL1 || '—', sub: card5Sub, badge: '', icon: 'fa-folder-tree', color: 'indigo', action: topL1 ? 'vpSetLevel1(\'' + _vpEscAttr(topL1) + '\')' : '' },
+    { label: lastCardLabel, val: lastCardVal, sub: lastCardSub, badge: '', icon: 'fa-fire', color: 'rose', action: lastCardAction }
+  ];
+
+  var iconColorMap = {
+    orange: 'text-[#ee4d2d] bg-orange-100 dark:bg-orange-950/40',
+    sky: 'text-sky-600 bg-sky-100 dark:bg-sky-950/40',
+    violet: 'text-violet-600 bg-violet-100 dark:bg-violet-950/40',
+    emerald: 'text-emerald-600 bg-emerald-100 dark:bg-emerald-950/40',
+    indigo: 'text-indigo-600 bg-indigo-100 dark:bg-indigo-950/40',
+    rose: 'text-rose-600 bg-rose-100 dark:bg-rose-950/40'
+  };
+
+  kpiGrid.innerHTML = cards.map(function(c){
+    var iconCls = iconColorMap[c.color] || iconColorMap.orange;
+    var clickAttr = c.action ? 'onclick="' + c.action + '" title="' + vpT('Click để xem chi tiết') + '"' : '';
+    return '<div class="vp-kpi-card vp-kpi-' + c.color + '" ' + clickAttr + '>' +
+      '<div class="flex items-center justify-between mb-2">' +
+      '  <span class="text-[11px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400 truncate pr-1">' + c.label + '</span>' +
+      '  <div class="flex items-center gap-1.5">' +
+      (c.badge ? c.badge : '') +
+      '    <div class="w-7 h-7 rounded-lg ' + iconCls + ' flex items-center justify-center text-xs shrink-0"><i class="fas ' + c.icon + '"></i></div>' +
+      '  </div>' +
+      '</div>' +
+      '<div class="text-xl font-black tracking-tight text-slate-900 dark:text-white truncate font-mono">' + c.val + '</div>' +
+      '<div class="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate mt-1 flex items-center justify-between">' +
+      '  <span class="truncate">' + (c.sub || '') + '</span>' +
+      '  <i class="fas fa-chevron-right text-[8px] opacity-40 shrink-0 ml-1"></i>' +
+      '</div>' +
+      '</div>';
+  }).join('');
+}
+
+var VP_AOM_RATE = {
+  'Trần Hữu Danh':       { m9: 0.00245, m8: 0.00199, m7: 0.00176 },
+  'Nguyễn Đức Huy':      { m9: 0.00207, m8: 0.00168, m7: 0.00156 },
+  'Nguyễn Đức Y':        { m9: 0.00199, m8: 0.00164, m7: 0.00162 },
+  'Nguyễn Thị Loan Anh': { m9: 0.00156, m8: 0.00195, m7: 0.00160 },
+  'Võ Thị Trà My':       { m9: 0.00177, m8: 0.00175, m7: 0.00160 },
+  'Lê Tấn Quang':        { m9: 0.00178, m8: 0.00152, m7: 0.00142 },
+  'Đinh Thị Thanh Vân':  { m9: 0.00209, m8: 0.00179, m7: 0.00167 }
+};
+
+function _vpPct(v){ return (v * 100).toFixed(3) + '%'; }
+
+
+
+function vpRenderBigPicture(){
+  var el = document.getElementById('vp-bigpicture');
+  if (!el) return;
+
+  var rows = _vpStationScoped();
+  if (!rows.length) { el.innerHTML = ''; return; }
+
+  // ── Tổng hợp 1 lượt ──
+  var byAom = {}, byStation = {}, byL2 = {}, byReason = {}, byDriver = {}, byMonth = {}, byWeek = {};
+  var withTicketCount = 0;
+  rows.forEach(function(c){
+    byAom[c.aom || 'Không rõ'] = (byAom[c.aom || 'Không rõ'] || 0) + 1;
+    if (c.station_name) byStation[c.station_name] = (byStation[c.station_name] || 0) + 1;
+    byL2[c.level2_case_category_name || 'Không rõ'] = (byL2[c.level2_case_category_name || 'Không rõ'] || 0) + 1;
+    var rs = c.last_onhold_reason || c.mapping_reason || 'Không rõ';
+    byReason[rs] = (byReason[rs] || 0) + 1;
+    if (c.driver_name) byDriver[c.driver_name] = (byDriver[c.driver_name] || 0) + 1;
+    if (c.month) byMonth[c.month] = (byMonth[c.month] || 0) + 1;
+    if (c.week) byWeek[c.week] = (byWeek[c.week] || 0) + 1;
+    if (c.ticket_no) withTicketCount++;
+  });
+  var total = rows.length;
+  var sortDesc = function(o){ return Object.keys(o).sort(function(a,b){ return o[b]-o[a]; }); };
+  var stationsList = Object.keys(byStation);
+
+  var isHubScope = !!VP_selectedStation || stationsList.length === 1;
+  var isAomScope = !isHubScope && !!VP_previewEntityLabel && (VP_previewEntityLabel.indexOf('AOM') !== -1 || VP_previewEntityLabel.indexOf('SUP') !== -1);
+  var isRegionScope = !isHubScope && !isAomScope;
+  var isAomView = isAomScope;
+
+  // ── 1. DIỄN BIẾN THEO TUẦN & TÀI XẾ RỦI RO ──
+  var wks = Object.keys(byWeek).map(Number).sort(function(a,b){ return a-b; });
+  var repeatDriversList = sortDesc(byDriver).filter(function(d){ return byDriver[d] >= 3; });
+
+  // ── 2. BIỂU ĐỒ DIỄN BIẾN THEO TUẦN & LŨY TIẾN THEO THÁNG ──
+  var trendHtml = '';
+  if (wks.length >= 3) {
+    var wMax = Math.max.apply(null, wks.map(function(w){ return byWeek[w]; }));
+    var last3 = wks.slice(-3), prev3 = wks.slice(-6, -3);
+    var avgL = last3.reduce(function(s,w){ return s+byWeek[w]; },0)/(last3.length||1);
+    var avgP = prev3.length ? prev3.reduce(function(s,w){ return s+byWeek[w]; },0)/prev3.length : avgL;
+    var accel = avgP ? ((avgL-avgP)/avgP*100) : 0;
+    var accUp = accel > 5, accDown = accel < -5;
+    var accCls = accUp ? 'vp-pill-badge-rose' : (accDown ? 'vp-pill-badge-emerald' : 'vp-pill-badge-slate');
+    var accTxt = accUp ? '▲ ' + vpT('Đang tăng tốc') + ' +' + accel.toFixed(0) + '%' : (accDown ? '▼ ' + vpT('Đang dịu đi') + ' ' + accel.toFixed(0) + '%' : '● ' + vpT('Đi ngang ổn định'));
+
+    var bars = wks.map(function(w){
+      var n = byWeek[w], h = Math.max(8, Math.round(n/wMax*60));
+      var isLast3 = last3.indexOf(w) !== -1;
+      var barCls = isLast3 ? 'recent' : 'normal';
+      return '<div class="vp-chart-bar-container group" onclick="vpDrillDownWeek(' + w + ')" title="' + vpT('Tuần') + ' ' + w + ': ' + n.toLocaleString() + ' ' + vpT('vụ — Bấm để lọc chi tiết') + '">' +
+        '<div class="vp-chart-bar ' + barCls + '" style="height:' + h + 'px"></div>' +
+        '<span style="font-size:10px;font-weight:700;color:#64748b;" class="group-hover:text-[#ee4d2d] transition-colors">' + w + '</span></div>';
+    }).join('');
+
+    var mks = Object.keys(byMonth).map(Number).sort(function(a,b){ return a-b; });
+    var monthHtml = mks.map(function(m){
+      var prev = byMonth[m-1];
+      var d = (prev != null) ? ((byMonth[m]-prev)/prev*100) : null;
+      var dCls = d == null ? 'text-slate-400' : (d > 0 ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-emerald-600 dark:text-emerald-400 font-bold');
+      return '<div class="vp-month-card" onclick="vpDrillDownMonth(' + m + ')" title="' + vpT('Tháng') + ' ' + m + ': ' + byMonth[m].toLocaleString() + ' ' + vpT('vụ — Bấm để lọc chi tiết') + '">' +
+        '<div style="font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:2px;">' + vpT('Tháng') + ' ' + m + '</div>' +
+        '<div style="font-size:17px;font-weight:900;font-family:ui-monospace,monospace;color:#0f172a;" class="dark:text-white">' + byMonth[m].toLocaleString() + '</div>' +
+        (d == null ? '<div style="font-size:10px;color:#94a3b8;font-weight:bold;">—</div>' : '<div class="' + dCls + '" style="font-size:11px;">' + (d>0?'▲ +':'▼ ') + Math.abs(d).toFixed(1) + '%</div>') +
+        '</div>';
+    }).join('');
+
+    trendHtml = '<div class="vp-card">' +
+      '<div class="vp-card-header">' +
+        '<div class="vp-card-title">' +
+          '<i class="fas fa-chart-column text-[#ee4d2d]"></i>' +
+          '<span>' + vpT('Diễn biến theo tuần') + ' (' + vpT('Tuần') + ' ' + wks[0] + ' – ' + wks[wks.length-1] + ')</span>' +
+          '<span class="text-[10px] text-slate-500 font-normal">(' + vpT('Bấm vào cột/tháng để lọc') + ')</span>' +
+        '</div>' +
+        '<span class="vp-pill-badge ' + accCls + '">' + accTxt + ' <span class="font-normal opacity-80">' + vpT('(3 tuần gần nhất vs 3 tuần trước)') + '</span></span>' +
+      '</div>' +
+      '<div class="vp-card-body">' +
+        '<div class="flex items-end gap-2 h-20 pt-2 pb-1 border-b border-dashed border-slate-200 dark:border-slate-800">' + bars + '</div>' +
+      '</div>' +
+      (monthHtml ? '<div class="vp-month-grid">' + monthHtml + '</div>' : '') +
+      '</div>';
+  }
+
+  // ── 3. BẢNG XẾP HẠNG ĐƠN VỊ CẤP DƯỚI (DRILL-DOWN ONCLICK TRẠM / AOM) ──
+  var cmpHtml = '';
+  if (isRegionScope) {
+    var allR = Object.keys(VP_AOM_RATE).map(function(k){ return VP_AOM_RATE[k]; });
+    var avgNow = allR.length ? (allR.reduce(function(s,v){ return s+v.m9; },0)/allR.length) : 0;
+    var names = Object.keys(byAom).filter(function(a){ return VP_AOM_RATE[a]; })
+      .sort(function(a,b){ return VP_AOM_RATE[b].m9 - VP_AOM_RATE[a].m9; });
+    if (names.length) {
+      var rowsHtmlAom = names.map(function(a, idx){
+        var r = VP_AOM_RATE[a], d = r.m9 - r.m8, w = d > 0;
+        var dp = r.m8 ? Math.abs(d/r.m8*100).toFixed(1) : '0.0';
+        var share = Math.round((byAom[a]||0)/total*100);
+        return '<tr class="cursor-pointer group transition-colors" onclick="vpDrillDownAOM(\'' + _vpEscAttr(a) + '\')" title="' + vpT('Bấm để lọc chi tiết các vụ của AOM') + ' ' + _vpEscAttr(a) + '">' +
+          '<td class="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">' +
+            '<span class="w-5 text-center font-mono text-[11px] font-bold text-slate-500">#' + (idx+1) + '</span>' +
+            '<span class="group-hover:text-[#ee4d2d] transition-colors">' + _vpEsc(a) + '</span>' +
+            (r.m9 > avgNow ? ' <span class="vp-pill-badge vp-pill-badge-rose text-[9px] font-black">' + vpT('TRÊN TB') + '</span>' : '') + '</td>' +
+          '<td class="text-center font-black font-mono ' + (r.m9>avgNow?'text-rose-600 dark:text-rose-400':'text-slate-900 dark:text-slate-100') + '">' + _vpPct(r.m9) + '</td>' +
+          '<td class="text-center font-bold ' + (w?'text-rose-600 dark:text-rose-400':(d<0?'text-emerald-600 dark:text-emerald-400':'text-slate-500')) + '">' + (w?'▲ +':'▼ -') + dp + '%</td>' +
+          '<td class="text-center font-mono font-bold text-slate-700 dark:text-slate-300">' + share + '%</td></tr>';
+      }).join('');
+
+      cmpHtml = '<div class="vp-card" id="vp-breakdown-card">' +
+        '<div class="vp-card-header">' +
+          '<div class="vp-card-title">' +
+            '<i class="fas fa-chart-line text-[#ee4d2d]"></i>' +
+            '<span>' + vpT('7 AOM — % CS Contact Rate (Tháng 9)') + '</span>' +
+            '<span class="text-[10px] text-slate-500 font-normal">(' + vpT('Bấm dòng để lọc chi tiết') + ')</span>' +
+          '</div>' +
+          '<span class="vp-pill-badge vp-pill-badge-slate font-bold">' + vpT('Rate TĂNG = Xấu đi · TB miền:') + ' <b>' + _vpPct(avgNow) + '</b></span>' +
+        '</div>' +
+        '<div class="p-0">' +
+          '<div class="vp-table-wrap border-0 rounded-none">' +
+            '<table class="vp-table"><thead><tr>' +
+            '<th class="w-1/3">AOM</th><th class="text-center">Contact Rate (T9)</th><th class="text-center">Xu hướng</th><th class="text-center">% Vụ toàn miền</th>' +
+            '</tr></thead><tbody>' + rowsHtmlAom + '</tbody></table>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }
+  } else {
+    var st = sortDesc(byStation).slice(0, 10);
+    if (st.length) {
+      var stMax = byStation[st[0]] || 1;
+      var rowsHtmlStation = st.map(function(s, idx){
+        var n = byStation[s], share = Math.round(n/total*100);
+        var rankBadgeCls = idx === 0 ? 'bg-rose-500 text-white font-black' : (idx === 1 ? 'bg-amber-500 text-white font-black' : (idx === 2 ? 'bg-orange-500 text-white font-black' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold'));
+        var barCls = share >= 20 ? 'vp-bar-critical' : 'vp-bar-warning';
+        return '<tr class="cursor-pointer group transition-colors" onclick="vpDrillDownStation(\'' + _vpEscAttr(s) + '\')" title="' + vpT('Bấm để lọc chi tiết tất cả các vụ của trạm') + ' ' + _vpEscAttr(s) + '">' +
+          '<td class="w-8"><span class="w-5 h-5 rounded-full inline-flex items-center justify-center text-[10px] ' + rankBadgeCls + '">' + (idx+1) + '</span></td>' +
+          '<td class="font-bold text-slate-900 dark:text-slate-100"><div class="flex items-center gap-1.5"><i class="fas fa-warehouse text-slate-400 group-hover:text-[#ee4d2d] transition-colors text-xs"></i><span class="group-hover:text-[#ee4d2d] transition-colors">' + _vpEsc(s) + '</span></div></td>' +
+          '<td style="width:38%;"><div class="vp-progress-track"><div class="vp-progress-bar ' + barCls + '" style="width:' + Math.round(n/stMax*100) + '%"></div></div></td>' +
+          '<td class="text-center font-black font-mono text-slate-900 dark:text-slate-100">' + n.toLocaleString() + '</td>' +
+          '<td class="text-center">' +
+            (share >= 20
+              ? '<span class="vp-pill-badge vp-pill-badge-rose"><span class="vp-pulse-dot bg-rose-500"></span>' + share + '%</span>'
+              : '<span class="vp-pill-badge vp-pill-badge-slate font-mono">' + share + '%</span>') +
+            '<i class="fas fa-arrow-right text-[10px] text-slate-400 opacity-0 group-hover:opacity-100 group-hover:text-[#ee4d2d] transition-all ml-1.5"></i>' +
+          '</td></tr>';
+      }).join('');
+
+      cmpHtml = '<div class="vp-card" id="vp-breakdown-card">' +
+        '<div class="vp-card-header">' +
+          '<div class="vp-card-title">' +
+            '<i class="fas fa-ranking-star text-amber-500"></i>' +
+            '<span>' + vpT('Trạm Cần Chú Ý Nhất Trong Vùng') + '</span>' +
+            '<span class="text-[10px] text-slate-500 font-normal">(' + vpT('Bấm dòng để mở danh sách vụ của trạm') + ')</span>' +
+          '</div>' +
+          '<span class="vp-pill-badge vp-pill-badge-slate font-bold">' + stationsList.length + ' ' + vpT('trạm') + ' · ' + total.toLocaleString() + ' ' + vpT('vụ') + '</span>' +
+        '</div>' +
+        '<div class="p-0">' +
+          '<div class="vp-table-wrap border-0 rounded-none">' +
+            '<table class="vp-table"><thead><tr>' +
+            '<th class="w-10">#</th><th>' + vpT('Bưu cục / Trạm') + '</th><th>' + vpT('Tỉ trọng so với trạm cao nhất') + '</th><th class="text-center">' + vpT('Số vụ') + '</th><th class="text-center">' + vpT('% Vùng') + '</th>' +
+            '</tr></thead><tbody>' + rowsHtmlStation + '</tbody></table>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }
+  }
+
+  // ── 4. 2 CỘT INSIGHTS: TOP NGUYÊN NHÂN & TÀI XẾ LẶP LẠI (2 Ô RIÊNG BIỆT) ──
+  var topR = sortDesc(byReason).slice(0, 5);
+  var reasonHtml = topR.length ? topR.map(function(r, idx){
+    var shareR = Math.round(byReason[r]/total*100);
+    return '<div class="mb-3 last:mb-0 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group border border-slate-100 dark:border-slate-800" onclick="vpDrillDownReason(\'' + _vpEscAttr(r) + '\')" title="' + vpT('Bấm để lọc các vụ do nguyên nhân:') + ' ' + _vpEscAttr(r) + '">' +
+      '<div class="flex justify-between items-center text-xs font-bold text-slate-800 dark:text-slate-100 mb-1.5">' +
+      '  <span class="truncate pr-2 flex items-center gap-2"><span class="w-4 text-[11px] font-mono font-bold text-slate-400">#' + (idx+1) + '</span><span class="group-hover:text-[#ee4d2d] transition-colors">' + _vpEsc(r) + '</span></span>' +
+      '  <span class="font-mono text-xs font-bold text-slate-900 dark:text-slate-100 shrink-0">' + byReason[r].toLocaleString() + ' <span class="text-[10px] text-slate-500 font-normal">(' + shareR + '%)</span></span>' +
+      '</div>' +
+      '<div class="vp-progress-track"><div class="vp-progress-bar vp-bar-rose" style="width:' + shareR + '%"></div></div>' +
+      '</div>';
+  }).join('') : '<div class="text-xs text-slate-400 py-6 text-center">' + vpT('Không có dữ liệu nguyên nhân.') + '</div>';
+
+  var repeat = repeatDriversList.slice(0, 5);
+  var driverHtml = repeat.length ? repeat.map(function(d){
+    var initials = d.split(' ').filter(Boolean).map(function(w){ return w[0]; }).slice(-2).join('').toUpperCase() || 'TX';
+    return '<div class="flex justify-between items-center p-2.5 mb-2 last:mb-0 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-950/20 border border-slate-200 dark:border-slate-800 cursor-pointer group transition-colors" onclick="vpDrillDownDriver(\'' + _vpEscAttr(d) + '\')" title="' + vpT('Bấm để lọc các vụ do tài xế') + ' ' + _vpEscAttr(d) + ' ' + vpT('thực hiện') + '">' +
+      '<div class="flex items-center gap-2.5 min-w-0 pr-2">' +
+      '  <div class="w-7 h-7 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800 flex items-center justify-center font-bold text-[10px] shrink-0">' + initials + '</div>' +
+      '  <span class="text-xs font-bold text-slate-900 dark:text-slate-100 truncate group-hover:text-[#ee4d2d] transition-colors">' + _vpEsc(d) + '</span>' +
+      '</div>' +
+      '<span class="vp-pill-badge vp-pill-badge-rose font-black shrink-0">' +
+      '  <span class="vp-pulse-dot bg-rose-500"></span>' + byDriver[d] + ' ' + vpT('vụ') +
+      '</span>' +
+      '</div>';
+  }).join('') : '<div class="text-xs text-emerald-600 dark:text-emerald-400 py-6 text-center font-bold flex items-center justify-center gap-2"><i class="fas fa-shield-check text-base"></i>' + vpT('Không có tài xế nào ≥3 vụ — lỗi phân tán, không tập trung cá nhân.') + '</div>';
+
+  var riderPct = Math.round((byL2['Rider behavior']||0)/total*100);
+  var twoCol = '<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">' +
+    '<div class="vp-card mb-0">' +
+    '  <div class="vp-card-header">' +
+    '    <div class="vp-card-title"><i class="fas fa-triangle-exclamation text-rose-500"></i><span>' + vpT('Top 5 Nguyên Nhân Lớn Nhất') + '</span></div>' +
+    '    <span class="text-[11px] text-slate-500 font-bold lowercase">' + vpT('Bấm để lọc') + '</span>' +
+    '  </div><div class="vp-card-body">' + reasonHtml + '</div></div>' +
+    '<div class="vp-card mb-0" id="vp-drivers-card">' +
+    '  <div class="vp-card-header">' +
+    '    <div class="vp-card-title"><i class="fas fa-user-clock text-amber-500"></i><span>' + vpT('Tài Xế Khiếu Nại Lặp Lại (≥3 Vụ)') + '</span></div>' +
+    '    <span class="text-[11px] text-slate-500 font-bold">' + repeatDriversList.length + ' ' + vpT('tài xế (Bấm xem)') + '</span>' +
+    '  </div><div class="vp-card-body">' + driverHtml + '</div></div>' +
+    '</div>';
+
+  // ── 5. ACTION CENTER: KHUYẾN NGHỊ HÀNH ĐỘNG DÀNH CHO CẤP QUẢN LÝ ──
+  var actItems = [];
+  if (isHubScope) {
+    // ── Khuyến nghị dành cho cấp Trưởng Bưu Cục (Lead Hub) & Điều Phối Trạm ──
+    var topR = sortDesc(byReason)[0];
+    var topRCnt = topR ? byReason[topR] : 0;
+    var topRPct = total ? Math.round(topRCnt / total * 100) : 0;
+    if (topR) {
+      actItems.push({
+        tag: vpT('VẬN HÀNH TRẠM'),
+        tagCls: 'vp-pill-badge-emerald',
+        text: vpT('Trưởng bưu cục & Điều phối rà soát nguyên nhân lớn nhất:') + ' <b>' + _vpEsc(topR) + '</b> — ' + vpT('chiếm tới') + ' <b>' + topRPct + '% ' + vpT('số vụ tại bưu cục') + '</b> (' + topRCnt + ' ' + vpT('vụ') + ').',
+        action: 'vpDrillDownReason(\'' + _vpEscAttr(topR) + '\')'
+      });
+    }
+    if (repeatDriversList.length > 0) {
+      actItems.push({
+        tag: vpT('CHẤN CHỈNH TÀI XẾ'),
+        tagCls: 'vp-pill-badge-rose',
+        text: vpT('Bưu cục có') + ' <b>' + repeatDriversList.length + ' ' + vpT('tài xế khiếu nại lặp lại từ 3 vụ trở lên') + '</b> — ' + vpT('Trưởng bưu cục trực tiếp phỏng vấn và chấn chỉnh danh sách tài xế này.'),
+        action: 'document.getElementById(\'vp-drivers-card\')?.scrollIntoView({behavior:\'smooth\'})'
+      });
+    }
+    var noTicketCount = total - withTicketCount;
+    if (noTicketCount > 0) {
+      var noTicketPct = Math.round(noTicketCount / total * 100);
+      actItems.push({
+        tag: vpT('XỬ LÝ KHIẾU NẠI'),
+        tagCls: 'vp-pill-badge-amber',
+        text: vpT('Bưu cục còn') + ' <b>' + noTicketCount + ' ' + vpT('vụ chưa có Ticket') + '</b> (' + noTicketPct + '%) — ' + vpT('đôn đốc nhân viên trạm tạo ticket phối hợp CS giải quyết dứt điểm, tránh rủi ro đền bù.'),
+        action: 'vpDrillDownTicket(false)'
+      });
+    }
+  } else if (isAomScope) {
+    // ── Khuyến nghị dành cho AOM / SUP (Quản lý cụm bưu cục) ──
+    var topSt = sortDesc(byStation)[0];
+    var topStShare = topSt ? Math.round(byStation[topSt]/total*100) : 0;
+    if (topSt && topStShare >= 20) {
+      actItems.push({
+        tag: vpT('KIỂM SOÁT BƯU CỤC'),
+        tagCls: 'vp-pill-badge-rose',
+        text: vpT('Làm việc trực tiếp với Trưởng bưu cục (Lead) của trạm') + ' <b>' + _vpEsc(topSt) + '</b> — ' + vpT('chiếm tới') + ' <b>' + topStShare + '% ' + vpT('tổng số vụ toàn vùng') + '</b> (' + vpT('Bấm để mở danh sách vụ') + ').',
+        action: 'vpDrillDownStation(\'' + _vpEscAttr(topSt) + '\')'
+      });
+    }
+    if (repeatDriversList.length > 0) {
+      actItems.push({
+        tag: vpT('GIÁM SÁT VÙNG'),
+        tagCls: 'vp-pill-badge-amber',
+        text: '<b>' + repeatDriversList.length + ' ' + vpT('tài xế lặp lại từ 3 vụ trở lên trong vùng') + '</b> — ' + vpT('yêu cầu Lead các bưu cục kiểm tra và báo cáo phương án chấn chỉnh tài xế vi phạm.'),
+        action: 'document.getElementById(\'vp-drivers-card\')?.scrollIntoView({behavior:\'smooth\'})'
+      });
+    }
+    if (riderPct >= 25) {
+      actItems.push({
+        tag: vpT('ĐÀO TẠO RIDER'),
+        tagCls: 'vp-pill-badge-violet',
+        text: '<b>' + riderPct + '% ' + vpT('vụ do hành vi tài xế (Rider behavior)') + '</b> — ' + vpT('ưu tiên đôn đốc các Lead tăng cường đào tạo và giám sát quy trình giao hàng.'),
+        action: 'vpSetLevel1(\'Logistics\')'
+      });
+    }
+  } else {
+    // ── Khuyến nghị dành cho Cấp Toàn Miền / Giám Đốc / Admin / ROM ──
+    var worst = Object.keys(VP_AOM_RATE).sort(function(a,b){ return (VP_AOM_RATE[b].m9-VP_AOM_RATE[b].m8) - (VP_AOM_RATE[a].m9-VP_AOM_RATE[a].m8); })[0];
+    if (worst && VP_AOM_RATE[worst].m9 > VP_AOM_RATE[worst].m8) {
+      actItems.push({
+        tag: vpT('ĐIỀU HÀNH VÙNG'),
+        tagCls: 'vp-pill-badge-sky',
+        text: vpT('Làm việc trọng tâm với') + ' <b>' + _vpEsc(worst) + '</b> — ' + vpT('AOM có tỉ lệ khiếu nại tăng mạnh nhất miền') + ' (' + _vpPct(VP_AOM_RATE[worst].m8) + ' → ' + _vpPct(VP_AOM_RATE[worst].m9) + ').',
+        action: 'vpDrillDownAOM(\'' + _vpEscAttr(worst) + '\')'
+      });
+    }
+    if (repeatDriversList.length > 0) {
+      actItems.push({
+        tag: vpT('GIÁM SÁT TOÀN MIỀN'),
+        tagCls: 'vp-pill-badge-amber',
+        text: '<b>' + repeatDriversList.length + ' ' + vpT('tài xế lặp lại từ 3 vụ trở lên toàn miền') + '</b> — ' + vpT('chỉ đạo các AOM yêu cầu trưởng trạm xử lý nghiêm các trường hợp tái diễn.'),
+        action: 'document.getElementById(\'vp-drivers-card\')?.scrollIntoView({behavior:\'smooth\'})'
+      });
+    }
+    if (riderPct >= 25) {
+      actItems.push({
+        tag: vpT('ĐÀO TẠO RIDER'),
+        tagCls: 'vp-pill-badge-violet',
+        text: '<b>' + riderPct + '% ' + vpT('vụ do hành vi tài xế (Rider behavior)') + '</b> — ' + vpT('ưu tiên triển khai chương trình chấn chỉnh văn hóa giao hàng cho rider toàn miền.'),
+        action: 'vpSetLevel1(\'Logistics\')'
+      });
+    }
+  }
+
+  var actHtml = '';
+  if (actItems.length) {
+    actHtml = '<div class="vp-action-box shadow-xs">' +
+      '<div class="flex items-center justify-between mb-3 pb-2 border-b border-amber-300 dark:border-amber-800/60">' +
+        '<div class="vp-action-title">' +
+          '<div class="w-6 h-6 rounded-lg bg-amber-500 text-white flex items-center justify-center text-xs font-bold"><i class="fas fa-bolt"></i></div>' +
+          '<span>' + vpT('Khuyến nghị hành động dành cho cấp quản lý') + '</span>' +
+        '</div>' +
+        '<span class="text-[11px] text-amber-800 dark:text-amber-400 font-bold lowercase">' + vpT('Bấm thẻ để kích hoạt hành động') + '</span>' +
+      '</div>' +
+      '<div class="space-y-2">' +
+      actItems.map(function(item){
+        var clickAttr = item.action ? 'onclick="' + item.action + '"' : '';
+        return '<div class="vp-action-card flex items-start gap-2.5 text-xs text-slate-800 dark:text-slate-100 group" ' + clickAttr + '>' +
+          '<span class="vp-pill-badge ' + item.tagCls + ' shrink-0 mt-0.5">' + item.tag + '</span>' +
+          '<div class="flex-1 leading-relaxed font-medium">' + item.text + '</div>' +
+          '<i class="fas fa-arrow-right text-[10px] text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity mt-1"></i>' +
+          '</div>';
+      }).join('') +
+      '</div></div>';
+  }
+
+  el.innerHTML = trendHtml + cmpHtml + twoCol + actHtml;
+}
+
+function vpRenderMain(){
+  _vpEnsureStyles();
+  var titleEl = document.getElementById('vp-scope-title');
+  var subtitleEl = document.getElementById('vp-scope-subtitle');
+  var rows = _vpStationScoped();
+
+  if (titleEl) {
+    if (VP_selectedStation) titleEl.textContent = VP_selectedStation;
+    else if (VP_previewEntityLabel) titleEl.textContent = VP_previewEntityLabel;
+    else titleEl.textContent = vpT('Tất cả trạm');
+  }
+  if (subtitleEl) {
+    var stCount = new Set(rows.map(function(r){ return r.station_name; }).filter(Boolean)).size;
+    subtitleEl.textContent = stCount + ' ' + vpT('bưu cục') + ' · ' + rows.length.toLocaleString() + ' ' + vpT('vụ khiếu nại ghi nhận');
+  }
+
+  var bannerEl = document.getElementById('vp-scope-banner');
+  if (bannerEl) {
+    bannerEl.innerHTML = (VP_previewEntityLabel && !VP_selectedStation)
+      ? '<div class="vp-card p-3.5 mb-4 flex items-center justify-between gap-3 bg-sky-50 dark:bg-sky-950/30 border-sky-300 dark:border-sky-800 text-xs text-sky-900 dark:text-sky-200">' +
+        '  <div class="flex items-center gap-3">' +
+        '    <div class="w-8 h-8 rounded-xl bg-sky-500 text-white flex items-center justify-center font-bold text-sm shrink-0"><i class="fas fa-eye"></i></div>' +
+        '    <div>' +
+        '      <div class="font-bold text-sm text-sky-950 dark:text-sky-100">' + vpT('Đang xem đúng góc nhìn của') + ' <b>' + _vpEsc(VP_previewEntityLabel) + '</b></div>' +
+        '      <div class="text-[11px] text-sky-700 dark:text-sky-300 font-medium">' + vpT('Bảng dữ liệu và chỉ số tự động thu hẹp theo các trạm thuộc quyền quản lý.') + '</div>' +
+        '    </div>' +
+        '  </div>' +
+        '</div>'
+      : '';
+  }
+
+  try { vpRenderFreshness(); } catch(e){ console.error('vpRenderFreshness error:', e); }
+  try { vpRenderLevel1Tabs(); } catch(e){ console.error('vpRenderLevel1Tabs error:', e); }
+  try { vpRenderKPI(); } catch(e){ console.error('vpRenderKPI error:', e); }
+  try { vpRenderBigPicture(); } catch(e){ console.error('vpRenderBigPicture error:', e); }
+  try { vpRenderFilterBar(); } catch(e){ console.error('vpRenderFilterBar error:', e); }
+  try { vpRenderTable(); } catch(e){ console.error('vpRenderTable error:', e); }
+}
+
+function vpRenderTable(){
+  var rows = _vpFilteredRows();
+  var wrap = document.getElementById('vp-table-wrap');
+  var badgeEl = document.getElementById('vp-table-count-badge');
+  if (badgeEl) {
+    badgeEl.textContent = rows.length.toLocaleString() + ' ' + vpT('vụ việc');
+  }
+  if (!wrap) return;
+
+  if (!rows.length) {
+    wrap.innerHTML = '<div class="vp-empty-state text-slate-400">' +
+      '<div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center text-xl mb-1">' +
+      '  <i class="fas fa-folder-open"></i>' +
+      '</div>' +
+      '<div class="text-sm font-bold text-slate-700 dark:text-slate-200">' + vpT('Không có vụ việc nào phù hợp với bộ lọc hiện tại.') + '</div>' +
+      '<div class="text-xs text-slate-400">' + vpT('Vui lòng thử điều chỉnh bộ lọc hoặc xóa ô tìm kiếm.') + '</div>' +
+      '</div>';
+    return;
+  }
+
+  var totalPages = Math.max(1, Math.ceil(rows.length / VP_PAGE_SIZE));
+  if (VP_page > totalPages) VP_page = totalPages;
+  var start = (VP_page - 1) * VP_PAGE_SIZE;
+  var pageRows = rows.slice(start, start + VP_PAGE_SIZE);
+
+  var tableHtml = '<div class="overflow-x-auto"><table class="vp-table"><thead><tr>' +
+    '<th>Case ID</th>' +
+    '<th>' + vpT('Ngày tạo') + '</th>' +
+    '<th>' + vpT('Bưu cục') + '</th>' +
+    '<th>' + vpT('Cấp 1') + '</th>' +
+    '<th>' + vpT('Cấp 2') + '</th>' +
+    '<th>' + vpT('Cấp 3') + '</th>' +
+    '<th>' + vpT('Mã vận đơn') + '</th>' +
+    '<th>' + vpT('Tài xế') + '</th>' +
+    '<th class="text-center">' + vpT('Ticket') + '</th>' +
+    '</tr></thead><tbody>' +
+    pageRows.map(function(c){
+      return '<tr>' +
+        '<td class="font-mono font-bold text-slate-900 dark:text-slate-100 cursor-pointer hover:text-[#ee4d2d] transition-colors group" onclick="event.stopPropagation(); vpCopyCode(\'' + _vpEscAttr(c.case_id) + '\')" title="' + vpT('Click để copy Case ID') + '">' +
+          _vpEsc(c.case_id) + '<i class="fas fa-copy ml-1.5 opacity-0 group-hover:opacity-60 text-[10px] transition-opacity"></i>' +
+        '</td>' +
+        '<td class="text-slate-600 dark:text-slate-400 whitespace-nowrap">' +
+          _vpEsc(c.case_create_date) + (c.case_create_time && String(c.case_create_time).length >= 16 ? ' <span class="font-mono text-[10px] text-slate-400">' + _vpEsc(String(c.case_create_time).slice(11, 16)) + '</span>' : '') +
+        '</td>' +
+        '<td class="font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">' + _vpEsc(c.station_name) + '</td>' +
+        '<td><span class="vp-pill-badge vp-pill-badge-slate font-bold">' + _vpEsc(c.level1_case_category_name) + '</span></td>' +
+        '<td class="text-slate-700 dark:text-slate-300 max-w-xs truncate" title="' + _vpEscAttr(c.level2_case_category_name) + '">' + _vpEsc(c.level2_case_category_name) + '</td>' +
+        '<td class="text-slate-600 dark:text-slate-400 max-w-xs truncate" title="' + _vpEscAttr(c.level3_case_category_name) + '">' + _vpEsc(c.level3_case_category_name) + '</td>' +
+        '<td class="font-mono text-slate-700 dark:text-slate-300">' + (_vpEsc(c.spx_tracking_id) || '—') + '</td>' +
+        '<td class="font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">' + (_vpEsc(c.driver_name) || '—') + '</td>' +
+        '<td class="text-center">' +
+          (c.ticket_no
+            ? '<span class="vp-pill-badge vp-pill-badge-emerald font-mono font-bold">' + _vpEsc(c.ticket_no) + '</span>'
+            : '<span class="text-slate-400 font-bold">—</span>') +
+        '</td>' +
+      '</tr>';
+    }).join('') +
+    '</tbody></table></div>';
+
+  var pagHtml = '<div class="p-3.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/40">' +
+    '<div>' + vpT('Hiển thị') + ' <b>' + (start + 1) + ' - ' + Math.min(rows.length, start + VP_PAGE_SIZE) + '</b> ' + vpT('trên') + ' <b>' + rows.length.toLocaleString() + '</b> ' + vpT('vụ') + '</div>' +
+    '<div class="flex items-center gap-2">' +
+      '<button class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 disabled:opacity-40 disabled:pointer-events-none font-bold transition-colors cursor-pointer" ' + (VP_page <= 1 ? 'disabled' : '') + ' onclick="vpGoPage(' + (VP_page - 1) + ')">' +
+        '<i class="fas fa-chevron-left mr-1"></i>' + vpT('Trước') +
+      '</button>' +
+      '<span class="font-mono px-2 font-black text-slate-900 dark:text-slate-100">' + VP_page + ' / ' + totalPages + '</span>' +
+      '<button class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 disabled:opacity-40 disabled:pointer-events-none font-bold transition-colors cursor-pointer" ' + (VP_page >= totalPages ? 'disabled' : '') + ' onclick="vpGoPage(' + (VP_page + 1) + ')">' +
+        vpT('Sau') + '<i class="fas fa-chevron-right ml-1"></i>' +
+      '</button>' +
+    '</div>' +
+  '</div>';
+
+  wrap.innerHTML = tableHtml + pagHtml;
+}
+
+function vpGoPage(p){
+  VP_page = p;
+  vpRenderTable();
+}
+
+function vpCopyCode(text) {
+  var done = function() { if (typeof showToast === 'function') showToast('✓ ' + vpT('Đã copy') + ': ' + text, 'success'); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(function() { _vpCopyFallback(text, done); });
+  } else {
+    _vpCopyFallback(text, done);
+  }
+}
+
+function _vpCopyFallback(text, cb) {
+  if (typeof spxCopyFallback === 'function') spxCopyFallback(text, cb);
+}
+
+vpInit();
+
+</script>

@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "version": "1.0.0",
+    "hubName": "SPX HUB KRÔNG PẮC 02",
+    "createdAt": "2026-10-28T23:22:38.003Z",
+    "lastSaved": "2026-10-28T23:22:43.023Z"
+  },
+  "stations": {
+    "Krông Pắc 02": {
+      "stationName": "Krông Pắc 02",
+      "orders": [
+        {
+          "orderId": "TEST12345",
+          "status": "delivered",
+          "rank": 4
+        }
+      ],
+      "inboundLock": false,
+      "epoch": 1793229758016,
+      "updatedAt": "2026-10-28T23:22:38.016Z",
+      "updatedBy": "test@spxexpress.com",
+      "totalOrders": 1
+    }
+  },
+  "supplements": {},
+  "rescueOrders": [],
+  "resolvedOrders": {},
+  "riderPlans": {},
+  "kpiFailData": {},
+  "adminRoles": [
+    {
+      "email": "xuan.nguyenthanh01@spxexpress.com",
+      "level": 1,
+      "note": "Admin Tối Cao Failsafe"
+    }
+  ],
+  "userPermissions": [
+    {
+      "email": "xuan.nguyenthanh01@spxexpress.com",
+      "name": "Admin Xuân",
+      "role": "ADMIN_1",
+      "stations": [
+        "ALL",
+        "Krông Pắc 02",
+        "Buôn Ma Thuột",
+        "Ea Kar",
+        "Cư Kuin"
+      ]
+    }
+  ],
+  "triggerLogs": []
+}

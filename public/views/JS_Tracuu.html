@@ -1,0 +1,1208 @@
+<!-- ============================================================
+     JS_Tracuu.html — SPX HUB Ops | Đồng bộ giao diện Index v19
+     Giữ nguyên 100% logic JS, UI đồng bộ hoàn toàn với index.html
+     ============================================================ -->
+
+<style>
+/* ── Kế thừa design tokens từ index.html ── */
+#tc-root {
+  --spx:        #ee4d2d;
+  --spx-soft:   rgba(238,77,45,.10);
+  --spx-glow:   rgba(238,77,45,.20);
+  --hub-clr:    #10b981;
+  --hub-dim:    rgba(16,185,129,.10);
+  --amber:      #f59e0b;
+  --amber-dim:  rgba(245,158,11,.10);
+  --sky:        #0ea5e9;
+  --sky-dim:    rgba(14,165,233,.10);
+
+  /* Inherit from ops-shell / index vars */
+  --surface:    rgba(255,255,255,0.96);
+  --surface2:   #f1f5f9;
+  --border:     rgba(15,23,42,.08);
+  --border-hi:  rgba(15,23,42,.14);
+  --accent:     #ee4d2d;
+  --text:       #0f172a;
+  --muted:      #64748b;
+  --muted2:     #475569;
+
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Dark mode — kế thừa từ .dark của index */
+.dark #tc-root {
+  --surface:    rgba(15,23,42,.96);
+  --surface2:   #101a2b;
+  --border:     rgba(148,163,184,.14);
+  --border-hi:  rgba(148,163,184,.22);
+  --text:       #e2e8f0;
+  --muted:      #94a3b8;
+  --muted2:     #7a8fa8;
+}
+
+/* ── Scrollbar đồng bộ index ── */
+#tc-root ::-webkit-scrollbar { width:4px; height:4px; }
+#tc-root ::-webkit-scrollbar-track { background:transparent; }
+#tc-root ::-webkit-scrollbar-thumb { background:var(--border-hi); border-radius:99px; }
+
+/* ── Back button — dùng style ops-icon-btn của index ── */
+.tc-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  cursor: pointer;
+  transition: all .18s ease;
+  font-family: inherit;
+  box-shadow: 0 8px 18px rgba(15,23,42,.05);
+  margin-bottom: 32px;
+}
+.tc-back-btn:hover {
+  border-color: rgba(238,77,45,.35);
+  color: var(--spx);
+  background: rgba(238,77,45,.04);
+  box-shadow: 0 10px 24px rgba(238,77,45,.10);
+}
+.dark .tc-back-btn:hover { background: rgba(238,77,45,.10); }
+
+/* ── Header icon — ops-brand-mark style ── */
+.tc-header-icon {
+  width: 44px; height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f97316, #e11d48);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 18px;
+  box-shadow: 0 12px 24px rgba(238,77,45,.26);
+  flex-shrink: 0;
+}
+
+/* ── Section title bar — dùng ops-section-title ── */
+.tc-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.dark .tc-section-title { color: #cbd5e1; }
+.tc-section-title::before {
+  content: "";
+  width: 4px; height: 18px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #f97316, #e11d48);
+  flex-shrink: 0;
+}
+
+/* ── Mode toggle pill — ops style ── */
+.tc-mode-pill {
+  position: relative;
+  display: flex;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.6);
+}
+.dark .tc-mode-pill { box-shadow: none; }
+.tc-mode-pill button {
+  flex: 1;
+  padding: 9px 16px;
+  border: none;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all .22s cubic-bezier(.4,0,.2,1);
+  background: transparent;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.tc-mode-pill button.active {
+  background: linear-gradient(135deg, #f97316, #e11d48);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(238,77,45,.28);
+}
+
+/* ── Search wrapper — ops-search-wrap style ── */
+#tc-search-wrap { position: relative; z-index: 9999; }
+
+#tc-input {
+  width: 100%;
+  padding: 16px 130px 16px 52px;
+  font-size: 15px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s, background .2s;
+  background: var(--surface2);
+  color: var(--text);
+  font-family: inherit;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.75);
+}
+.dark #tc-input {
+  background: rgba(15,23,42,.92);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+}
+#tc-input:focus {
+  border-color: rgba(238,77,45,.55);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(238,77,45,.12), 0 10px 24px rgba(15,23,42,.08);
+}
+.dark #tc-input:focus { background: #0b1324; }
+#tc-input:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Search button — ops style */
+#tc-btn {
+  position: absolute;
+  right: 6px; top: 6px; bottom: 6px;
+  padding: 0 22px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f97316, #e11d48);
+  color: #fff; border: none;
+  font-size: 12px; font-weight: 900;
+  text-transform: uppercase; letter-spacing: .06em;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 7px;
+  transition: all .18s;
+  font-family: inherit;
+  box-shadow: 0 6px 16px rgba(238,77,45,.28);
+}
+#tc-btn:hover { opacity: .9; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(238,77,45,.36); }
+#tc-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+/* Clear btn */
+#tc-clear {
+  position: absolute; right: 108px; top: 50%;
+  transform: translateY(-50%);
+  background: none; border: none;
+  cursor: pointer; padding: 4px 8px;
+  color: var(--muted); font-size: 13px;
+  border-radius: 6px; transition: color .15s;
+}
+#tc-clear:hover { color: var(--text); }
+
+/* ── Autocomplete dropdown ── */
+#tc-ac-box {
+  position: absolute;
+  left: 0; right: 0;
+  top: calc(100% + 8px);
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  border-radius: 14px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 99999;
+  box-shadow: 0 24px 48px rgba(15,23,42,.16), 0 8px 16px rgba(15,23,42,.08);
+  display: none;
+}
+.dark #tc-ac-box { box-shadow: 0 24px 48px rgba(0,0,0,.36); }
+
+.tc-ac-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+  transition: background .12s;
+}
+.tc-ac-item:last-child { border-bottom: none; }
+.tc-ac-item:hover,
+.tc-ac-item.tc-focused { background: rgba(238,77,45,.06) !important; }
+
+/* ── Result cards — ops-card style ── */
+.tc-card {
+  background: var(--surface);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: 0 14px 34px rgba(15,23,42,.07);
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+  animation: tcSlideIn .25s ease both;
+  position: relative;
+  margin-bottom: 10px;
+}
+.dark .tc-card { box-shadow: 0 18px 42px rgba(0,0,0,.24); }
+.tc-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(238,77,45,.26);
+  box-shadow: 0 20px 42px rgba(15,23,42,.10);
+}
+
+/* Card accent bottom bar on hover */
+.tc-card::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(238,77,45,.65), rgba(14,165,233,.55));
+  opacity: 0;
+  transition: opacity .18s;
+}
+.tc-card:hover::after { opacity: 1; }
+
+/* Left accent bar */
+.tc-card-hub::before {
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, #e11d48, #f97316);
+}
+.tc-card-ward::before {
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, #10b981, #0ea5e9);
+}
+
+/* ── Email chip ── */
+.tc-email-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  cursor: pointer;
+  position: relative;
+  background: var(--surface2);
+  color: var(--muted2);
+  border: 1px solid var(--border);
+  transition: all .18s;
+  box-shadow: 0 2px 6px rgba(15,23,42,.04);
+}
+.tc-email-chip:hover {
+  background: rgba(16,185,129,.08);
+  border-color: #10b981;
+  color: #10b981;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(16,185,129,.15);
+}
+
+/* ── Copy tooltip ── */
+.tc-copy-tip {
+  position: absolute;
+  bottom: 120%; left: 50%;
+  transform: translateX(-50%) scale(.85) translateY(4px);
+  background: #0f172a;
+  color: #38bdf8;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 60;
+  transition: all .18s cubic-bezier(.34,1.56,.64,1);
+  font-family: inherit;
+  border: 1px solid rgba(56,189,248,.25);
+}
+.tc-copy-tip.show {
+  opacity: 1;
+  transform: translateX(-50%) scale(1) translateY(0);
+}
+
+/* ── Loading skeleton ── */
+.tc-skeleton {
+  background: linear-gradient(90deg, var(--surface2) 25%, var(--surface) 50%, var(--surface2) 75%);
+  background-size: 200% 100%;
+  animation: tcShimmer 1.4s infinite;
+  border-radius: 8px;
+}
+@keyframes tcShimmer { from{background-position:200% 0} to{background-position:-200% 0} }
+
+/* ── Hint cards — ops-mini-card style ── */
+.tc-hint-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 20px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 20px rgba(15,23,42,.05);
+  transition: transform .18s, border-color .18s, box-shadow .18s;
+  position: relative;
+  overflow: hidden;
+}
+.tc-hint-row::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(238,77,45,.55), rgba(14,165,233,.45));
+  opacity: 0;
+  transition: opacity .18s;
+}
+.tc-hint-row:hover { transform: translateY(-2px); border-color: rgba(238,77,45,.2); box-shadow: 0 14px 28px rgba(15,23,42,.09); }
+.tc-hint-row:hover::after { opacity: 1; }
+
+/* ── Animations ── */
+@keyframes tcSlideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes tcPop {
+  0%   { transform: scale(.94); opacity: 0; }
+  60%  { transform: scale(1.02); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes tcSpin { to { transform: rotate(360deg); } }
+@keyframes tcFadeDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Label dưới search ── */
+#tc-label-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+  margin-bottom: 22px;
+  animation: tcFadeDown .3s ease;
+}
+
+/* ── No result panel ── */
+.tc-no-result {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--muted);
+  margin-top: 4px;
+  box-shadow: 0 8px 24px rgba(15,23,42,.05);
+}
+
+/* ── Badge pills ── */
+.tc-badge {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .07em;
+  padding: 3px 10px;
+  border-radius: 99px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.tc-badge-hub {
+  background: rgba(238,77,45,.10);
+  color: #e11d48;
+  border: 1px solid rgba(238,77,45,.30);
+}
+.tc-badge-ward {
+  background: rgba(16,185,129,.10);
+  color: #10b981;
+  border: 1px solid rgba(16,185,129,.30);
+}
+
+/* ── Sort code pill ── */
+.tc-pill-code {
+  font-size: 10px; font-weight: 700;
+  padding: 2px 9px; border-radius: 99px;
+  background: var(--surface2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  font-family: 'Courier New', monospace;
+}
+.tc-pill-zone {
+  font-size: 10px; font-weight: 700;
+  padding: 2px 9px; border-radius: 99px;
+  background: var(--amber-dim);
+  color: var(--amber);
+  border: 1px solid rgba(245,158,11,.3);
+}
+
+/* ── Copy all button ── */
+.tc-copy-all-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  background: rgba(238,77,45,.08);
+  border: 1.5px solid var(--spx);
+  color: var(--spx);
+  font-size: 11px; font-weight: 900;
+  text-transform: uppercase; letter-spacing: .05em;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .15s;
+}
+.tc-copy-all-btn:hover {
+  background: linear-gradient(135deg, #f97316, #e11d48);
+  color: #fff; border-color: transparent;
+  box-shadow: 0 6px 16px rgba(238,77,45,.28);
+  transform: translateY(-1px);
+}
+</style>
+
+<!-- ════════════════════════════════════════════════════════
+     ROOT
+     ════════════════════════════════════════════════════════ -->
+<div id="tc-root" class="overflow-y-auto w-full h-full">
+  <div style="max-width:960px;margin:0 auto;padding:36px 40px 80px">
+
+    <!-- Header -->
+    <div style="margin-bottom:36px">
+      <div style="display:flex;align-items:center;gap:18px;margin-bottom:8px">
+        <div class="tc-header-icon" style="width:54px;height:54px;border-radius:16px;font-size:22px">
+          <i class="fas fa-map-location-dot"></i>
+        </div>
+        <div>
+          <div style="font-size:28px;font-weight:900;letter-spacing:-.8px;color:var(--text);line-height:1.1" data-i18n-ui="Tra Cứu HUB">Tra Cứu HUB</div>
+          <div style="font-size:13px;color:var(--muted);font-weight:500;margin-top:6px;display:flex;align-items:center;gap:7px">
+            <span style="width:7px;height:7px;border-radius:50%;background:var(--hub-clr);display:inline-block;flex-shrink:0"></span>
+            <span data-i18n-ui="Địa chỉ · Danh bạ · Email liên hệ">Địa chỉ · Danh bạ · Email liên hệ</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mode toggle pill -->
+      <div class="tc-mode-pill" id="tc-tabs" style="margin-top:24px;max-width:460px">
+        <button id="tc-tab-ward" class="active" onclick="tcSwitchMode('ward')" style="font-size:12px;padding:11px 24px">
+          <i class="fas fa-location-dot"></i>
+          <span data-i18n-ui="Xã / Phường">Xã / Phường</span>
+        </button>
+        <button id="tc-tab-hub" onclick="tcSwitchMode('hub')" style="font-size:12px;padding:11px 24px">
+          <i class="fas fa-warehouse"></i>
+          <span data-i18n-ui="Tên / Mã HUB">Tên / Mã HUB</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div id="tc-search-wrap" style="margin-bottom:8px">
+      <!-- Icon left -->
+      <div style="position:absolute;left:17px;top:50%;transform:translateY(-50%);pointer-events:none;z-index:1">
+        <i id="tc-search-icon" class="fas fa-search" style="font-size:16px;color:var(--muted)"></i>
+      </div>
+
+      <input
+        type="text" id="tc-input"
+        placeholder="Đang sẵn sàng..." data-i18n-placeholder="Đang sẵn sàng..."
+        oninput="tcOnInput()"
+        onkeydown="tcOnKeyDown(event)"
+        onfocus="tcOnFocus()"
+        autocomplete="off" />
+
+      <!-- Clear btn -->
+      <button id="tc-clear" onclick="tcClear()" style="display:none">
+        <i class="fas fa-times-circle"></i>
+      </button>
+
+      <!-- Search btn -->
+      <button id="tc-btn" onclick="tcSearch()">
+        <i class="fas fa-search"></i> <span data-i18n-ui="Tìm">Tìm</span>
+      </button>
+
+      <!-- Autocomplete dropdown -->
+      <div id="tc-ac-box"></div>
+    </div>
+
+    <!-- Label bên dưới ô tìm -->
+    <div id="tc-label-wrap">
+      <span style="width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;display:inline-block"></span>
+      <span id="tc-label" style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em" data-i18n-ui="Nhập tên Xã / Phường hoặc Sort Code">Nhập tên Xã / Phường hoặc Sort Code</span>
+    </div>
+
+    <!-- Loading -->
+    <div id="tc-loading" style="display:none;padding:48px 0;text-align:center">
+      <div style="
+        width:34px;height:34px;border-radius:50%;
+        border:3px solid var(--border);border-top-color:var(--spx);
+        animation:tcSpin .7s linear infinite;
+        margin:0 auto 14px"></div>
+      <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em" data-i18n-ui="Đang truy vấn dữ liệu...">Đang truy vấn dữ liệu...</div>
+    </div>
+
+    <!-- Hint khi chưa tìm -->
+    <div id="tc-hint">
+      <div class="tc-section-title" style="margin-bottom:12px" data-i18n-ui="Hướng dẫn tìm kiếm">Hướng dẫn tìm kiếm</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div class="tc-hint-row">
+          <div style="width:40px;height:40px;border-radius:12px;background:rgba(238,77,45,.08);border:1px solid rgba(238,77,45,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.65)">
+            <i class="fas fa-location-dot" style="font-size:16px;color:var(--spx)"></i>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:5px" data-i18n-ui="Xã / Phường">Xã / Phường</div>
+            <div style="font-size:12px;color:var(--muted);line-height:1.6" data-i18n-ui="Tìm theo địa chỉ xã/phường → tra HUB phụ trách + email">Tìm theo địa chỉ xã/phường → tra HUB phụ trách + email</div>
+          </div>
+        </div>
+        <div class="tc-hint-row">
+          <div style="width:40px;height:40px;border-radius:12px;background:var(--hub-dim);border:1px solid rgba(16,185,129,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.65)">
+            <i class="fas fa-warehouse" style="font-size:16px;color:var(--hub-clr)"></i>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:5px" data-i18n-ui="Tên / Mã HUB">Tên / Mã HUB</div>
+            <div style="font-size:12px;color:var(--muted);line-height:1.6" data-i18n-ui="Nhập tên hoặc mã HUB để lấy email liên hệ trực tiếp">Nhập tên hoặc mã HUB để lấy email liên hệ trực tiếp</div>
+          </div>
+        </div>
+      </div>
+      <!-- Tip bar đồng bộ ops-statusbar -->
+      <div style="
+        padding:14px 20px;border-radius:12px;
+        background:var(--surface);border:1px solid var(--border);
+        font-size:12px;color:var(--muted);
+        display:flex;align-items:center;gap:12px;
+        box-shadow:0 6px 16px rgba(15,23,42,.04)">
+        <div style="width:32px;height:32px;border-radius:10px;background:var(--amber-dim);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="fas fa-bolt" style="font-size:13px;color:var(--amber)"></i>
+        </div>
+        <span style="font-weight:600" data-i18n-ui="Hỗ trợ gõ tắt, thiếu dấu, sai chính tả — vẫn tìm được kết quả">Hỗ trợ gõ tắt, thiếu dấu, sai chính tả — vẫn tìm được kết quả</span>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="tc-results"></div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     SCRIPT — giữ nguyên 100% logic, không thay đổi gì
+     ════════════════════════════════════════════════════════ -->
+<script>
+// [MỚI] Wrapper i18n module-scoped.
+function tcT(viText){ return (typeof spxUiLabel === 'function') ? spxUiLabel(viText) : viText; }
+
+(function () {
+'use strict';
+
+/* ── NORM ─────────────────────────────────────────────── */
+function norm(s) {
+  if (!s) return '';
+  return s.toString()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/gi, 'd')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/* ── TRIE ─────────────────────────────────────────────── */
+function TrieNode() { this.children = Object.create(null); this.items = []; }
+function Trie()     { this.root = new TrieNode(); }
+
+Trie.prototype.insert = function(key, item) {
+  var tokens = key.split(' ').filter(Boolean);
+  for (var t = 0; t < tokens.length; t++) {
+    var node = this.root;
+    var tok  = tokens[t];
+    for (var i = 0; i < tok.length; i++) {
+      var ch = tok[i];
+      if (!node.children[ch]) node.children[ch] = new TrieNode();
+      node = node.children[ch];
+      if (node.items.length < 50 && node.items.indexOf(item) === -1) node.items.push(item);
+    }
+  }
+};
+
+Trie.prototype.search = function(prefix) {
+  var node = this.root;
+  for (var i = 0; i < prefix.length; i++) {
+    if (!node.children[prefix[i]]) return [];
+    node = node.children[prefix[i]];
+  }
+  return node.items;
+};
+
+/* ── STATE ────────────────────────────────────────────── */
+var TC = {
+  mode: 'ward',
+  wards: [], hubs: [],
+  wardReady: false, hubReady: false,
+  wardTrie: null,   hubTrie: null,
+  acIdx: -1,        acItems: [],
+  acTimer: null,
+  acRequestId: 0,   searchRequestId: 0,
+  showingHistory: false,
+  lastList: [], lastQuery: '', lastTruncated: false, activeProvince: ''
+};
+
+/* ── TRIE BUILD ───────────────────────────────────────── */
+function buildTrie(items) {
+  var trie = new Trie();
+  for (var i = 0; i < items.length; i++) {
+    if (items[i].clean)    trie.insert(items[i].clean,    items[i]);
+    if (items[i].subClean) trie.insert(items[i].subClean, items[i]);
+  }
+  return trie;
+}
+
+/* ── HISTORY ──────────────────────────────────────────── */
+var HIST_KEY = 'tc_history_v1';
+function histLoad()   { try { var r=sessionStorage.getItem(HIST_KEY); return r?JSON.parse(r):{ward:[],hub:[]}; } catch(e){return{ward:[],hub:[]};} }
+function histSave(d)  { try { sessionStorage.setItem(HIST_KEY,JSON.stringify(d)); } catch(e){} }
+function histGet(m)   { return histLoad()[m]||[]; }
+function histPush(m,q){ if(!q||q.length<2)return; var d=histLoad(),l=(d[m]||[]).filter(function(x){return norm(x)!==norm(q);}); l.unshift(q); if(l.length>8)l=l.slice(0,8); d[m]=l; histSave(d); }
+function histDel(m,q) { var d=histLoad(); d[m]=(d[m]||[]).filter(function(x){return norm(x)!==norm(q);}); histSave(d); }
+
+/* ── LOCK / UNLOCK ────────────────────────────────────── */
+function unlock() {
+  var inp = document.getElementById('tc-input');
+  var ico = document.getElementById('tc-search-icon');
+  if (!inp) return;
+  inp.disabled = false;
+  inp.placeholder = TC.mode === 'ward' ? "VD: Hòa An, bn ho, ea hleo..." : 'VD: 31NAN41, Anh Son 02 Hub...';
+  if (ico) { ico.className = 'fas fa-search'; ico.style.color = 'var(--muted)'; }
+}
+function lock(msg) {
+  var inp = document.getElementById('tc-input');
+  var ico = document.getElementById('tc-search-icon');
+  if (!inp) return;
+  inp.disabled = true;
+  inp.placeholder = msg || tcT('Đang tải...');
+  if (ico) { ico.className = 'fas fa-circle-notch fa-spin'; ico.style.color = 'var(--accent)'; }
+}
+function updateReadyState() {
+  var ready = TC.mode === 'hub' ? TC.hubReady : TC.wardReady;
+  if (ready) unlock();
+  else lock(TC.mode === 'ward' ? tcT('Đang tải gợi ý xã/phường...') : tcT('Đang tải gợi ý HUB...'));
+}
+
+/* ── INIT DATA ────────────────────────────────────────── */
+function initAutocompleteData() {
+  lock(tcT('Đang tải...'));
+  if (typeof google === 'undefined' || !google.script) {
+    TC.wardReady = TC.hubReady = true; unlock(); return;
+  }
+  google.script.run
+    .withSuccessHandler(function(data) {
+      TC.wards = (data||[]).map(function(item) {
+        var name=item&&item.ward?item.ward:'', station=item&&item.station?item.station:'', zoneId=item&&item.zoneId?item.zoneId:'';
+        return { type:'ward', name:name, sub:station, zoneId:zoneId, clean:norm(name), subClean:norm(station) };
+      });
+      TC.wardTrie = buildTrie(TC.wards);
+      TC.wardReady = true; updateReadyState();
+    })
+    .withFailureHandler(function(){ TC.wardReady=true; updateReadyState(); })
+    .tracuu_getAllWards();
+
+  google.script.run
+    .withSuccessHandler(function(data) {
+      TC.hubs = (data||[]).map(function(item) {
+        var name=item&&item.name?item.name:'', code=item&&item.code?item.code:'';
+        return { type:'hub', name:name, sub:code, clean:norm(name), subClean:norm(code) };
+      });
+      TC.hubTrie = buildTrie(TC.hubs);
+      TC.hubReady = true; updateReadyState();
+    })
+    .withFailureHandler(function(){ TC.hubReady=true; updateReadyState(); })
+    .tracuu_getAllHubs();
+}
+
+/* ── SWITCH MODE ──────────────────────────────────────── */
+window.tcSwitchMode = function(mode) {
+  TC.mode = mode;
+  var tw = document.getElementById('tc-tab-ward');
+  var th = document.getElementById('tc-tab-hub');
+  var lbl = document.getElementById('tc-label');
+  if (tw) { tw.classList.toggle('active', mode==='ward'); }
+  if (th) { th.classList.toggle('active', mode==='hub');  }
+  if (lbl) lbl.textContent = mode==='ward'
+    ? tcT('Nhập tên Xã / Phường hoặc Sort Code')
+    : tcT('Nhập tên HUB hoặc Mã HUB (FMS)');
+  window.tcClear();
+  updateReadyState();
+};
+
+/* ── FOCUS → history ─────────────────────────────────── */
+window.tcOnFocus = function() {
+  var inp = document.getElementById('tc-input');
+  if (!inp || inp.disabled || (inp.value||'').trim()) return;
+  showHistory();
+};
+
+/* ── ON INPUT ─────────────────────────────────────────── */
+window.tcOnInput = function() {
+  var inp = document.getElementById('tc-input');
+  var clr = document.getElementById('tc-clear');
+  var val = inp ? inp.value : '';
+  if (clr) clr.style.display = val ? 'block' : 'none';
+  TC.acIdx = -1;
+  if (TC.acTimer) { clearTimeout(TC.acTimer); TC.acTimer = null; }
+  if (!val || val.trim().length < 1) {
+    if (!val || !val.trim()) showHistory(); else window.tcCloseAC();
+    return;
+  }
+  TC.acTimer = setTimeout(function() { TC.acTimer=null; buildLocalAutocomplete(val.trim()); }, 80);
+};
+
+/* ── CLEAR ────────────────────────────────────────────── */
+window.tcClear = function() {
+  var inp=document.getElementById('tc-input'), clr=document.getElementById('tc-clear'),
+      res=document.getElementById('tc-results'), hint=document.getElementById('tc-hint'),
+      load=document.getElementById('tc-loading'), btn=document.getElementById('tc-btn');
+  if (TC.acTimer) { clearTimeout(TC.acTimer); TC.acTimer=null; }
+  TC.acRequestId++; TC.searchRequestId++;
+  TC.acItems=[]; TC.acIdx=-1; TC.showingHistory=false;
+  if (inp)  inp.value='';
+  if (clr)  clr.style.display='none';
+  if (res)  res.innerHTML='';
+  if (hint) hint.style.display='block';
+  if (load) load.style.display='none';
+  if (btn)  { btn.disabled=false; btn.innerHTML='<i class="fas fa-search"></i> Tìm'; }
+  window.tcCloseAC();
+};
+
+/* ── KEYBOARD ─────────────────────────────────────────── */
+window.tcOnKeyDown = function(e) {
+  var box=document.getElementById('tc-ac-box'), items=box?box.querySelectorAll('.tc-ac-item'):[];
+  if (!box||box.style.display==='none') { if(e.key==='Enter') window.tcSearch(); return; }
+  if (e.key==='ArrowDown')  { e.preventDefault(); TC.acIdx=Math.min(TC.acIdx+1,items.length-1); syncFocused(items); return; }
+  if (e.key==='ArrowUp')    { e.preventDefault(); TC.acIdx=Math.max(TC.acIdx-1,-1); syncFocused(items); return; }
+  if (e.key==='Enter')      { e.preventDefault(); TC.acIdx>=0&&items[TC.acIdx]?items[TC.acIdx].click():window.tcSearch(); return; }
+  if (e.key==='Escape')     window.tcCloseAC();
+};
+function syncFocused(items) {
+  items.forEach(function(it,i){ var a=i===TC.acIdx; it.classList.toggle('tc-focused',a); it.style.background=a?'rgba(238,77,45,.06)':''; });
+  if (TC.acIdx>=0&&items[TC.acIdx]) items[TC.acIdx].scrollIntoView({block:'nearest'});
+}
+
+/* ── TRIE AUTOCOMPLETE ────────────────────────────────── */
+function buildLocalAutocomplete(query) {
+  var nq=norm(query);
+  if (!nq||nq.length<1) { window.tcCloseAC(); return; }
+  var trie=TC.mode==='hub'?TC.hubTrie:TC.wardTrie, source=TC.mode==='hub'?TC.hubs:TC.wards;
+  if (!trie||!source.length) { window.tcCloseAC(); return; }
+  var tokens=nq.split(' ').filter(Boolean), candidates=null;
+  for (var t=0;t<tokens.length;t++) {
+    var found=trie.search(tokens[t]);
+    if (candidates===null) { candidates=found.slice(); }
+    else {
+      var fs=Object.create(null);
+      for (var f=0;f<found.length;f++) fs[found[f].name+'|'+found[f].sub]=true;
+      candidates=candidates.filter(function(it){ return fs[it.name+'|'+it.sub]; });
+    }
+    if (!candidates.length) break;
+  }
+  if (!candidates||!candidates.length) {
+    candidates=[];
+    for (var i=0;i<source.length;i++) {
+      var item=source[i];
+      if (item.clean.indexOf(nq)!==-1||item.subClean.indexOf(nq)!==-1) { candidates.push(item); if(candidates.length>=12)break; }
+    }
+  }
+  var seen=Object.create(null), items=[];
+  for (var j=0;j<candidates.length;j++) {
+    var key=candidates[j].name+'|'+candidates[j].sub;
+    if (!seen[key]) { seen[key]=true; items.push(candidates[j]); }
+    if (items.length>=8) break;
+  }
+  TC.showingHistory=false;
+  buildAC(query, items, false);
+}
+
+/* ── HISTORY DROPDOWN ─────────────────────────────────── */
+function showHistory() {
+  var list=histGet(TC.mode);
+  if (!list.length) { window.tcCloseAC(); return; }
+  TC.showingHistory=true;
+  var histItems=list.map(function(q){ return {type:'__history__',name:q,sub:'',clean:norm(q),subClean:''}; });
+  TC.acItems=histItems;
+  buildAC('',histItems,true);
+}
+
+/* ── BUILD AC DROPDOWN ────────────────────────────────── */
+function buildAC(query, items, isHistory) {
+  var box=document.getElementById('tc-ac-box');
+  if (!box) return;
+  TC.acItems=Array.isArray(items)?items:[];
+  if (!TC.acItems.length) { window.tcCloseAC(); return; }
+
+  var header='';
+  if (isHistory) {
+    header='<div style="padding:9px 14px 5px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)">'
+      +'<span style="display:flex;align-items:center;gap:6px"><i class="fas fa-clock-rotate-left" style="opacity:.5"></i> Tìm kiếm gần đây</span>'
+      +'<button onclick="tcClearAllHistory(event)" style="border:none;background:none;color:var(--muted);cursor:pointer;font-size:10px;font-weight:800;font-family:inherit;padding:2px 6px;border-radius:4px" onmouseover="this.style.color=\'#f87171\'" onmouseout="this.style.color=\'var(--muted)\'">Xóa tất cả</button>'
+      +'</div>';
+  }
+
+  box.innerHTML = header + TC.acItems.map(function(r,idx) {
+    var isHist=r.type==='__history__';
+    var icon = isHist ? 'fa-clock-rotate-left' : (r.type==='hub'?'fa-warehouse':'fa-location-dot');
+    var iconClr = isHist ? 'var(--muted)' : (r.type==='hub'?'var(--accent)':'var(--hub-clr)');
+    var badge = isHist ? '' : (r.type==='hub'
+      ? '<span class="tc-badge tc-badge-hub">HUB</span>'
+      : '<span class="tc-badge tc-badge-ward">Xã/Phường</span>');
+    var nameHtml = isHist
+      ? '<div style="font-weight:700;color:var(--text)">' + esc(r.name) + '</div>'
+      : '<div style="font-weight:700;color:var(--text)">' + highlight(r.name||'',query) + '</div>'
+        + (r.sub?'<div style="font-size:11px;color:var(--muted);margin-top:1px">'+esc(r.sub)+'</div>':'');
+    var delBtn = isHist
+      ? '<button onclick="tcDeleteHistory(event,'+idx+')" style="border:none;background:none;color:var(--muted);cursor:pointer;padding:4px 8px;font-size:11px;flex-shrink:0;font-family:inherit;border-radius:4px" onmouseover="this.style.color=\'#f87171\'" onmouseout="this.style.color=\'var(--muted)\'"><i class="fas fa-xmark"></i></button>'
+      : '';
+    return '<div class="tc-ac-item" data-idx="'+idx+'" onclick="tcSelectAC('+idx+')">'
+      +'<i class="fas '+icon+'" style="font-size:12px;color:'+iconClr+';flex-shrink:0;opacity:.8"></i>'
+      +'<div style="flex:1;min-width:0">'+nameHtml+'</div>'
+      +badge+delBtn+'</div>';
+  }).join('');
+
+  box.style.display='block';
+  var hint=document.getElementById('tc-hint');
+  if(hint)hint.style.display='none';
+}
+
+/* ── HISTORY DELETE ───────────────────────────────────── */
+window.tcDeleteHistory=function(e,idx){ e.stopPropagation(); var item=TC.acItems[idx]; if(!item)return; histDel(TC.mode,item.name); showHistory(); if(!histGet(TC.mode).length)window.tcCloseAC(); };
+window.tcClearAllHistory=function(e){ e.stopPropagation(); var d=histLoad(); d[TC.mode]=[]; histSave(d); window.tcCloseAC(); };
+
+/* ── SELECT AC ────────────────────────────────────────── */
+window.tcSelectAC=function(index) {
+  var item=TC.acItems[index], inp=document.getElementById('tc-input'), clr=document.getElementById('tc-clear');
+  if (!item||!inp) return;
+  if (TC.acTimer){clearTimeout(TC.acTimer);TC.acTimer=null;}
+  inp.value=item.name||'';
+  if (clr) clr.style.display=inp.value?'block':'none';
+  window.tcCloseAC(); TC.showingHistory=false;
+  setTimeout(function(){window.tcSearch();},0);
+};
+
+window.tcCloseAC=function(){
+  var box=document.getElementById('tc-ac-box');
+  if(box){box.style.display='none';box.innerHTML='';}
+  TC.acItems=[]; TC.acIdx=-1; TC.showingHistory=false;
+  var inp=document.getElementById('tc-input');
+  var res=document.getElementById('tc-results');
+  var hint=document.getElementById('tc-hint');
+  if(hint&&inp&&!(inp.value||'').trim()&&res&&!res.innerHTML.trim())
+    hint.style.display='block';
+};
+
+/* ── SEARCH ───────────────────────────────────────────── */
+window.tcSearch=function(){
+  var inp=document.getElementById('tc-input');
+  if (!inp) return;
+  var query=inp.value.trim();
+  if (!query) return;
+  if (TC.acTimer){clearTimeout(TC.acTimer);TC.acTimer=null;}
+  window.tcCloseAC();
+  histPush(TC.mode, query);
+
+  var btn=document.getElementById('tc-btn'), res=document.getElementById('tc-results'),
+      load=document.getElementById('tc-loading'), hint=document.getElementById('tc-hint');
+  var requestId=++TC.searchRequestId;
+
+  if (btn)  {btn.disabled=true; btn.innerHTML='<span style="display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:tcSpin .6s linear infinite"></span>';}
+  if (res)  res.innerHTML='';
+  if (load) load.style.display='block';
+  if (hint) hint.style.display='none';
+
+  if (typeof google==='undefined'||!google.script) {
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-search"></i> Tìm';}
+    if(load)load.style.display='none';
+    if(res)res.innerHTML=noResult(tcT('Không kết nối được tới hệ thống. Vui lòng tải lại trang.'));
+    return;
+  }
+
+  google.script.run
+    .withSuccessHandler(function(data){
+      if(requestId!==TC.searchRequestId)return;
+      if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-search"></i> Tìm';}
+      if(load)load.style.display='none';
+      render(data,query);
+    })
+    .withFailureHandler(function(err){
+      if(requestId!==TC.searchRequestId)return;
+      if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-search"></i> Tìm';}
+      if(load)load.style.display='none';
+      if(res)res.innerHTML=noResult('<strong>Lỗi:</strong> '+esc(err&&err.message?err.message:tcT('Không xác định')));
+    })
+    .search_searchSortCode_v2(query,TC.mode);
+};
+
+/* ── RENDER ───────────────────────────────────────────── */
+function render(data,query){
+  var res=document.getElementById('tc-results');
+  if(!res)return;
+  if(!data){res.innerHTML=noResult(tcT('Không nhận được phản hồi từ máy chủ.'));return;}
+  if(data.error||data.success===false){res.innerHTML=noResult('<strong>Lỗi máy chủ:</strong> '+esc(data.error||tcT('Không xác định')));return;}
+  var list=Array.isArray(data.data)?data.data:[];
+  if(!list.length){res.innerHTML=noResult('Không tìm thấy kết quả cho <strong style="color:var(--text)">"'+esc(query)+'"</strong>.<br>Hệ thống đã thử tự tra theo dữ liệu sáp nhập xã/phường nhưng chưa xác định được — có thể đây là địa chỉ vừa sáp nhập/đổi tên và chưa cập nhật trong hệ thống. Đã ghi nhận để đội vận hành bổ sung.<br>Thử gõ khác: <em>bn ho</em> thay vì <em>buôn hồ</em>');return;}
+
+  TC.lastList=list; TC.lastQuery=query; TC.lastTruncated=!!data.truncated; TC.activeProvince='';
+
+  res.innerHTML='';
+
+  // Đếm số kết quả theo tỉnh — tên xã/phường bị trùng giữa nhiều tỉnh
+  var provinceCounts={}, provinceOrder=[];
+  list.forEach(function(item){
+    if(item.type==='ward' && item.province){
+      if(!provinceCounts[item.province]){provinceCounts[item.province]=0; provinceOrder.push(item.province);}
+      provinceCounts[item.province]++;
+    }
+  });
+
+  if(provinceOrder.length>1){
+    var warn=document.createElement('div');
+    warn.style.cssText='display:flex;align-items:flex-start;gap:8px;padding:10px 14px;border-radius:10px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35);margin-bottom:10px;font-size:12.5px;color:#b45309;font-weight:600;line-height:1.6';
+    warn.innerHTML='<i class="fas fa-triangle-exclamation" style="margin-top:1px"></i>'
+      +'<span>Tên "'+esc(query)+'" trùng ở <strong>'+provinceOrder.length+' tỉnh/thành</strong>. Chọn đúng tỉnh bên dưới, hoặc kiểm tra kỹ cột <strong>Tỉnh/Thành</strong> trên mỗi thẻ trước khi dùng email.</span>';
+    res.appendChild(warn);
+
+    var chipLabel=document.createElement('div');
+    chipLabel.style.cssText='font-size:12px;color:var(--muted);font-weight:700;padding:0 2px 7px';
+    chipLabel.textContent='Bạn muốn tìm "'+query+'" của:';
+    res.appendChild(chipLabel);
+
+    var chipWrap=document.createElement('div');
+    chipWrap.id='tc-province-chips';
+    chipWrap.style.cssText='display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px';
+    chipWrap.innerHTML=provinceOrder.map(function(p){
+      return '<button type="button" class="tc-province-chip" data-province="'+esc(p)+'" onclick="tcFilterProvince(this)" '
+        +'style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:20px;border:1px solid rgba(139,92,246,.35);background:rgba(139,92,246,.08);color:#7c3aed;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s ease">'
+        +'<i class="fas fa-location-dot" style="font-size:9px"></i>'+esc(p)
+        +' <span style="opacity:.65;font-weight:600">('+provinceCounts[p]+')</span></button>';
+    }).join('');
+    res.appendChild(chipWrap);
+  }
+
+  renderCardList(list, '');
+}
+
+/* ── RENDER DANH SÁCH THẺ (lọc theo tỉnh nếu có, không cần gọi lại server) ── */
+function renderCardList(list, provinceFilter){
+  var res=document.getElementById('tc-results');
+  if(!res)return;
+  var old=document.getElementById('tc-card-list');
+  if(old) old.remove();
+
+  var filtered=provinceFilter?list.filter(function(it){return it.province===provinceFilter;}):list;
+
+  var wrap=document.createElement('div');
+  wrap.id='tc-card-list';
+
+  var ch=document.createElement('div');
+  ch.style.cssText='display:flex;align-items:center;gap:6px;padding:0 2px 12px';
+  ch.innerHTML='<span style="font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;display:flex;align-items:center;gap:6px">'
+    +'<i class="fas fa-list-ul" style="color:var(--accent);opacity:.7"></i>'
+    +'Tìm thấy <span style="color:var(--accent);font-size:13px">'+filtered.length+'</span> kết quả'
+    +(provinceFilter?' tại <strong style="color:var(--text)">'+esc(provinceFilter)+'</strong>':'')
+    +(TC.lastTruncated&&!provinceFilter?tcT(' (đã giới hạn)'):'')+'</span>';
+  wrap.appendChild(ch);
+
+  if(!filtered.length){
+    var emptyBox=document.createElement('div');
+    emptyBox.innerHTML=noResult(tcT('Không có kết quả nào thuộc tỉnh này.'));
+    wrap.appendChild(emptyBox);
+  } else {
+    filtered.forEach(function(item,idx){wrap.appendChild(buildCard(item,idx));});
+  }
+
+  if(TC.lastTruncated&&!provinceFilter){
+    var n=document.createElement('div');
+    n.style.cssText='font-size:11px;color:var(--muted);padding:8px 2px 0;text-align:center;font-weight:600';
+    n.textContent=tcT('Nhập cụ thể hơn để thu hẹp kết quả.');
+    wrap.appendChild(n);
+  }
+
+  res.appendChild(wrap);
+}
+
+/* ── CLICK CHỌN TỈNH ĐỂ LỌC NHANH ─────────────────────── */
+window.tcFilterProvince=function(btn){
+  var prov=btn.getAttribute('data-province');
+  var turningOff=(TC.activeProvince===prov);
+  TC.activeProvince=turningOff?'':prov;
+
+  var chips=document.querySelectorAll('.tc-province-chip');
+  chips.forEach(function(c){
+    var isActive=!turningOff&&c.getAttribute('data-province')===prov;
+    c.style.background=isActive?'#7c3aed':'rgba(139,92,246,.08)';
+    c.style.color=isActive?'#fff':'#7c3aed';
+    c.style.borderColor=isActive?'#7c3aed':'rgba(139,92,246,.35)';
+  });
+
+  renderCardList(TC.lastList, TC.activeProvince);
+};
+
+function noResult(msg){
+  return '<div class="tc-no-result">'
+    +'<div style="width:52px;height:52px;border-radius:14px;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.6)">'
+    +'<i class="fas fa-magnifying-glass-minus" style="font-size:22px;color:#f87171"></i></div>'
+    +'<p style="font-size:13px;line-height:1.8;font-weight:500">'+msg+'</p></div>';
+}
+
+/* ── BUILD CARD ───────────────────────────────────────── */
+function buildCard(item,idx){
+  var isHub=item.type==='hub';
+  var emails=(item.email||'').split(',').map(function(e){return e.trim();}).filter(Boolean);
+  var allMail=emails.join('; ');
+  var card=document.createElement('div');
+  card.className='tc-card '+(isHub?'tc-card-hub':'tc-card-ward');
+  card.style.cssText='animation-delay:'+(idx*0.05)+'s';
+
+  // Pills
+  var codePill=item.sortCode?'<span class="tc-pill-code">'+esc(item.sortCode)+'</span>':'';
+  var zonePill=item.zoneId?'<span class="tc-pill-zone">Zone '+esc(item.zoneId)+'</span>':'';
+  var provincePill=item.province?'<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:8px;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);color:#8b5cf6;font-size:11px;font-weight:700"><i class="fas fa-location-dot" style="font-size:9px"></i>'+esc(item.province)+'</span>':'';
+  var oldNewPill=(item.provinceOld&&item.provinceNew&&item.provinceOld!==item.provinceNew)?'<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:8px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#059669;font-size:11px;font-weight:700"><i class="fas fa-right-left" style="font-size:9px"></i>'+esc(item.provinceOld)+' \u2192 '+esc(item.provinceNew)+'</span>':'';
+  var wardLabel=item.wardName?'<div style="padding:10px 18px 0;font-size:11px;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:5px"><i class="fas fa-map-pin" style="font-size:9px;color:var(--amber)"></i>Kết quả cho: <span style="color:var(--amber);font-weight:800">'+esc(item.wardName)+'</span></div>':'';
+
+  var mergedNote=item.matchedFromOldName?'<div style="margin:8px 18px 0;padding:7px 10px;border-radius:8px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);font-size:11px;color:#3b82f6;font-weight:600;display:flex;align-items:center;gap:6px"><i class="fas fa-circle-info"></i>Đã tự động khớp từ địa chỉ bạn nhập "'+esc(item.matchedFromOldName)+'" (đối chiếu dữ liệu sáp nhập xã/phường) — kiểm tra kỹ thông tin bên dưới trước khi dùng</div>':'';
+
+  // [MỚI — theo yêu cầu trực tiếp "tra hub trả về địa chỉ, toạ độ luôn"] Chỉ
+  // hiện khi backend có dữ liệu (hub chưa có trong sheet Hub/SOC infor sẽ
+  // không hiện phần này, tránh hiện "-" gây rối mắt — cùng nguyên tắc đã áp
+  // dụng ở tab "Trạm quản lý" (Admin)).
+  var addressBlockHTML='';
+  if(isHub && (item.address || item.coord)){
+    var mapLinkHTML='';
+    if(item.coord){
+      var _mm=String(item.coord).match(/(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)/);
+      if(_mm) mapLinkHTML='<a href="https://www.google.com/maps?q='+_mm[1]+','+_mm[2]+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;color:#0ea5e9;font-weight:700;text-decoration:none;white-space:nowrap"><i class="fas fa-location-crosshairs"></i>Xem trên Google Maps</a>';
+    }
+    var locLine=[item.hubCity,item.hubProvince].filter(Boolean).join(', ');
+    addressBlockHTML='<div style="margin:0 18px;padding:9px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);display:flex;flex-direction:column;gap:5px">'
+      +(item.address?'<div style="display:flex;align-items:flex-start;gap:7px;font-size:12px;color:var(--text);font-weight:600"><i class="fas fa-map-pin" style="margin-top:2px;color:#e11d48;flex-shrink:0"></i><span>'+esc(item.address)+(locLine?' <span style="color:var(--muted);font-weight:500">('+esc(locLine)+')</span>':'')+'</span></div>':'')
+      +(item.parentHub?'<div style="font-size:11px;color:var(--muted);font-weight:600;padding-left:19px">Hub mẹ (MBH): <span style="color:var(--text)">'+esc(item.parentHub)+'</span></div>':'')
+      +(mapLinkHTML?'<div style="padding-left:19px;font-size:12px">'+mapLinkHTML+'</div>':'')
+    +'</div>';
+  } else if(isHub && item._hubInfoUnmatched && item._hubInfoSuggest && item._hubInfoSuggest.length){
+    // [MỚI — chẩn đoán] Không tìm thấy địa chỉ dù đã tự làm mới cache — gợi ý
+    // tên gần giống nhất trong sheet Hub/SOC infor, để biết ngay đây là lệch
+    // tên thật giữa 2 nguồn dữ liệu (Mail vs Hub/SOC infor), không phải lỗi.
+    addressBlockHTML='<div style="margin:0 18px;padding:8px 12px;border-radius:10px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);font-size:11px;color:#b45309;font-weight:600">'
+      +'<i class="fas fa-triangle-exclamation" style="margin-right:5px"></i>Chưa có địa chỉ cho tên này trong danh mục Hub — có thể là: '+item._hubInfoSuggest.map(esc).join(' / ')
+    +'</div>';
+  }
+
+  // Avatar
+  var avatarBg=isHub?'rgba(238,77,45,.08)':'rgba(16,185,129,.08)';
+  var avatarBorder=isHub?'rgba(238,77,45,.25)':'rgba(16,185,129,.25)';
+  var avatarClr=isHub?'#e11d48':'var(--hub-clr)';
+  var avatarIcon=isHub?'fa-warehouse':'fa-location-dot';
+  var badgeClass=isHub?'tc-badge tc-badge-hub':'tc-badge tc-badge-ward';
+  var badgeText=isHub?'HUB':'Xã / Phường';
+
+  // Emails
+  var emailsHTML='';
+  if(!emails.length){
+    emailsHTML='<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:12px;font-weight:600"><i class="fas fa-triangle-exclamation" style="color:var(--amber)"></i>Chưa có email — liên hệ quản lý</div>';
+  } else {
+    emailsHTML=emails.map(function(em){
+      return '<div class="tc-email-chip" onclick="tcCopyEmail(this,\''+esc(em)+'\')">'
+        +'<i class="fas fa-envelope" style="font-size:10px;opacity:.7"></i>'+esc(em)
+        +'<span class="tc-copy-tip">Đã copy!</span></div>';
+    }).join('');
+  }
+
+  var copyAllBtn=emails.length>1
+    ?'<div style="padding:0 18px 14px;display:flex;justify-content:flex-end">'
+      +'<button class="tc-copy-all-btn" onclick="tcCopyAll(this,\''+esc(allMail)+'\')">'
+      +'<i class="fas fa-copy"></i>Copy tất cả</button></div>':'';
+
+  card.innerHTML=
+    '<div style="padding:14px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)">'
+    +'<div style="width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;background:'+avatarBg+';color:'+avatarClr+';border:1px solid '+avatarBorder+';box-shadow:inset 0 1px 0 rgba(255,255,255,.65)"><i class="fas '+avatarIcon+'"></i></div>'
+    +'<div style="flex:1;min-width:0">'
+    +'<div style="font-size:14px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(item.station||'Không rõ')+'</div>'
+    +'<div style="display:flex;align-items:center;gap:5px;margin-top:5px;flex-wrap:wrap">'+codePill+zonePill+provincePill+oldNewPill+'</div>'
+    +'</div>'
+    +'<span class="'+badgeClass+'">'+badgeText+'</span>'
+    +'</div>'
+    +wardLabel
+    +mergedNote
+    +addressBlockHTML
+    +'<div style="padding:12px 18px;display:flex;flex-wrap:wrap;gap:7px">'+emailsHTML+'</div>'
+    +copyAllBtn;
+
+  return card;
+}
+
+/* ── COPY ─────────────────────────────────────────────── */
+window.tcCopyEmail=function(el,email){
+  clip(email,function(){
+    var tip=el.querySelector('.tc-copy-tip');
+    if(tip)tip.classList.add('show');
+    el.style.background='rgba(16,185,129,.12)'; el.style.color='var(--hub-clr)'; el.style.borderColor='var(--hub-clr)';
+    setTimeout(function(){
+      if(tip)tip.classList.remove('show');
+      el.style.background=''; el.style.color=''; el.style.borderColor='';
+    },1600);
+  });
+};
+window.tcCopyAll=function(btn,str){
+  clip(str,function(){
+    var orig=btn.innerHTML;
+    btn.innerHTML='<i class="fas fa-check"></i>Đã copy!';
+    btn.style.background='linear-gradient(135deg,#10b981,#0ea5e9)';
+    btn.style.color='#fff'; btn.style.borderColor='transparent';
+    setTimeout(function(){btn.innerHTML=orig;btn.style.background='';btn.style.color='';btn.style.borderColor='';},2000);
+  });
+};
+function clip(t,cb){if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(t).then(cb).catch(function(){fb(t,cb);});}else{fb(t,cb);}}
+function fb(t,cb){var x=document.createElement('textarea');x.value=t;document.body.appendChild(x);x.select();try{document.execCommand('copy');cb();}catch(e){}document.body.removeChild(x);}
+
+/* ── UTILS ────────────────────────────────────────────── */
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function highlight(text, query) {
+  try {
+    if (!text || !query) return esc(text || '');
+    var nText  = norm(text);
+    var tokens = norm(query).split(/\s+/).filter(Boolean);
+    if (!tokens.length) return esc(text);
+
+    var marks = new Array(text.length).fill(false);
+    for (var t = 0; t < tokens.length; t++) {
+      var tok = tokens[t];
+      var pos = 0;
+      while (pos <= nText.length - tok.length) {
+        if (nText.slice(pos, pos + tok.length) === tok) {
+          for (var k = pos; k < pos + tok.length; k++) marks[k] = true;
+          pos += tok.length;
+        } else { pos++; }
+      }
+    }
+
+    var result = '', inMark = false;
+    for (var i = 0; i < text.length; i++) {
+      var ch = esc(text[i]);
+      if (marks[i] && !inMark) { result += '<strong style="color:var(--accent)">'; inMark = true; }
+      if (!marks[i] && inMark) { result += '</strong>'; inMark = false; }
+      result += ch;
+    }
+    if (inMark) result += '</strong>';
+    return result;
+  } catch(e) { return esc(text || ''); }
+}
+
+/* ── GLOBAL EVENTS ────────────────────────────────────── */
+if (!window.__TC_DOC_EVENTS_BOUND__) {
+  document.addEventListener('click',function(e){
+    if(!e.target.closest('#tc-ac-box')&&!e.target.closest('#tc-input')&&window.tcCloseAC)window.tcCloseAC();
+  });
+  window.__TC_DOC_EVENTS_BOUND__=true;
+}
+
+/* ── BOOT ─────────────────────────────────────────────── */
+initAutocompleteData();
+
+})();
+</script>
