@@ -10,12 +10,13 @@ const fs = require('fs');
 const path = require('path');
 const db = require('./database');
 const triggerManager = require('./trigger_manager');
+const authManager = require('./auth_manager');
 
 const VIEWS_DIR = path.join(__dirname, '..', 'public', 'views');
 
 // Danh sách trạm mặc định tại khu vực Đắk Lắk & Tây Nguyên
 const DEFAULT_STATIONS = [
-  'Krông Pắc 02',
+  '45-DLK Krong Pak 02 Hub',
   'Buôn Ma Thuột',
   'Ea Kar',
   'Cư Kuin',
@@ -58,30 +59,36 @@ class RpcDispatcher {
   // 1. SYSTEM INITIALIZATION & PERMISSION
   // ============================================================
   checkUserAccess(userEmail = 'xuan.nguyenthanh01@spxexpress.com') {
+    const auth = authManager.getUser(userEmail);
     return {
       allowed: true,
-      email: userEmail,
-      name: 'Admin Xuân (SPX Krông Pắc 02)',
-      role: 'admin',
-      level: 1,
-      isRootAdmin: true,
-      stations: ['ALL', ...DEFAULT_STATIONS],
-      stationList: DEFAULT_STATIONS,
-      defaultStation: 'Krông Pắc 02',
-      serverMode: 'LOCAL_MULTI_USER'
+      email: auth.email,
+      name: auth.name,
+      role: auth.role,
+      level: auth.levelNum || auth.level || 1,
+      levelNum: auth.levelNum || auth.level || 1,
+      levelCode: auth.levelCode || auth.role,
+      levelLabel: auth.levelLabel || (auth.role === 'admin' ? 'Admin (L1)' : auth.role.toUpperCase()),
+      isRootAdmin: auth.isRootAdmin,
+      stations: auth.hubs,
+      stationList: auth.hubs.filter(h => h !== 'ALL'),
+      defaultStation: auth.defaultHub,
+      serverMode: 'RENDER_CONTAINER'
     };
   }
 
-  getCurrentUserAccess(userEmail) {
+  getCurrentUserAccess(userEmail = 'xuan.nguyenthanh01@spxexpress.com') {
     return this.checkUserAccess(userEmail);
   }
 
-  checkAnalyticsPermission(userEmail) {
+  checkAnalyticsPermission(userEmail = 'xuan.nguyenthanh01@spxexpress.com') {
+    const auth = authManager.getUser(userEmail);
+    const isRootAdmin = (auth.role === 'admin' || auth.isRootAdmin);
     return {
-      allowed: true,
-      email: userEmail,
-      role: 'ADMIN_1',
-      stations: ['ALL', ...DEFAULT_STATIONS]
+      allowed: isRootAdmin || auth.role === 'aom' || auth.role === 'sup',
+      email: auth.email,
+      role: auth.role.toUpperCase(),
+      stations: auth.hubs
     };
   }
 
@@ -94,14 +101,19 @@ class RpcDispatcher {
     };
   }
 
-  getModuleAccess() {
+  getModuleAccess(userEmail = 'xuan.nguyenthanh01@spxexpress.com') {
+    const auth = authManager.getUser(userEmail);
+    const isRootAdmin = (auth.role === 'admin' || auth.isRootAdmin);
     return {
-      role: 'admin',
-      level: 1,
-      email: 'xuan.nguyenthanh01@spxexpress.com',
-      hubs: ['ALL', ...DEFAULT_STATIONS],
-      defaultHub: 'Krông Pắc 02',
-      isRootAdmin: true,
+      role: auth.role,
+      level: auth.levelNum || auth.level || 1,
+      levelNum: auth.levelNum || auth.level || 1,
+      levelCode: auth.levelCode || auth.role,
+      levelLabel: auth.levelLabel || (auth.role === 'admin' ? 'Admin (L1)' : auth.role.toUpperCase()),
+      email: auth.email,
+      hubs: auth.hubs,
+      defaultHub: auth.defaultHub,
+      isRootAdmin: isRootAdmin,
       modules: {
         tondong: true,
         pick: true,
@@ -113,7 +125,7 @@ class RpcDispatcher {
         luong: true,
         tracuu: true,
         tailieu: true,
-        adminzone: true,
+        adminzone: isRootAdmin,
         analytics: true
       }
     };
@@ -127,7 +139,7 @@ class RpcDispatcher {
         level: 1,
         email: userEmail,
         hubs: ['ALL', ...DEFAULT_STATIONS],
-        defaultHub: 'Krông Pắc 02',
+        defaultHub: '45-DLK Krong Pak 02 Hub',
         isRootAdmin: true
       },
       analyticsPerm: {
@@ -614,7 +626,78 @@ class RpcDispatcher {
     return JSON.stringify({ success: true, scope: [] });
   }
 
-  spx_getOverviewPart() {
+    spx_getOverviewPart(part, hub, force, userEmail = 'xuan.nguyenthanh01@spxexpress.com') {
+    const auth = authManager.getUser(userEmail);
+    if (part === 'meta') {
+      return JSON.stringify({
+        success: true,
+        data: {
+          levelCode: auth.levelCode || auth.role,
+          levelNum: auth.levelNum || auth.level || 1,
+          levelLabel: auth.levelLabel || (auth.role === 'admin' ? 'Admin (L1)' : auth.role.toUpperCase()),
+          role: auth.role,
+          hubs: auth.hubs,
+          defaultHub: auth.defaultHub,
+          isRootAdmin: auth.isRootAdmin
+        }
+      });
+    }
+
+    if (part === 'aging') {
+      return JSON.stringify({
+        success: true,
+        data: {
+          total: 0,
+          hubs: {},
+          lastSync: new Date().toLocaleTimeString('vi-VN')
+        }
+      });
+    }
+
+    if (part === 'kpifail') {
+      return JSON.stringify({
+        success: true,
+        data: {
+          totalFail: 0,
+          rate: 99.2,
+          hubs: {}
+        }
+      });
+    }
+
+    if (part === 'rescue') {
+      return JSON.stringify({
+        success: true,
+        data: {
+          pendingCount: 0,
+          urgentCount: 0,
+          orders: []
+        }
+      });
+    }
+
+    if (part === 'violation') {
+      return JSON.stringify({
+        success: true,
+        data: {
+          totalViolations: 0,
+          pendingReview: 0,
+          cases: []
+        }
+      });
+    }
+
+    if (part === 'riderplan') {
+      return JSON.stringify({
+        success: true,
+        data: {
+          totalRiders: 25,
+          activeToday: 24,
+          planCompliance: 98
+        }
+      });
+    }
+
     return JSON.stringify({ success: true, data: {} });
   }
 

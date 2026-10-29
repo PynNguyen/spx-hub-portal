@@ -22,8 +22,17 @@
     }
   } catch (e) {}
 
-  var currentUserEmail = localStorage.getItem('spx_user_email') || 'xuan.nguyenthanh01@spxexpress.com';
-  var currentUserName = localStorage.getItem('spx_user_name') || 'Admin Xuân - Krông Pắc 02';
+    // Tự động thiết lập trạm mặc định nếu chưa chọn hoặc bị lỗi encoding
+  try {
+    var curHub = localStorage.getItem('spx_default_hub');
+    if (!curHub || curHub === 'Chưa chọn Hub' || curHub.includes('KrA') || curHub.includes('?')) {
+      localStorage.setItem('spx_default_hub', '45-DLK Krong Pak 02 Hub');
+      localStorage.setItem('SPX_selectedHub', '45-DLK Krong Pak 02 Hub');
+    }
+  } catch (e) {}
+
+  var currentUserEmail = (window.__SPX_CURRENT_USER__ && window.__SPX_CURRENT_USER__.email) || localStorage.getItem('spx_current_user_email') || localStorage.getItem('spx_user_email') || 'xuan.nguyenthanh01@spxexpress.com';
+  var currentUserName = (window.__SPX_CURRENT_USER__ && window.__SPX_CURRENT_USER__.name) || localStorage.getItem('spx_user_name') || 'Admin Xuân';
 
   window.SPX_LOCAL_ENV = {
     isLocal: true,

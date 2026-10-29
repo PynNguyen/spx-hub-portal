@@ -1,8 +1,8 @@
 /**
  * ============================================================
- * SPX HUB GOOGLE CLOUD RUN SERVER
- * Hệ thống điều hành 500 Hub toàn quốc chạy trên Cloud Container
- * Sẵn sàng 24/7/365, tự động co giãn (Auto-scaling), SLA 99.95%
+ * SPX HUB CLOUD SERVER (RENDER & CLOUD RUN CONTAINER)
+ * Hệ thống điều hành 500 Hub toàn quốc - FirstMile & LastMile
+ * Tích hợp Xác thực Google Workspace & Phân quyền đa cấp bậc
  * ============================================================
  */
 
@@ -14,6 +14,8 @@ const fs = require('fs');
 const db = require('./services/database');
 const triggerManager = require('./services/trigger_manager');
 const rpcDispatcher = require('./services/rpc_dispatcher');
+const authManager = require('./services/auth_manager');
+const sheetsService = require('./services/sheets_service');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -23,9 +25,13 @@ const VIEWS_DIR = path.join(__dirname, 'public', 'views');
 app.use(cors());
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
-
-// Static files (css, js, assets)
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Trợ giúp đọc Cookie đơn giản không cần package ngoài
+function getCookie(req, name) {
+  const match = (req.headers.cookie || '').match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+  return match ? decodeURIComponent(match[1]) : null;
+}
 
 /**
  * Health Check Endpoint
@@ -33,35 +39,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get('/_healthz', (req, res) => {
   res.status(200).send('OK');
 });
-
-const DEFAULT_STATIONS = [
-  'Krông Pắc 02', 'Buôn Ma Thuột', 'Ea Kar', 'Cư Kuin', 'Lắk',
-  'Ea H\'leo', 'Krông Bông', 'Krông Năng', 'Krông Búk', 'Buôn Đôn',
-  'Cư M\'gar', 'M\'Đrắk'
-];
-
-const BOOTSTRAP_DATA = {
-  email: 'xuan.nguyenthanh01@spxexpress.com',
-  name: 'Admin Xuân',
-  moduleAccess: {
-    role: 'admin',
-    level: 1,
-    email: 'xuan.nguyenthanh01@spxexpress.com',
-    hubs: ['ALL', ...DEFAULT_STATIONS],
-    defaultHub: 'Krông Pắc 02',
-    isRootAdmin: true
-  },
-  analyticsPerm: {
-    allowed: true,
-    stations: ['ALL', ...DEFAULT_STATIONS]
-  },
-  luongAccess: 'granted',
-  hubOrgDir: {
-    byHub: {},
-    supNames: ['Sup Tây Nguyên', 'Sup Đắk Lắk'],
-    aomNames: ['AOM Tây Nguyên']
-  }
-};
 
 const MOD_STATUS_DATA = {
   tondong: { status: 'normal' },
@@ -102,41 +79,41 @@ function renderTemplate(htmlContent, depth = 0) {
 }
 
 /**
- * Biên dịch toàn bộ các scriptlet Apps Script còn tồn đọng trong template
+ * Biên dịch toàn bộ các scriptlet Apps Script tương ứng với tài khoản đăng nhập
  */
-function processGasScriptlets(html) {
+function processGasScriptlets(html, user, bootstrapData) {
   // 1. BOOTSTRAP_JSON & MOD_STATUS_JSON
   html = html.replace(
-    /<\?!\s*\(typeof BOOTSTRAP_JSON[\s\S]*?\?>/g,
-    JSON.stringify(JSON.stringify(BOOTSTRAP_DATA))
+    /<\?![=]?\s*\(typeof BOOTSTRAP_JSON[\s\S]*?\?>/g,
+    JSON.stringify(bootstrapData)
   );
   html = html.replace(
-    /<\?!\s*\(typeof MOD_STATUS_JSON[\s\S]*?\?>/g,
-    JSON.stringify(JSON.stringify(MOD_STATUS_DATA))
+    /<\?![=]?\s*\(typeof MOD_STATUS_JSON[\s\S]*?\?>/g,
+    JSON.stringify(MOD_STATUS_DATA)
   );
 
   // 2. Hub header label
   html = html.replace(
     /<\?!=\s*\(function\(\)\{[\s\S]*?return hub \|\| 'Chưa chọn Hub';[\s\S]*?\}\)\(\)\s*\?>/g,
-    'Krông Pắc 02'
+    user.defaultHub || '45-DLK Krong Pak 02 Hub'
   );
 
-  // 3. Admin preview wrap
+  // 3. Admin preview wrap (hiển thị nút chọn role cho Admin)
   html = html.replace(
     /<\?=\s*\(typeof BOOTSTRAP_DATA[\s\S]*?role === 'admin'\)\s*\?\s*''\s*:\s*'hidden'\s*\?>/g,
-    ''
+    (user.role === 'admin' || user.isRootAdmin) ? '' : 'hidden'
   );
 
   // 4. Current user email display
   html = html.replace(
     /<\?=\s*typeof Session !== 'undefined'[\s\S]*?: 'ADMIN XUÂN'\s*\?>/g,
-    'ADMIN XUÂN'
+    user.name || user.email.split('@')[0].toUpperCase()
   );
 
   // 5. Current user level display
   html = html.replace(
     /<\?=\s*\(typeof BOOTSTRAP_DATA[\s\S]*?role === 'admin' \? 'ADMIN'[\s\S]*?: 'Đang tải\.\.\.'\s*\?>/g,
-    'ADMIN'
+    user.levelLabel || (user.role === 'admin' ? 'ADMIN' : user.role.toUpperCase())
   );
 
   // Dọn dẹp an toàn các thẻ <?...?> còn sót lại
@@ -145,8 +122,45 @@ function processGasScriptlets(html) {
   return html;
 }
 
+// ============================================================
+// ROUTES: AUTHENTICATION (ĐĂNG NHẬP GOOGLE WORKSPACE)
+// ============================================================
+
+app.get('/login', (req, res) => {
+  const loginPath = path.join(VIEWS_DIR, 'login.html');
+  if (fs.existsSync(loginPath)) {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.sendFile(loginPath);
+  }
+  res.status(404).send('Không tìm thấy file login.html');
+});
+
+app.post('/api/auth/login', (req, res) => {
+  const { email, role } = req.body;
+  const result = authManager.authenticate(email, role);
+
+  if (!result.success) {
+    return res.status(401).json(result);
+  }
+
+  // Đặt cookie phiên làm việc (7 ngày)
+  res.setHeader('Set-Cookie', `spx_user_email=${encodeURIComponent(result.user.email)}; Path=/; Max-Age=604800; SameSite=Lax`);
+  res.json(result);
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  res.setHeader('Set-Cookie', 'spx_user_email=; Path=/; Max-Age=0');
+  res.json({ success: true, message: 'Đã đăng xuất' });
+});
+
+app.get('/api/auth/me', (req, res) => {
+  const email = req.query.user || getCookie(req, 'spx_user_email') || 'xuan.nguyenthanh01@spxexpress.com';
+  const user = authManager.getUser(email);
+  res.json({ success: true, user });
+});
+
 /**
- * Route Trang Chủ: Trả về index.html đã được compile và tích hợp RPC Bridge
+ * Route Trang Chủ: Trả về index.html đã được compile và tích hợp RPC Bridge + Auth
  */
 app.get('/', (req, res) => {
   try {
@@ -155,17 +169,29 @@ app.get('/', (req, res) => {
       return res.status(404).send('Không tìm thấy file index.html trong public/views/');
     }
 
+    // Xác định người dùng từ Cookie / Query / Header
+    const userEmail = req.query.user || getCookie(req, 'spx_user_email') || req.headers['x-spx-user-email'] || 'xuan.nguyenthanh01@spxexpress.com';
+    const user = authManager.getUser(userEmail);
+    const bootstrapData = authManager.generateBootstrapData(user);
+
     let html = fs.readFileSync(indexPath, 'utf8');
 
     // 1. Biên dịch các partial view nhúng tĩnh (TailwindBuild, JS_FMS, JS_Pick...)
     html = renderTemplate(html);
 
-    // 2. Giải quyết triệt để các thẻ Apps Script scriptlet
-    html = processGasScriptlets(html);
+    // 2. Biên dịch dữ liệu phân quyền người dùng
+    html = processGasScriptlets(html, user, bootstrapData);
 
-    // 3. Tiêm bộ RPC Bridge vào phần đầu <head> để bắt các lệnh google.script.run
+    // 3. Tiêm bộ RPC Bridge & Thanh công cụ Đăng xuất / Chuyển tài khoản
     const bridgeScript = `
-    <!-- SPX Hub Multi-Hub RPC Bridge -->
+    <!-- SPX Hub Multi-Hub RPC Bridge & Authentication Bar -->
+    <script>
+      window.__SPX_CURRENT_USER__ = ${JSON.stringify(user)};
+      localStorage.setItem('spx_current_user_email', ${JSON.stringify(user.email)});
+      if (!localStorage.getItem('spx_default_hub')) {
+        localStorage.setItem('spx_default_hub', ${JSON.stringify(user.defaultHub)});
+      }
+    </script>
     <script src="/js/spx_rpc_bridge.js"></script>
     `;
 
@@ -173,6 +199,20 @@ app.get('/', (req, res) => {
       html = html.replace('<head>', '<head>' + bridgeScript);
     } else {
       html = bridgeScript + html;
+    }
+
+    // Tiêm nút Đăng Xuất & Chuyển Tài Khoản vào Header người dùng
+    const userAccountAction = `
+    <div id="spxAuthActionWrap" class="flex items-center gap-1.5 ml-2">
+      <a href="/login" title="Chuyển tài khoản Google Workspace" class="px-2 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 text-[#ee4d2d] text-[10px] font-extrabold flex items-center gap-1 transition-all border border-orange-200 shadow-xs">
+        <i class="fas fa-right-from-bracket"></i> <span>Đổi Nick</span>
+      </a>
+    </div>
+    `;
+
+    if (html.includes('id="spx-userinfo-wrap"')) {
+      html = html.replace('id="spx-userinfo-wrap"', 'id="spx-userinfo-wrap" data-auth="ready"');
+      html = html.replace('</div>\n      <div class="w-10 h-10', '</div>' + userAccountAction + '\n      <div class="w-10 h-10');
     }
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -189,7 +229,7 @@ app.get('/', (req, res) => {
 app.post('/api/rpc/:functionName', async (req, res) => {
   const functionName = req.params.functionName;
   const args = req.body.args || [];
-  const userEmail = req.headers['x-spx-user-email'] || req.body.user || 'xuan.nguyenthanh01@spxexpress.com';
+  const userEmail = req.headers['x-spx-user-email'] || getCookie(req, 'spx_user_email') || req.body.user || 'xuan.nguyenthanh01@spxexpress.com';
 
   try {
     const result = await rpcDispatcher.dispatch(functionName, args, userEmail);
@@ -201,7 +241,7 @@ app.post('/api/rpc/:functionName', async (req, res) => {
 });
 
 /**
- * API Cloud Scheduler Webhook: Cho phép kích hoạt Trigger định kỳ
+ * API Cloud Scheduler Webhook: Kích hoạt Trigger định kỳ
  */
 app.post('/api/triggers/:triggerName', async (req, res) => {
   const triggerName = req.params.triggerName;

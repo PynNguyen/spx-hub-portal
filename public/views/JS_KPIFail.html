@@ -45,9 +45,39 @@
   .kfn-kv{display:grid;grid-template-columns:150px 1fr;gap:6px 12px;font-size:12.5px;margin:10px 0} .kfn-kv span:nth-child(odd){color:var(--kmut)}
   .kfn-ta{width:100%;min-height:90px;border:1px solid var(--kline);background:var(--kcard);color:var(--ktext);border-radius:10px;padding:9px;font-size:13px;resize:vertical}
   .kfn-toast{position:fixed;top:22px;left:50%;transform:translateX(-50%);padding:9px 16px;border-radius:12px;color:#fff;font-weight:800;font-size:12px;z-index:10000;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+  @keyframes kfnShimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+  .kfn-skeleton { background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%); background-size: 200% 100%; animation: kfnShimmer 1.5s infinite; border-radius: 6px; }
+  .dark .kfn-skeleton { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); }
+  .kfn-loading-panel { display: flex; flex-direction: column; gap: 16px; padding: 4px 0 24px; }
+  .kfn-loading-status { display: flex; align-items: center; gap: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 16px; color: var(--kmut); font-size: 13px; font-weight: 500; }
+  .dark .kfn-loading-status { background: #1e293b; border-color: #334155; color: #94a3b8; }
+  .kfn-loading-spinner { width: 16px; height: 16px; border: 2px solid #cbd5e1; border-top-color: var(--kp, #ee4d2d); border-radius: 50%; animation: kfnSpin 0.8s linear infinite; flex-shrink: 0; }
+  @keyframes kfnSpin { to { transform: rotate(360deg); } }
 </style>
 
-<div class="kfn-scroll" data-scroll-root="true" id="kfn-body"><div class="kfn-load">…</div></div>
+<div class="kfn-scroll" data-scroll-root="true" id="kfn-body">
+  <div class="kfn-loading-panel">
+    <div class="kfn-loading-status"><div class="kfn-loading-spinner"></div><span>Đang tải và tổng hợp dữ liệu KPI (FM, LM, SOP, Sản lượng)…</span></div>
+    <div class="kfn-card" style="padding:16px 20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div><div class="kfn-skeleton" style="height:14px;width:180px;margin-bottom:8px"></div><div class="kfn-skeleton" style="height:24px;width:320px"></div></div>
+        <div class="kfn-skeleton" style="height:32px;width:220px;border-radius:20px"></div>
+      </div>
+      <div class="kfn-wrap"><table class="kfn-tbl"><thead><tr>
+        <th class="nm"><div class="kfn-skeleton" style="height:12px;width:80px"></div></th>
+        <th><div class="kfn-skeleton" style="height:12px;width:60px"></div></th>
+        <th><div class="kfn-skeleton" style="height:12px;width:70px"></div></th>
+        <th><div class="kfn-skeleton" style="height:12px;width:50px"></div></th>
+        <th><div class="kfn-skeleton" style="height:12px;width:50px"></div></th>
+        <th><div class="kfn-skeleton" style="height:12px;width:50px"></div></th>
+      </tr></thead><tbody>
+        <tr><td class="nm"><div class="kfn-skeleton" style="height:14px;width:120px"></div></td><td><div class="kfn-skeleton" style="height:14px;width:50px;margin:auto"></div></td><td><div class="kfn-skeleton" style="height:14px;width:60px;margin:auto"></div></td><td><div class="kfn-skeleton" style="height:14px;width:45px;margin:auto"></div></td><td><div class="kfn-skeleton" style="height:14px;width:45px;margin:auto"></div></td><td><div class="kfn-skeleton" style="height:14px;width:45px;margin:auto"></div></td></tr>
+        <tr><td class="nm"><div class="kfn-skeleton" style="height:14px;width:120px"></div></td><td><div class="kfn-skeleton" style="height:14px;width:50px;margin:auto"></div></td><td><div class="kfn-skeleton" style="height:14px;width:60px;margin:auto"></div></td><td><div class="kfn-skeleton" style="height:14px;width:45px;margin:auto"></div></td><td><div class="kfn-skeleton" style="height:14px;width:45px;margin:auto"></div></td><td><div class="kfn-skeleton" style="height:14px;width:45px;margin:auto"></div></td></tr>
+        <tr><td class="nm"><div class="kfn-skeleton" style="height:14px;width:120px"></div></td><td><div class="kfn-skeleton" style="height:14px;width:50px;margin:auto"></div></td><td><div class="kfn-skeleton" style="height:14px;width:60px;margin:auto"></div></td><td><div class="kfn-skeleton" style="height:14px;width:45px;margin:auto"></div></td><td><div class="kfn-skeleton" style="height:14px;width:45px;margin:auto"></div></td><td><div class="kfn-skeleton" style="height:14px;width:45px;margin:auto"></div></td></tr>
+      </tbody></table></div>
+    </div>
+  </div>
+</div>
 <div id="kfn-modal-host"></div>
 <div id="kfn-day-host"></div>
 
@@ -81,10 +111,11 @@ var KFN_D = {
   tTitle: ['Chỉ số theo {0} — {1}', 'KPI by {0} — {1}'], lAom: ['AOM', 'AOM'], lSup: ['SUP', 'SUP'], lHub: ['Hub', 'Hub'],
   full: ['Bảng đầy đủ', 'Full table'], matrix: ['Ma trận theo thời gian', 'Matrix over time'], gDate: ['Ngày', 'Date'],
   latest: ['(mới nhất)', '(latest)'], mtdP: ['(lũy kế)', '(MTD)'], wk: ['Tuần {0}', 'W{0}'],
-  sName: ['Sắp xếp: Tên A–Z', 'Sort: Name A–Z'], sFm: ['Sắp xếp: % FM thấp → cao', 'Sort: % FM low → high'], sLm: ['Sắp xếp: % LM thấp → cao', 'Sort: % LM low → high'], sSop: ['Sắp xếp: Sai SOP cao → thấp', 'Sort: Wrong SOP high → low'], sVol: ['Sắp xếp: Sản lượng cao → thấp', 'Sort: Volume high → low'],
+  sName: ['Sắp xếp: Tên A–Z', 'Sort: Name A–Z'], sFm: ['Sắp xếp: % FM thấp → cao', 'Sort: % FM low → high'], sLm: ['Sắp xếp: % LM thấp → cao', 'Sort: % LM low → high'], sSop: ['Sắp xếp: Sai SOP cao → thấp', 'Sort: Wrong SOP high → low'], sVol: ['Sắp xếp: Sản lượng cao → thấp', 'Sort: Volume high → low'], sSuc: ['Sắp xếp: % Giao TC thấp → cao', 'Sort: % Success low → high'],
   search: ['Tìm đơn vị…', 'Search unit…'], totRegion: ['TỔNG KHU VỰC', 'REGION TOTAL'], totCluster: ['TỔNG CỤM', 'CLUSTER TOTAL'],
   cFm: ['% FM đúng hạn', '% FM on-time'], cLm: ['% LM đúng hạn', '% LM on-time'], tgt: ['mục tiêu {0}', 'target {0}'], kpiLe: ['mục tiêu ≤ {0}', 'target ≤ {0}'], orders: ['{0} đơn', '{0} orders'],
-  cVol: ['Sản lượng đơn', 'Shipment volume'], cVolS: ['Được giao', 'Assigned'], cSuc: ['% Giao thành công', '% Delivery success'], cSucS: ['Đã giao / Được giao', 'Delivered / Assigned'],
+  cVol: ['Sản lượng đơn', 'Shipment volume'], cVolS: ['Được giao', 'Assigned'], cVolWithMtd: ['Được giao · LK tháng', 'Assigned · MTD'],
+  cSuc: ['% Giao thành công', '% Delivery success'], cSucS: ['Đã giao / Được giao', 'Delivered / Assigned'], cSucWithMtd: ['Đã giao / Được giao · LK tháng', 'Delivered / Assigned · MTD'],
   noUnit: ['Không có đơn vị phù hợp.', 'No matching unit.'], showing: ['Hiển thị {0}/{1} {2} · bấm vào một dòng để xem cấp dưới', 'Showing {0}/{1} {2} · click a row to drill down'], showing2: ['Hiển thị {0}/{1} {2}', 'Showing {0}/{1} {2}'],
   lag: ['Một số chỉ số chưa có số liệu mới nhất: {0}. Các ô thiếu hiển thị “—”.', 'Some indicators have no latest data yet: {0}. Missing cells show “—”.'], lagTo: ['{0} đến {1}', '{0} up to {1}'],
   partial: ['Đang bổ sung dữ liệu lịch sử (tuần/tháng cũ) — các kỳ cũ có thể hiển thị “—” cho tới khi hoàn tất, trang sẽ tự cập nhật.', 'Historical data is still loading — older periods may show “—” until done; the page will refresh automatically.'],
@@ -134,7 +165,7 @@ function kfnCatLabel(c) { return kfnT(c === 'FM' ? 'fFm' : c === 'LM' ? 'fLm' : 
 
 var KFN_T = { fm: 0.99, lm: 0.99, sop: 0.005 };    // mặc định; máy chủ luôn gửi mục tiêu hiện hành qua bundle.targets
 var KFN_PAGE = 25, KFN_DAYPAGE = 50;
-var KFN = { bundle: null, sel: { aom: '', sup: '', hub: '' }, drill: { aom: '', sup: '', hub: '' }, retry: 0, kGran: 'day', tGran: 'day', tPeriod: 0, tView: 'full', tMetric: 'fm',
+var KFN = { bundle: null, sel: { aom: '', sup: '', hub: '' }, drill: { aom: '', sup: '', hub: '' }, retry: 0, kGran: 'day', tGran: 'mtd', tPeriod: 0, tView: 'full', tMetric: 'fm',
             sort: 'name', q: '', watch: false, modal: null,
             rec: { hub: '', loading: false, list: null, err: '', from: '', to: '', cat: 'ALL', type: '', rider: '', q: '', page: 1 },
             day: { open: false, date: '', cat: 'ALL', q: '', page: 1, loading: false, err: '', data: null, local: false, seq: 0 } };
@@ -257,7 +288,7 @@ function kfnRenderK() {
     { k: 'lm', lab: kfnT('rLm'), sub: '', tgt: kfnTgt(KFN_T.lm), f: function (m) { return kfnPct(m.lm); }, cat: 'LM' },
     { k: 'sop', lab: kfnT('rSop'), sub: kfnT('rSopS'), tgt: '≤ ' + kfnTgt(KFN_T.sop), f: function (m) { return kfnPct(m.sop, 2); }, cat: 'SOP' },
     { k: 'suc', lab: kfnT('rSuc'), sub: kfnT('rSucS'), tgt: '—', f: function (m) { return kfnPct(m.suc); } },
-    { k: 'vol', lab: kfnT('rVol'), sub: kfnT('rVolS'), tgt: '—', f: function (m) { return kfnInt(m.vol); } }
+    { k: 'vol', lab: kfnT('rVol'), sub: kfnT('rVolS'), tgt: '—', f: function (m) { return (m.vol > 0 || m.suc != null) ? kfnInt(m.vol) : '—'; } }
   ];
   var head = '<tr><th class="nm">' + kfnT('colKpi') + '</th><th>' + kfnT('colTarget') + '</th>' + cols.map(function (c) {
     return c.date ? '<th class="clk" title="' + kfnEsc(kfnT('clkHint')) + '" data-kfn-act="dayfail" data-kfn-v="' + c.date + '|ALL">' + kfnEsc(c.h) + '<small>' + kfnEsc(c.sub) + '</small></th>' : '<th>' + kfnEsc(c.h) + '<small>' + kfnEsc(c.sub) + '</small></th>';
@@ -284,56 +315,173 @@ function kfnChildren() {
   hubs.forEach(function (h) { var k = h[keyIx]; if (!groups[k]) { groups[k] = []; order.push(k); } groups[k].push(h); });
   return { label: kfnT(lv === 'rom' ? 'lAom' : lv === 'aom' ? 'lSup' : 'lHub'), names: order, groups: groups };
 }
+function kfnRenderSkeleton() {
+  return '<div class="kfn-loading-panel">' +
+    '<div class="kfn-loading-status"><div class="kfn-loading-spinner"></div><span>' + kfnT('loading') + '</span></div>' +
+    '<div class="kfn-card" style="padding:16px 20px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">' +
+        '<div><div class="kfn-skeleton" style="height:14px;width:180px;margin-bottom:8px"></div><div class="kfn-skeleton" style="height:24px;width:320px"></div></div>' +
+        '<div class="kfn-skeleton" style="height:32px;width:220px;border-radius:20px"></div>' +
+      '</div>' +
+      '<div class="kfn-wrap"><table class="kfn-tbl"><thead><tr>' +
+        '<th class="nm"><div class="kfn-skeleton" style="height:12px;width:80px"></div></th>' +
+        '<th><div class="kfn-skeleton" style="height:12px;width:60px"></div></th>' +
+        '<th><div class="kfn-skeleton" style="height:12px;width:70px"></div></th>' +
+        '<th><div class="kfn-skeleton" style="height:12px;width:50px"></div></th>' +
+        '<th><div class="kfn-skeleton" style="height:12px;width:50px"></div></th>' +
+        '<th><div class="kfn-skeleton" style="height:12px;width:50px"></div></th>' +
+      '</tr></thead><tbody>' +
+        [1,2,3,4,5].map(function () {
+          return '<tr><td class="nm"><div class="kfn-skeleton" style="height:14px;width:120px"></div></td>' +
+            '<td><div class="kfn-skeleton" style="height:14px;width:50px;margin:auto"></div></td>' +
+            '<td><div class="kfn-skeleton" style="height:14px;width:60px;margin:auto"></div></td>' +
+            '<td><div class="kfn-skeleton" style="height:14px;width:45px;margin:auto"></div></td>' +
+            '<td><div class="kfn-skeleton" style="height:14px;width:45px;margin:auto"></div></td>' +
+            '<td><div class="kfn-skeleton" style="height:14px;width:45px;margin:auto"></div></td></tr>';
+        }).join('') +
+      '</tbody></table></div>' +
+    '</div>' +
+    '<div class="kfn-card" style="padding:16px 20px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">' +
+        '<div><div class="kfn-skeleton" style="height:20px;width:260px"></div></div>' +
+        '<div class="kfn-skeleton" style="height:32px;width:160px;border-radius:20px"></div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">' +
+        '<div class="kfn-skeleton" style="height:32px;width:100px;border-radius:18px"></div>' +
+        '<div class="kfn-skeleton" style="height:32px;width:80px;border-radius:18px"></div>' +
+        '<div class="kfn-skeleton" style="height:32px;width:80px;border-radius:18px"></div>' +
+        '<div class="kfn-skeleton" style="height:32px;width:80px;border-radius:18px"></div>' +
+        '<div class="kfn-skeleton" style="height:32px;width:140px;border-radius:8px"></div>' +
+        '<div class="kfn-skeleton" style="height:32px;width:180px;border-radius:8px"></div>' +
+      '</div>' +
+      '<div class="kfn-wrap"><table class="kfn-tbl"><thead><tr>' +
+        '<th class="nm"><div class="kfn-skeleton" style="height:12px;width:100px"></div></th>' +
+        '<th><div class="kfn-skeleton" style="height:12px;width:70px"></div></th>' +
+        '<th><div class="kfn-skeleton" style="height:12px;width:70px"></div></th>' +
+        '<th><div class="kfn-skeleton" style="height:12px;width:60px"></div></th>' +
+        '<th><div class="kfn-skeleton" style="height:12px;width:80px"></div></th>' +
+        '<th><div class="kfn-skeleton" style="height:12px;width:90px"></div></th>' +
+      '</tr></thead><tbody>' +
+        [1,2,3,4,5,6].map(function () {
+          return '<tr><td class="nm"><div class="kfn-skeleton" style="height:14px;width:150px"></div></td>' +
+            '<td><div class="kfn-skeleton" style="height:14px;width:55px;margin:auto"></div></td>' +
+            '<td><div class="kfn-skeleton" style="height:14px;width:55px;margin:auto"></div></td>' +
+            '<td><div class="kfn-skeleton" style="height:14px;width:55px;margin:auto"></div></td>' +
+            '<td><div class="kfn-skeleton" style="height:14px;width:60px;margin:auto"></div></td>' +
+            '<td><div class="kfn-skeleton" style="height:14px;width:55px;margin:auto"></div></td></tr>';
+        }).join('') +
+      '</tbody></table></div>' +
+    '</div>' +
+  '</div>';
+}
 function kfnPeriodList() {
   var P = KFN.bundle.periods, g = KFN.tGran, out = [];
-  if (g === 'day') for (var i = P.d.length - 1; i >= 0; i--) out.push({ i: i, label: kfnDay(P.d[i]).dm + (i === P.d.length - 1 ? ' ' + kfnT('latest') : '') });
-  else if (g === 'week') for (var j = P.w.length - 1; j >= 0; j--) out.push({ i: j, label: kfnT('wk', kfnWeekNo(P.w[j])) + ' · ' + kfnWeekRange(P.w[j]) + (j === P.w.length - 1 ? ' ' + kfnT('latest') : '') });
-  else for (var k = P.m.length - 1; k >= 0; k--) out.push({ i: k, label: P.m[k].replace('-', '/') + (k === P.m.length - 1 ? ' ' + kfnT('mtdP') : '') });
+  var mCur = P.m[P.m.length - 1];
+  if (g === 'mtd') {
+    out.push({ i: P.m.length - 1, kind: 'm', isMtd: true, label: kfnT('mtd') + ' (' + mCur.replace('-', '/') + ')' });
+  } else if (g === 'day') {
+    for (var i = P.d.length - 1; i >= 0; i--) out.push({ i: i, kind: 'd', label: kfnDay(P.d[i]).dm + (i === P.d.length - 1 ? ' ' + kfnT('latest') : '') });
+  } else if (g === 'week') {
+    for (var j = P.w.length - 1; j >= 0; j--) out.push({ i: j, kind: 'w', label: kfnT('wk', kfnWeekNo(P.w[j])) + ' · ' + kfnWeekRange(P.w[j]) + (j === P.w.length - 1 ? ' ' + kfnT('latest') : '') });
+  } else {
+    for (var k = P.m.length - 1; k >= 0; k--) out.push({ i: k, kind: 'm', label: P.m[k].replace('-', '/') + (k === P.m.length - 1 ? ' ' + kfnT('mtdP') : '') });
+  }
   return out;
 }
 function kfnRenderT() {
-  var lv = kfnLevel(), ch = kfnChildren(), kind = KFN.tGran === 'day' ? 'd' : KFN.tGran === 'week' ? 'w' : 'm';
+  var lv = kfnLevel(), ch = kfnChildren(), P = KFN.bundle.periods;
   var plist = kfnPeriodList(); if (KFN.tPeriod >= plist.length) KFN.tPeriod = 0;
   var cur = plist[KFN.tPeriod] || plist[0], hubsAll = kfnHubs();
-  var rows = ch.names.map(function (n) { var s = kfnSum(ch.groups[n], kind, cur.i); return { n: n, sub: lv === 'sup' ? (ch.groups[n][0][1] || '') : '', m: kfnM(s), hubs: ch.groups[n] }; });
+  var kind = cur.kind || (KFN.tGran === 'day' ? 'd' : KFN.tGran === 'week' ? 'w' : 'm');
+  var isMtd = (KFN.tGran === 'mtd' || !!cur.isMtd);
+  var rows = ch.names.map(function (n) {
+    var s = kfnSum(ch.groups[n], kind, cur.i);
+    return { n: n, sub: lv === 'sup' ? (ch.groups[n][0][1] || '') : '', m: kfnM(s), hubs: ch.groups[n] };
+  });
   rows = rows.filter(function (r) { return !(/^Chưa phân/.test(r.n) && !r.m); });
   var q = KFN.q.toLowerCase().trim();
   var shown = rows.filter(function (r) { return !q || r.n.toLowerCase().indexOf(q) >= 0; });
-  var so = KFN.sort, nullLast = function (a, b, f, dir) { var x = a.m ? f(a.m) : null, y = b.m ? f(b.m) : null; if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1; return dir * (x - y); };
+  var so = KFN.sort, nullLast = function (a, b, f, dir) { var x = a ? f(a) : null, y = b ? f(b) : null; if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1; return dir * (x - y); };
   shown.sort(function (a, b) {
-    if (so === 'fm') return nullLast(a, b, function (m) { return m.fm; }, 1);
-    if (so === 'lm') return nullLast(a, b, function (m) { return m.lm; }, 1);
-    if (so === 'sop') return nullLast(a, b, function (m) { return m.sop; }, -1);
-    if (so === 'vol') return nullLast(a, b, function (m) { return m.vol; }, -1);
+    if (so === 'fm') return nullLast(a, b, function (x) { return x.m ? x.m.fm : null; }, 1);
+    if (so === 'lm') return nullLast(a, b, function (x) { return x.m ? x.m.lm : null; }, 1);
+    if (so === 'sop') return nullLast(a, b, function (x) { return x.m ? x.m.sop : null; }, -1);
+    if (so === 'vol') return nullLast(a, b, function (x) { return x.m ? x.m.vol : null; }, -1);
+    if (so === 'suc') return nullLast(a, b, function (x) { return x.m ? x.m.suc : null; }, 1);
     return String(a.n).localeCompare(String(b.n), 'vi');
   });
   var gb = function (g, t) { return '<button class="kfn-btn' + (KFN.tGran === g ? ' on' : '') + '" data-kfn-act="tgran" data-kfn-v="' + g + '">' + t + '</button>'; };
   var vb = function (v, t) { return '<button class="kfn-btn' + (KFN.tView === v ? ' on' : '') + '" data-kfn-act="tview" data-kfn-v="' + v + '">' + t + '</button>'; };
   var sel1 = '<select class="kfn-sel" data-kfn-sel="tperiod">' + plist.map(function (p, ix) { return '<option value="' + ix + '"' + (ix === KFN.tPeriod ? ' selected' : '') + '>' + kfnEsc(p.label) + '</option>'; }).join('') + '</select>';
-  var sel2 = '<select class="kfn-sel" data-kfn-sel="sort">' + [['name', 'sName'], ['fm', 'sFm'], ['lm', 'sLm'], ['sop', 'sSop'], ['vol', 'sVol']].map(function (o) { return '<option value="' + o[0] + '"' + (so === o[0] ? ' selected' : '') + '>' + kfnT(o[1]) + '</option>'; }).join('') + '</select>';
-  var bar = '<div class="kfn-bar"><span class="kfn-chip">' + kfnT(KFN_LVK[lv][0]) + ' · ' + rows.length + ' ' + ch.label + '</span>' + gb('day', kfnT('gDate')) + gb('week', kfnT('gWeek')) + gb('month', kfnT('gMonth')) + (KFN.tView === 'full' ? sel1 : '') + sel2 +
+  var sel2 = '<select class="kfn-sel" data-kfn-sel="sort">' + [['name', 'sName'], ['fm', 'sFm'], ['lm', 'sLm'], ['sop', 'sSop'], ['vol', 'sVol'], ['suc', 'sSuc']].map(function (o) { return '<option value="' + o[0] + '"' + (so === o[0] ? ' selected' : '') + '>' + kfnT(o[1]) + '</option>'; }).join('') + '</select>';
+  var bar = '<div class="kfn-bar"><span class="kfn-chip">' + kfnT(KFN_LVK[lv][0]) + ' · ' + rows.length + ' ' + ch.label + '</span>' +
+    gb('mtd', kfnT('mtd')) + gb('day', kfnT('gDate')) + gb('week', kfnT('gWeek')) + gb('month', kfnT('gMonth')) +
+    (KFN.tView === 'full' && plist.length > 1 ? sel1 : '') + sel2 +
     '<input class="kfn-in" id="kfn-q" placeholder="' + kfnEsc(kfnT('search')) + '" value="' + kfnEsc(KFN.q) + '"></div>';
   var tableHtml;
   if (KFN.tView === 'full') {
     var tm = kfnM(kfnSum(hubsAll, kind, cur.i));
-    var cell = function (metric, m, d) { if (!m) return '<td>—</td>'; var v = m[metric]; return '<td class="' + kfnCls(metric, v) + '">' + kfnPct(v, d) + (metric === 'sop' ? '<small class="cnt">' + kfnT('orders', kfnInt(m.sopW)) + '</small>' : '') + '</td>'; };
+    var cell = function (metric, m, d) {
+      if (!m) return '<td>—</td>';
+      var v = m[metric];
+      var sopSub = (metric === 'sop' && m.sopW != null) ? '<small class="cnt">' + kfnT('orders', kfnInt(m.sopW)) + '</small>' : '';
+      return '<td class="' + kfnCls(metric, v) + '">' + kfnPct(v, d) + sopSub + '</td>';
+    };
+    var volCell = function (m) {
+      if (!m) return '<td>—</td>';
+      var hasVol = (m.vol > 0 || m.suc != null);
+      var val = hasVol ? kfnInt(m.vol) : '—';
+      return '<td>' + val + '</td>';
+    };
+    var sucCell = function (m) {
+      if (!m || m.suc == null) return '<td class="neu">—</td>';
+      return '<td class="neu">' + kfnPct(m.suc) + '</td>';
+    };
     var line = function (r, tot) {
       return '<tr class="' + (tot ? 'tot' : 'cl') + '"' + (tot ? '' : ' data-kfn-act="drill" data-kfn-v="' + kfnEsc(r.n) + '"') + '><td class="nm">' + kfnEsc(r.n) + (r.sub ? '<small>' + kfnEsc(r.sub) + '</small>' : '') + '</td>' +
-        cell('fm', r.m, 1) + cell('lm', r.m, 1) + cell('sop', r.m, 2) + '<td>' + (r.m ? kfnInt(r.m.vol) : '—') + '</td><td class="neu">' + (r.m ? kfnPct(r.m.suc) : '—') + '</td></tr>';
+        cell('fm', r.m, 1) + cell('lm', r.m, 1) + cell('sop', r.m, 2) + volCell(r.m) + sucCell(r.m) + '</tr>';
     };
     var tot = line({ n: kfnT(lv === 'sup' ? 'totCluster' : 'totRegion'), sub: '', m: tm }, true);
-    tableHtml = '<div class="kfn-wrap"><table class="kfn-tbl"><thead><tr><th class="nm">' + ch.label + '</th><th>' + kfnT('cFm') + '<small>' + kfnT('tgt', kfnTgt(KFN_T.fm)) + '</small></th><th>' + kfnT('cLm') + '<small>' + kfnT('tgt', kfnTgt(KFN_T.lm)) + '</small></th><th>' + kfnT('rSop') + '<small>' + kfnT('kpiLe', kfnTgt(KFN_T.sop)) + '</small></th><th>' + kfnT('cVol') + '<small>' + kfnT('cVolS') + '</small></th><th>' + kfnT('cSuc') + '<small>' + kfnT('cSucS') + '</small></th></tr></thead><tbody>' +
+    var volHeaderSub = isMtd ? kfnT('mtdP') : kfnT('cVolS');
+    var sucHeaderSub = isMtd ? kfnT('mtdP') : kfnT('cSucS');
+    tableHtml = '<div class="kfn-wrap"><table class="kfn-tbl"><thead><tr>' +
+      '<th class="nm">' + ch.label + '</th>' +
+      '<th>' + kfnT('cFm') + '<small>' + kfnT('tgt', kfnTgt(KFN_T.fm)) + '</small></th>' +
+      '<th>' + kfnT('cLm') + '<small>' + kfnT('tgt', kfnTgt(KFN_T.lm)) + '</small></th>' +
+      '<th>' + kfnT('rSop') + '<small>' + kfnT('kpiLe', kfnTgt(KFN_T.sop)) + '</small></th>' +
+      '<th>' + kfnT('cVol') + '<small>' + volHeaderSub + '</small></th>' +
+      '<th>' + kfnT('cSuc') + '<small>' + sucHeaderSub + '</small></th>' +
+      '</tr></thead><tbody>' +
       tot + shown.map(function (r) { return line(r, false); }).join('') + '</tbody></table></div>' +
       (shown.length ? '' : '<div class="kfn-empty">' + kfnT('noUnit') + '</div>') + '<div class="kfn-foot">' + kfnT('showing', shown.length, rows.length, ch.label) + '</div>';
   } else {
     var mk = KFN.tMetric, P = KFN.bundle.periods, idxs = plist.map(function (p) { return p.i; });
     var mb = function (k, t) { return '<button class="kfn-btn' + (mk === k ? ' on' : '') + '" data-kfn-act="tmetric" data-kfn-v="' + k + '">' + t + '</button>'; };
-    var heads = idxs.map(function (i) { var lab = KFN.tGran === 'day' ? kfnDay(P.d[i]) : null; return '<th>' + (lab ? lab.wd + '<small>' + lab.dm + '</small>' : KFN.tGran === 'week' ? kfnT('wk', kfnWeekNo(P.w[i])) + '<small>' + kfnWeekRange(P.w[i]) + '</small>' : P.m[i].replace('-', '/')) + '</th>'; }).join('');
+    var hasMtdCol = (KFN.tGran === 'day' || KFN.tGran === 'week');
+    var mtdHead = hasMtdCol ? '<th>' + kfnT('mtd') + '<small>' + kfnT('mtdP') + '</small></th>' : '';
+    var heads = mtdHead + idxs.map(function (i) { var lab = KFN.tGran === 'day' ? kfnDay(P.d[i]) : null; return '<th>' + (lab ? lab.wd + '<small>' + lab.dm + '</small>' : KFN.tGran === 'week' ? kfnT('wk', kfnWeekNo(P.w[i])) + '<small>' + kfnWeekRange(P.w[i]) + '</small>' : P.m[i].replace('-', '/')) + '</th>'; }).join('');
     var dd = mk === 'sop' ? 2 : 1;
     var mrow = function (name, hs, tot) {
-      return '<tr class="' + (tot ? 'tot' : 'cl') + '"' + (tot ? '' : ' data-kfn-act="drill" data-kfn-v="' + kfnEsc(name) + '"') + '><td class="nm">' + kfnEsc(name) + '</td>' + idxs.map(function (i) { var m = kfnM(kfnSum(hs, kind, i)); if (!m) return '<td>—</td>'; var v = m[mk]; return '<td class="' + kfnCls(mk, v) + '">' + kfnPct(v, dd) + '</td>'; }).join('') + '</tr>';
+      var mMtd = kfnM(kfnSum(hs, 'm', P.m.length - 1));
+      var mtdCell = '';
+      if (hasMtdCol) {
+        if (!mMtd) mtdCell = '<td>—</td>';
+        else if (mk === 'vol') mtdCell = '<td style="font-weight:600;color:var(--kp,#ee4d2d)">' + ((mMtd.vol > 0 || mMtd.suc != null) ? kfnInt(mMtd.vol) : '—') + '</td>';
+        else {
+          var vM = mMtd[mk];
+          mtdCell = '<td class="' + kfnCls(mk, vM) + '" style="font-weight:600">' + (mk === 'suc' ? kfnPct(vM) : kfnPct(vM, dd)) + '</td>';
+        }
+      }
+      var cells = idxs.map(function (i) {
+        var m = kfnM(kfnSum(hs, kind, i));
+        if (!m) return '<td>—</td>';
+        if (mk === 'vol') return '<td>' + ((m.vol > 0 || m.suc != null) ? kfnInt(m.vol) : '—') + '</td>';
+        var v = m[mk];
+        return '<td class="' + kfnCls(mk, v) + '">' + kfnPct(v, dd) + '</td>';
+      }).join('');
+      return '<tr class="' + (tot ? 'tot' : 'cl') + '"' + (tot ? '' : ' data-kfn-act="drill" data-kfn-v="' + kfnEsc(name) + '"') + '><td class="nm">' + kfnEsc(name) + '</td>' + mtdCell + cells + '</tr>';
     };
-    tableHtml = '<div class="kfn-bar">' + mb('fm', kfnT('cFm')) + mb('lm', kfnT('cLm')) + mb('sop', kfnT('rSop')) + mb('suc', kfnT('cSuc')) + '</div>' +
+    tableHtml = '<div class="kfn-bar">' + mb('fm', kfnT('cFm')) + mb('lm', kfnT('cLm')) + mb('sop', kfnT('rSop')) + mb('suc', kfnT('cSuc')) + mb('vol', kfnT('cVol')) + '</div>' +
       '<div class="kfn-wrap"><table class="kfn-tbl"><thead><tr><th class="nm">' + ch.label + '</th>' + heads + '</tr></thead><tbody>' + mrow(kfnT(lv === 'sup' ? 'totCluster' : 'totRegion'), hubsAll, true) +
       shown.map(function (r) { return mrow(r.n, r.hubs, false); }).join('') + '</tbody></table></div><div class="kfn-foot">' + kfnT('showing2', shown.length, rows.length, ch.label) + '</div>';
   }
@@ -566,7 +714,7 @@ function kpifailLoadData(force, prefetch) {
   if (KPIFAIL_STATE.loading) return;
   if (typeof google === 'undefined' || !google.script || !google.script.run) return;
   KPIFAIL_STATE.loading = true; KPIFAIL_STATE.silentLoad = !!prefetch && !kfnVisible();
-  var body0 = document.getElementById('kfn-body'); if (body0 && !KPIFAIL_STATE.loaded) body0.innerHTML = '<div class="kfn-load">' + kfnT('loading') + '</div>';
+  var body0 = document.getElementById('kfn-body'); if (body0 && !KPIFAIL_STATE.loaded) body0.innerHTML = kfnRenderSkeleton();
   google.script.run.withFailureHandler(function (e) {
     KPIFAIL_STATE.loading = false;
     var body = document.getElementById('kfn-body');
