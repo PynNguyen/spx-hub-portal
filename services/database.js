@@ -36,7 +36,7 @@ class WorkspaceDatabase {
           email: 'xuan.nguyenthanh01@spxexpress.com',
           name: 'Admin Xuân',
           role: 'ADMIN_1',
-          stations: ['ALL', 'Krông Pắc 02', 'Buôn Ma Thuột', 'Ea Kar', 'Cư Kuin']
+          stations: ['ALL', '45-DLK Krong Pak 02 Hub']
         }
       ],
       triggerLogs: []

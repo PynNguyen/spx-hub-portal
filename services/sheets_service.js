@@ -22,6 +22,11 @@ class WorkspaceSheetsService {
       agingCoreId: '1V2Tpun2-4d6_iBVBKgFSe9GWGGIsgEmLdCPmpunYTcA',
       lostId: '1vvOZG80Rz5PTNPFsbHzmUMPkPaAkGOY70nDHBwfzjQE',
       masterDbId: '145-rfoh-hLPPa5o8Uoy1SFl04ryh9N4x5Roi2ByxwPY',
+      orgSourceId: '1gtn1Z1n0hZp0QXWrWKo8hdBR_Pt9lkJsiJAyxA0uYPY', // Danh mục 379 Hub & AOM/Sup
+      kpiFailId: '1pcQJB_-ZxGQQwg20GreeLhMovocfs6u1sIqrjQHsJQ0',   // FM, LM, SOP Late Orders
+      rescueId: '18J7Wb_9VOPW-7dr85cgzPUzT0uKH_kFpkbzGBUSECVc',    // Đơn cần cứu 48h
+      viPhamId: '1A0G2B7f-Ab_c1vAR4NrMtspnXDS34lzsi0eoWMAc2q0',    // complaint raw
+      riderPlanId: '1Tqy2J-679RFeOBSpuAt3U-55w5Kxoeqe8gH5GXHJoxA', // FC (auto), AOM SUP
       gasWebhookUrl: process.env.SPX_GAS_WEBHOOK_URL || ''
     };
     this.userTokens = new Map(); // email -> { access_token, refresh_token, expires_at }
@@ -262,6 +267,18 @@ class WorkspaceSheetsService {
           console.error('⚠️ [Sheets Sync Lost Error]:', errLost.message);
         }
 
+        // 3. Tự động đồng bộ thêm các module liên quan nếu có quyền
+        try {
+          await Promise.allSettled([
+            this.syncOrgHubs(token),
+            this.syncKpiFail(token),
+            this.syncRescueOrders(token),
+            this.syncViolations(token)
+          ]);
+        } catch (eModules) {
+          console.warn('⚠️ [Sheets Sync Extra Modules Warning]:', eModules.message);
+        }
+
         if (parsedOrders.length > 0) {
           if (!db.data.agingData) db.data.agingData = {};
           db.data.agingData.core = parsedOrders;
@@ -283,6 +300,195 @@ class WorkspaceSheetsService {
     } finally {
       this.isSyncing = false;
     }
+  }
+
+  /**
+   * Đồng bộ danh mục 379 Hub chuẩn quốc gia từ Org Sheet
+   */
+  async syncOrgHubs(token) {
+    try {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${this.sheetsConfig.orgSourceId}/values/'Hub/SOC%20infor'!A1:Q?valueRenderOption=FORMATTED_VALUE`;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const rows = data.values || [];
+      if (rows.length < 2) return null;
+      
+      const head = rows[0].map(c => String(c || '').toLowerCase().trim());
+      let colName = head.findIndex(h => /hub name|tên trạm|hub/i.test(h));
+      let colStatus = head.findIndex(h => /status|trạng thái/i.test(h));
+      if (colName < 0) colName = 4;
+      if (colStatus < 0) colStatus = 9;
+
+      const hubs = [];
+      for (let i = 1; i < rows.length; i++) {
+        const r = rows[i];
+        const name = String(r[colName] || '').trim();
+        const stat = String(r[colStatus] || '').trim();
+        if (name && /hub/i.test(name) && (!stat || stat.includes('1. Live') || stat === 'Live')) {
+          if (!hubs.includes(name)) hubs.push(name);
+        }
+      }
+      hubs.sort();
+      if (hubs.length > 50) {
+        const hubsPath = path.join(__dirname, '..', 'data', 'standard_hubs.json');
+        fs.writeFileSync(hubsPath, JSON.stringify(hubs, null, 2), 'utf8');
+        console.log(`✅ [Sheets Sync] Đã cập nhật ${hubs.length} Hub chuẩn quốc gia vào standard_hubs.json!`);
+      }
+      return hubs;
+    } catch (e) {
+      console.warn('⚠️ [Sheets Sync Org Hubs]:', e.message);
+      return null;
+    }
+  }
+
+  /**
+   * Đồng bộ dữ liệu KPI Fail Hub Analytics (FM, LM, Wrong SOP)
+   */
+  async syncKpiFail(token) {
+    try {
+      const tabs = ['FM', 'LM', 'SOP'];
+      const result = { fm: [], lm: [], sop: [], total: 0 };
+      for (const tab of tabs) {
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${this.sheetsConfig.kpiFailId}/values/${tab}!A1:Z?valueRenderOption=FORMATTED_VALUE`;
+        const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) continue;
+        const data = await res.json();
+        const rows = data.values || [];
+        if (rows.length > 1) {
+          const head = rows[0].map(c => String(c || '').toLowerCase().trim());
+          let iDate = head.findIndex(h => /date|ngày/i.test(h));
+          let iHub = head.findIndex(h => /station|hub|trạm/i.test(h));
+          let iTrack = head.findIndex(h => /tracking|shipment|mã đơn/i.test(h));
+          let iReason = head.findIndex(h => /reason|lý do/i.test(h));
+          let iDriver = head.findIndex(h => /driver|tài xế|rider/i.test(h));
+
+          if (iDate < 0) iDate = 0;
+          if (iHub < 0) iHub = 1;
+          if (iTrack < 0) iTrack = 2;
+
+          for (let i = 1; i < rows.length; i++) {
+            const r = rows[i];
+            const track = String(r[iTrack] || '').trim();
+            if (!track) continue;
+            result[tab.toLowerCase()].push({
+              type: tab,
+              date: String(r[iDate] || '').trim(),
+              hub: String(r[iHub] || '').trim(),
+              trackingNo: track,
+              driver: iDriver >= 0 ? String(r[iDriver] || '') : '',
+              reason: iReason >= 0 ? String(r[iReason] || '') : ''
+            });
+          }
+        }
+      }
+      result.total = result.fm.length + result.lm.length + result.sop.length;
+      if (result.total > 0) {
+        db.data.kpiFailData = result;
+        db.data.kpiOrders = [...result.fm, ...result.lm, ...result.sop];
+        db.isDirty = true;
+        console.log(`✅ [Sheets Sync KPI Fail] Đã đồng bộ ${result.total} đơn lỗi KPI (FM: ${result.fm.length}, LM: ${result.lm.length}, SOP: ${result.sop.length})!`);
+      }
+      return result;
+    } catch (e) {
+      console.warn('⚠️ [Sheets Sync KPI Fail]:', e.message);
+      return null;
+    }
+  }
+
+  /**
+   * Đồng bộ Đơn Cầu Cứu 48h từ Google Sheets
+   */
+  async syncRescueOrders(token) {
+    try {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${this.sheetsConfig.rescueId}/values/A1:M?valueRenderOption=FORMATTED_VALUE`;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const rows = data.values || [];
+      if (rows.length < 2) return null;
+
+      const head = rows[0].map(c => String(c || '').toLowerCase().trim());
+      let iTrack = head.findIndex(h => /tracking_no|tracking|mã đơn/i.test(h));
+      let iHub = head.findIndex(h => /station_name|station|hub/i.test(h));
+      let iDriver = head.findIndex(h => /driver_name|driver/i.test(h));
+      let iDate = head.findIndex(h => /export_date|date|ngày/i.test(h));
+      let iRegion = head.findIndex(h => /region|khu vực/i.test(h));
+
+      if (iTrack < 0) iTrack = 0;
+      if (iHub < 0) iHub = 2;
+
+      const rescue = [];
+      for (let i = 1; i < rows.length; i++) {
+        const r = rows[i];
+        const tNo = String(r[iTrack] || '').trim();
+        if (!tNo) continue;
+        rescue.push({
+          trackingNo: tNo,
+          stationName: iHub >= 0 ? String(r[iHub] || '').trim() : '',
+          driverName: iDriver >= 0 ? String(r[iDriver] || '').trim() : '',
+          region: iRegion >= 0 ? String(r[iRegion] || '').trim() : '',
+          exportDate: iDate >= 0 ? String(r[iDate] || '').trim() : '',
+          status: 'CẦN CỨU',
+          createdAt: new Date().toISOString()
+        });
+      }
+      if (rescue.length > 0) {
+        db.data.rescueOrders = rescue;
+        db.isDirty = true;
+        console.log(`✅ [Sheets Sync Rescue] Đã đồng bộ ${rescue.length} đơn cầu cứu 48h!`);
+      }
+      return rescue;
+    } catch (e) {
+      console.warn('⚠️ [Sheets Sync Rescue]:', e.message);
+      return null;
+    }
+  }
+
+  /**
+   * Đồng bộ Dữ liệu Vi Phạm / Khiếu Nại (complaint raw)
+   */
+  async syncViolations(token) {
+    try {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${this.sheetsConfig.viPhamId}/values/'complaint%20raw'!A1:Z?valueRenderOption=FORMATTED_VALUE`;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const rows = data.values || [];
+      if (rows.length < 2) return null;
+
+      const head = rows[0].map(c => String(c || '').toLowerCase().trim());
+      let iTrack = head.findIndex(h => /tracking|shipment|mã đơn/i.test(h));
+      let iHub = head.findIndex(h => /station|hub|trạm/i.test(h));
+      let iReason = head.findIndex(h => /complaint|khiếu nại|vi phạm|lý do/i.test(h));
+      let iDate = head.findIndex(h => /date|ngày/i.test(h));
+
+      if (iTrack < 0) iTrack = 1;
+      if (iHub < 0) iHub = 3;
+
+      const viols = [];
+      for (let i = 1; i < rows.length; i++) {
+        const r = rows[i];
+        const tNo = String(r[iTrack] || '').trim();
+        if (!tNo) continue;
+        viols.push({
+          trackingNo: tNo,
+          hub: iHub >= 0 ? String(r[iHub] || '').trim() : '',
+          reason: iReason >= 0 ? String(r[iReason] || '').trim() : '',
+          date: iDate >= 0 ? String(r[iDate] || '').trim() : ''
+        });
+      }
+      if (viols.length > 0) {
+        db.data.violations = viols;
+        db.isDirty = true;
+        console.log(`✅ [Sheets Sync Violations] Đã đồng bộ ${viols.length} đơn vi phạm/khiếu nại!`);
+      }
+      return viols;
+    } catch (e) {
+      console.warn('⚠️ [Sheets Sync Violations]:', e.message);
+      return null;
+    }
+  }
   }
 }
 

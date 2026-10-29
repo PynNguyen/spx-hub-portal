@@ -14,21 +14,26 @@ const authManager = require('./auth_manager');
 
 const VIEWS_DIR = path.join(__dirname, '..', 'public', 'views');
 
-// Danh sách trạm mặc định tại khu vực Đắk Lắk & Tây Nguyên
-const DEFAULT_STATIONS = [
-  '45-DLK Krong Pak 02 Hub',
-  'Buôn Ma Thuột',
-  'Ea Kar',
-  'Cư Kuin',
-  'Lắk',
-  'Ea H\'leo',
-  'Krông Bông',
-  'Krông Năng',
-  'Krông Búk',
-  'Buôn Đôn',
-  'Cư M\'gar',
-  'M\'Đrắk'
-];
+// Nạp danh sách 379 Hub chuẩn quốc gia từ dữ liệu tổ chức (format XX-YYY Name Hub)
+let DEFAULT_STATIONS = [];
+try {
+  const hubsPath = path.join(__dirname, '..', 'data', 'standard_hubs.json');
+  if (fs.existsSync(hubsPath)) {
+    DEFAULT_STATIONS = JSON.parse(fs.readFileSync(hubsPath, 'utf8'));
+  }
+} catch (eHub) {
+  console.warn('[RpcDispatcher] Không đọc được standard_hubs.json', eHub.message);
+}
+
+if (!DEFAULT_STATIONS || !DEFAULT_STATIONS.length) {
+  DEFAULT_STATIONS = [
+    '31-NAN Anh Son 02 Hub',
+    '31-NAN Anh Son Hub',
+    '31-NAN Con Cuong Hub',
+    '36-DNG Cam Le Hub',
+    '45-DLK Krong Pak 02 Hub'
+  ];
+}
 
 /**
  * Trình phân tích CSV chuẩn RFC-4180 in-memory

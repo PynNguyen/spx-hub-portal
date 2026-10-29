@@ -6,20 +6,29 @@
  * ============================================================
  */
 
-const DEFAULT_STATIONS = [
-  '45-DLK Krong Pak 02 Hub',
-  'Buôn Ma Thuột',
-  'Ea Kar',
-  'Cư Kuin',
-  'Lắk',
-  'Ea H\'leo',
-  'Krông Bông',
-  'Krông Năng',
-  'Krông Búk',
-  'Buôn Đôn',
-  'Cư M\'gar',
-  'M\'Đrắk'
-];
+const fs = require('fs');
+const path = require('path');
+
+// Nạp danh sách 379 Hub chuẩn quốc gia từ dữ liệu tổ chức (format XX-YYY Name Hub)
+let DEFAULT_STATIONS = [];
+try {
+  const hubsPath = path.join(__dirname, '..', 'data', 'standard_hubs.json');
+  if (fs.existsSync(hubsPath)) {
+    DEFAULT_STATIONS = JSON.parse(fs.readFileSync(hubsPath, 'utf8'));
+  }
+} catch (eHub) {
+  console.warn('[AuthManager] Không đọc được standard_hubs.json, fallback', eHub.message);
+}
+
+if (!DEFAULT_STATIONS || !DEFAULT_STATIONS.length) {
+  DEFAULT_STATIONS = [
+    '31-NAN Anh Son 02 Hub',
+    '31-NAN Anh Son Hub',
+    '31-NAN Con Cuong Hub',
+    '36-DNG Cam Le Hub',
+    '45-DLK Krong Pak 02 Hub'
+  ];
+}
 
 const ROLE_LEVEL_MAP = {
   admin: { levelNum: 1, levelCode: 'admin', levelLabel: 'Admin (L1)' },
@@ -65,8 +74,8 @@ const USERS_DIRECTORY = {
     levelCode: 'lead',
     levelLabel: 'L4 - Lead',
     isRootAdmin: false,
-    hubs: ['Buôn Ma Thuột'],
-    defaultHub: 'Buôn Ma Thuột'
+    hubs: ['45-DLK Buon Ma Thuot Hub'],
+    defaultHub: '45-DLK Buon Ma Thuot Hub'
   },
   'sup.daklak@spxexpress.com': {
     email: 'sup.daklak@spxexpress.com',
@@ -77,7 +86,7 @@ const USERS_DIRECTORY = {
     levelCode: 'sup',
     levelLabel: 'L3 - SUP',
     isRootAdmin: false,
-    hubs: ['45-DLK Krong Pak 02 Hub', 'Buôn Ma Thuột', 'Ea Kar', 'Cư Kuin'],
+    hubs: ['45-DLK Krong Pak 02 Hub', '45-DLK Buon Ma Thuot Hub', '45-DLK Ea Kar Hub'],
     defaultHub: '45-DLK Krong Pak 02 Hub'
   },
   'aom.taynguyen@spxexpress.com': {
