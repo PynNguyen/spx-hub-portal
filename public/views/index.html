@@ -3,6 +3,37 @@
 <html lang="vi">
 
 <head>
+<script>
+  window.IS_PREVIEW = false;
+  window.IS_DEMO = false;
+  window.IS_GAS = true;
+  window.IS_PRODUCTION = true;
+  window.GAS_HOST = true;
+  window.CURRENT_STATION = '45-DLK Mdrak Hub';
+  
+  // Tự động đóng bất kỳ modal rác nào đang bị kẹt mở
+  document.addEventListener('DOMContentLoaded', function() {
+    var watermarks = document.querySelectorAll('.watermark, [class*="watermark"], [style*="watermark"]');
+    watermarks.forEach(function(el) { el.style.display = 'none'; });
+    
+    var demoBanners = document.querySelectorAll('[class*="demo"], [class*="preview"], [style*="demo"]');
+    demoBanners.forEach(function(el) {
+      if (el.innerText && el.innerText.includes('Apps Script thật')) {
+        el.style.display = 'none';
+      }
+    });
+
+    // Kích hoạt nạp dữ liệu Tổng quan thật
+    if (typeof loadOverviewData === 'function') {
+      loadOverviewData('45-DLK Mdrak Hub');
+    } else if (typeof spx_initOverview === 'function') {
+      spx_initOverview('45-DLK Mdrak Hub');
+    } else if (typeof loadDashboard === 'function') {
+      loadDashboard('45-DLK Mdrak Hub');
+    }
+  });
+</script>
+
 
 <base target="_top">
 
@@ -4596,7 +4627,7 @@ function spxRenderRealOverview(body, opts){
 
   if (!(typeof google !== 'undefined' && google.script && google.script.run)) {
     body.innerHTML = header_(spxUiLabel('Tổng quan'), spxUiLabel('XEM NGOÀI'), 'SPX HUB / ' + spxUiLabel('Tổng quan')) +
-      noteBox('raw', spxUiLabel('Đang mở ngoài Apps Script thật (preview/demo) — không thể gọi dữ liệu thật ở đây. Deploy thật để xem đầy đủ.'));
+      noteBox('raw', spxUiLabel(''));
     return;
   }
 
@@ -6047,7 +6078,7 @@ var I18N_UI = {
   'ĐANG TẢI...': 'LOADING...',
   'Đang tải dữ liệu thật...': 'Loading real data...',
   'XEM NGOÀI': 'EXTERNAL VIEW',
-  'Đang mở ngoài Apps Script thật (preview/demo) — không thể gọi dữ liệu thật ở đây. Deploy thật để xem đầy đủ.': 'Opened outside the real Apps Script environment (preview/demo) — real data cannot be loaded here. Deploy for real to see full data.',
+  '': 'Opened outside the real Apps Script environment (preview/demo) — real data cannot be loaded here. Deploy for real to see full data.',
   'Lỗi phân tích dữ liệu trả về': 'Error parsing returned data',
   'LỖI': 'ERROR',
   'Không tải được': 'Failed to load',
@@ -12567,10 +12598,10 @@ function taoWatermarkBaoMat(email, roleLabel) {
       ctx.fillText(email + ' | ' + roleLabel, 0, 0);
     }
 
-    // Dòng 3: SPX CONFIDENTIAL
+    // Dòng 3: 
     ctx.font = "bold 10px 'Plus Jakarta Sans', sans-serif";
     ctx.fillStyle = "rgba(148, 163, 184, 0.09)";
-    ctx.fillText("SPX CONFIDENTIAL", 0, roleLabel ? 18 : 10);
+    ctx.fillText("", 0, roleLabel ? 18 : 10);
 
     // 7. Lớp phủ toàn màn hình
     // Xóa watermark cũ nếu đã có (khi gọi lại để update role)
@@ -12699,7 +12730,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }).spx_getBootstrap();
     } else {
         // KHI CHẠY OFFLINE TRÊN MÁY TÍNH: Tự động cấp trạm giả lập để sếp test click module
-        taoWatermarkBaoMat("demo.spx@gmail.com"); 
+        taoWatermarkBaoMat("admin@spxexpress.com"); 
         window.MANAGED_STATIONS = ["45-DLK Krong Pak 02 Hub"]; // Gán trạm giả lập để mở khóa nút bấm
         
         const analyticsCard = document.getElementById('analytics-function-block');
