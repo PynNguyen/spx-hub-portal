@@ -4,6 +4,7 @@ const fs = require('fs');
 const gas = require('./services/gas_runtime');
 
 const app = express();
+app.get('/favicon.ico', (req, res) => res.status(204).end());
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: '50mb' }));
@@ -89,10 +90,9 @@ app.get('/', (req, res) => {
 </script>
 `;
 
-  if (html.includes('<head>')) {
+  // Không inject thừa tránh gây cú pháp lặp
+  if (!html.includes('window.RUNTIME_CACHE') && html.includes('<head>')) {
     html = html.replace('<head>', '<head>' + bootstrapScript);
-  } else {
-    html = bootstrapScript + html;
   }
 
   res.send(html);

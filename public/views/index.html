@@ -4,35 +4,28 @@
 
 <head>
 <script>
+  window.RUNTIME_CACHE = window.RUNTIME_CACHE || {};
+  window.SPX_ACCESS = window.SPX_ACCESS || {
+    role: 'ADMIN',
+    roleLevel: 99,
+    email: 'admin@spxexpress.com',
+    allowedStations: ['ALL'],
+    isSuperAdmin: true,
+    isAdmin: true
+  };
+  window.CURRENT_STATION = '45-DLK Mdrak Hub';
   window.IS_PREVIEW = false;
   window.IS_DEMO = false;
   window.IS_GAS = true;
   window.IS_PRODUCTION = true;
   window.GAS_HOST = true;
-  window.CURRENT_STATION = '45-DLK Mdrak Hub';
-  
-  // Tự động đóng bất kỳ modal rác nào đang bị kẹt mở
-  document.addEventListener('DOMContentLoaded', function() {
-    var watermarks = document.querySelectorAll('.watermark, [class*="watermark"], [style*="watermark"]');
-    watermarks.forEach(function(el) { el.style.display = 'none'; });
-    
-    var demoBanners = document.querySelectorAll('[class*="demo"], [class*="preview"], [style*="demo"]');
-    demoBanners.forEach(function(el) {
-      if (el.innerText && el.innerText.includes('Apps Script thật')) {
-        el.style.display = 'none';
-      }
-    });
-
-    // Kích hoạt nạp dữ liệu Tổng quan thật
-    if (typeof loadOverviewData === 'function') {
-      loadOverviewData('45-DLK Mdrak Hub');
-    } else if (typeof spx_initOverview === 'function') {
-      spx_initOverview('45-DLK Mdrak Hub');
-    } else if (typeof loadDashboard === 'function') {
-      loadDashboard('45-DLK Mdrak Hub');
-    }
-  });
+  try {
+    localStorage.setItem('spx_current_hub', '45-DLK Mdrak Hub');
+    localStorage.setItem('spx_selected_hub', '45-DLK Mdrak Hub');
+    localStorage.setItem('spx_active_station', '45-DLK Mdrak Hub');
+  } catch(e) {}
 </script>
+
 
 
 <base target="_top">
