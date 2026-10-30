@@ -1,0 +1,634 @@
+<div class="flex flex-col h-full qdo" id="qdo-root" style="width:100%;min-width:0;flex:1 1 0%">
+<style>
+  .qdo{--kb:#2563eb;--kpur:#5146e5;--kline:#dfe6f0;--ktext:#17243b;--kmut:#6c7a90;--kbg:#f4f7fb;--kcard:#fff;--khead:#f8fafd;--kbad:#b42318;--kwarn:#d97706;--kshadow:0 5px 18px rgba(25,46,79,.07);background:var(--kbg);color:var(--ktext);font-size:13px;font-family:Inter,'Segoe UI',Arial,sans-serif}
+  .dark .qdo{--kline:#243049;--ktext:#e6edf7;--kmut:#8da0bd;--kbg:#0b1121;--kcard:#111a30;--khead:#0f1830;--kbad:#f87171;--kshadow:none}
+  .qdo *{box-sizing:border-box}
+  .qdo-top{background:var(--kcard);border-bottom:1px solid var(--kline);padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;position:sticky;top:0;z-index:20}
+  .qdo-sel,.qdo-in{border:1px solid var(--kline);background:var(--kcard);color:var(--ktext);border-radius:9px;padding:7px 10px;font-size:12.5px;min-width:130px;outline:none}
+  .qdo-grow{flex:1} .qdo-upd{color:var(--kmut);font-size:11.5px}
+  .qdo-btn{border:1px solid var(--kline);background:var(--kcard);color:var(--ktext);border-radius:9px;padding:6px 12px;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap}
+  .qdo-btn:hover{border-color:var(--kb)} .qdo-btn.on{background:var(--kpur);border-color:var(--kpur);color:#fff} .qdo-btn.pri{background:var(--kb);border-color:var(--kb);color:#fff} .qdo-btn:disabled{opacity:.45;cursor:not-allowed}
+  .qdo-scroll{flex:1;overflow-y:auto;padding:16px 16px 120px}
+  .qdo-tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  .qdo-tab{border:1px solid var(--kline);background:var(--kcard);color:var(--ktext);border-radius:9px;padding:7px 14px;font-weight:800;font-size:12.5px;cursor:pointer}
+  .qdo-tab.on{background:#0c1d38;color:#fff;border-color:#0c1d38} .dark .qdo-tab.on{background:#2563eb;border-color:#2563eb} .qdo-tab:disabled{opacity:.4;cursor:not-allowed}
+  .qdo-crumb{color:var(--kmut);font-size:11.5px;margin-bottom:3px} .qdo-title{font-size:22px;font-weight:900;letter-spacing:-.01em;margin:0}
+  .qdo-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+  .qdo-tag{background:#e8efff;color:#1d4ed8;border-radius:10px;padding:7px 12px;font-weight:800;font-size:12px} .dark .qdo-tag{background:#1b2a52;color:#9db8ff}
+  .qdo-card{background:var(--kcard);border:1px solid var(--kline);border-radius:14px;box-shadow:var(--kshadow);margin-bottom:16px;overflow:hidden}
+  .qdo-ch{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--kline);flex-wrap:wrap}
+  .qdo-ct{font-weight:900;font-size:15px} .qdo-cs{color:var(--kmut);font-size:11px;margin-top:1px}
+  .qdo-seg{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap} .qdo-bar{display:flex;gap:8px;align-items:center;padding:10px 16px;flex-wrap:wrap;border-bottom:1px solid var(--kline)}
+  .qdo-chip{background:#eaf0ff;color:#1e40af;border-radius:999px;padding:5px 12px;font-weight:800;font-size:12px} .dark .qdo-chip{background:#1b2a52;color:#9db8ff}
+  .qdo-wrap{overflow-x:auto}
+  .qdo-tbl{border-collapse:collapse;width:100%;font-size:12.5px}
+  .qdo-tbl th{background:var(--khead);color:var(--kmut);font-weight:800;font-size:10.5px;text-align:center;padding:9px 10px;white-space:nowrap;border-bottom:1px solid var(--kline)}
+  .qdo-tbl td{padding:9px 10px;text-align:center;border-bottom:1px solid var(--kline);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .qdo-tbl td.nm,.qdo-tbl th.nm{text-align:left;font-weight:800;position:sticky;left:0;background:var(--kcard);z-index:1} .qdo-tbl th.nm{background:var(--khead)}
+  .qdo-tbl tr.tot td{font-weight:900;background:var(--khead)} .qdo-tbl tr.tot td.nm{background:var(--khead)}
+  .qdo-tbl tbody tr.cl{cursor:pointer} .qdo-tbl tbody tr.cl:hover td.nm{color:var(--kb)}
+  .qdo-tbl td.bad{color:var(--kbad);font-weight:800}
+  .qdo-foot{color:var(--kmut);font-size:11px;padding:8px 16px}
+  .qdo-note{background:#fff7e6;border:1px solid #fde1a8;color:#8a5a00;border-radius:10px;padding:9px 12px;font-size:12px;margin-bottom:12px} .dark .qdo-note{background:#3a2c0f;border-color:#6b4f12;color:#f5c26b}
+  .qdo-empty{padding:34px;text-align:center;color:var(--kmut)} .qdo-load{padding:30px;text-align:center;color:var(--kmut)}
+  .qdo-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+  .qdo-kpi{background:var(--kcard);border:1px solid var(--kline);border-radius:12px;padding:10px 13px;box-shadow:var(--kshadow)}
+  .qdo-kpi .cap{color:var(--kmut);font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+  .qdo-kpi .num{font-size:24px;font-weight:900;margin-top:2px;line-height:1.15} .qdo-kpi .dl{color:var(--kmut);font-size:11px;margin-top:2px;min-height:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .qdo-kpi .num.bad{color:#dc2626} .qdo-kpi .num.warn{color:#d97706}
+  .qdo-grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;margin-bottom:16px}
+  .qdo-grid2 .qdo-card{margin-bottom:0}
+  .qdo-pad{padding:14px 16px}
+  .qdo-bars{display:flex;align-items:flex-end;gap:14px;height:190px;padding:10px 6px 0}
+  .qdo-bcol{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
+  .qdo-bcol .bar{width:100%;max-width:56px;border-radius:7px 7px 0 0;min-height:2px} .qdo-bcol .v{font-weight:800;font-size:12px;margin-bottom:4px} .qdo-bcol .l{color:var(--kmut);font-size:10.5px;margin-top:6px;text-align:center}
+  .qdo-hb{display:grid;grid-template-columns:130px 1fr 52px;gap:10px;align-items:center;margin:8px 0;font-size:12px}
+  .qdo-hb .tr{height:11px;background:var(--khead);border-radius:99px;overflow:hidden;border:1px solid var(--kline)} .qdo-hb .fl{height:100%;border-radius:99px;background:#2563eb}
+  .qdo-hb .n{text-align:right;font-weight:800} .qdo-hb .nmx{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .qdo-donut{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .qdo-leg{font-size:12px} .qdo-leg div{display:flex;align-items:center;gap:7px;margin:5px 0} .qdo-leg i{width:10px;height:10px;border-radius:50%;display:inline-block}
+  .qdo-badge{display:inline-block;border-radius:6px;padding:2px 7px;font-size:10.5px;font-weight:800}
+  .qdo-badge.up{background:#fee4e2;color:#b42318} .qdo-badge.ch{background:#4b1d1d;color:#fecaca} .qdo-badge.oh{background:#fff2d6;color:#9a6200}
+  .qdo-badge.a1{background:#e0f2fe;color:#0369a1} .qdo-badge.a2{background:#fff1e0;color:#b25e00} .qdo-badge.a3{background:#fee4e2;color:#b42318}
+  .qdo-toast{position:fixed;top:22px;left:50%;transform:translateX(-50%);padding:9px 16px;border-radius:12px;color:#fff;font-weight:800;font-size:12px;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+  .qdo-pg{display:flex;gap:8px;align-items:center;justify-content:flex-start;padding:10px 16px;flex-wrap:wrap}
+  .qdo-id{cursor:pointer;font-weight:800} .qdo-id:hover{color:var(--kb);text-decoration:underline}
+  .qdo-kpi.clk{cursor:pointer;transition:all .15s ease} .qdo-kpi.clk:hover{border-color:var(--kb);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.06)}
+  .qdo-kpi.act{border-color:#2563eb !important;outline:2.5px solid #2563eb !important;outline-offset:0px;background:#eff6ff !important;box-shadow:0 0 0 3px rgba(37,99,235,0.25),0 6px 14px rgba(37,99,235,0.12) !important;transform:translateY(-2px)}
+  .dark .qdo-kpi.act{background:#172554 !important;border-color:#3b82f6 !important;outline:2.5px solid #3b82f6 !important;box-shadow:0 0 0 3px rgba(59,130,246,0.3),0 6px 14px rgba(0,0,0,0.4) !important}
+  .qdo-tables{grid-template-columns:repeat(auto-fit,minmax(520px,1fr));align-items:start;margin-bottom:16px}
+  .qdo-tbl td.chev,.qdo-tbl th.chev{width:20px;padding-left:0;padding-right:8px;color:var(--kmut);font-weight:900;font-size:15px}
+  .qdo-tbl tbody tr.cl:hover td{background:rgba(37,99,235,.06)} .qdo-tbl tbody tr.cl:hover td.chev{color:var(--kb)}
+  .qdo-tbl td.nm{min-width:140px}
+  .qdo-nav{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+  .qdo-banner{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:10px;padding:8px 12px;font-size:12px;margin-bottom:12px}
+</style>
+
+<div class="qdo-scroll" data-scroll-root="true" id="qdo-body"><div class="qdo-load">Đang tải dữ liệu Delivery…</div></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════
+   DELIVERY OPERATION CONTROL (REQ-006) — [TÁI CẤU TRÚC 2026-10] theo wireframe V2.25
+   Dữ liệu: đúng nguồn Quá hạn hiện có do trang chủ nạp (allData = đơn LM aging + đơn đã chốt Lost).
+   QUY TẮC (đã đối chiếu với sheet 'Backlog FM+LM' — khớp từng số 681/477/5.553/1.564/516):
+     • Mốc tuổi = timingDate (số ngày tồn TẠI TRẠM HIỆN TẠI): ≤1 | 1–2 | 2–5 | 5–7 | >7 ngày.
+     • Nhóm wireframe: "1–2 ngày" = ≤2 · "3–5 ngày" = >2 và ≤5 · "Trên 5 ngày" = >5.
+     • On-hold = trạng thái cuối (finalStatus) chứa "onhold".
+     • Upcoming Lost = đơn có cờ "Lost today" (Đến hạn lost hôm nay) · Amount = tổng COGS của chính các đơn đó.
+     • Đã chốt Lost = đơn trong nguồn Lost (isChotLost) — giữ lại từ module cũ.
+   Chưa có nguồn nên CHƯA làm: theo Tỉnh/Thành phố, Phường/Xã, Rider, lý do On-hold, "2 days/1 day to Lost".
+   GIỮ NGUYÊN các hàm trang chủ/module khác gọi vào (xem khối COMPAT cuối file).
+   ═══════════════════════════════════════════════════════════════════════ */
+var currentModeQH = 'GIAO';
+var _qhLmFullPicRaw = null;
+var currentEditingId = '', currentEditingHub = '';
+
+var QDO = { sel: { aom: '', sup: '', hub: '' }, cat: 'ALL', kf: '', rows: null, rowsRef: null, rowsLen: -1,
+            L: { grp: '', proc: '', fin: '', flag: '', q: '', page: 1 }, inited: false };
+QDO.drill = { aom: '', sup: '', hub: '' };
+var QDO_PAGE = 25;
+var QDO_B5 = [['≤ 1 ngày', '#2563eb'], ['1–2 ngày', '#3b82f6'], ['2–5 ngày', '#f59e0b'], ['5–7 ngày', '#f97316'], ['> 7 ngày', '#dc2626']];
+
+/* ───────── tiện ích ───────── */
+function qdoEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function qdoInt(x) { return (x == null || !isFinite(x)) ? '—' : Math.round(x).toLocaleString('en-US'); }
+function qdoMoney(v) {
+  if (v == null || !isFinite(v)) return '—';
+  if (v >= 1e6) return (v / 1e6).toFixed(1) + 'Mđ';
+  if (v >= 1e3) return Math.round(v / 1e3) + 'Kđ';
+  return Math.round(v) + 'đ';
+}
+function qdoUniq(a) { var o = {}, r = []; a.forEach(function (x) { if (x && !o[x]) { o[x] = 1; r.push(x); } }); return r; }
+function qdoSortVi(a) { return a.slice().sort(function (x, y) { return String(x).localeCompare(String(y), 'vi'); }); }
+function qdoToast(msg, type) {
+  var t = document.createElement('div'); t.className = 'qdo-toast'; t.style.background = type === 'error' ? '#ef4444' : '#10b981'; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(function () { t.style.transition = 'opacity .3s'; t.style.opacity = '0'; }, 1800); setTimeout(function () { t.remove(); }, 2300);
+}
+function qdoNum(v) { if (v == null || v === '') return null; var n = Number(v); return isFinite(n) ? n : null; }
+function qdoMoneyOf(v) {                  // core: số; lost: chuỗi "999.999 đ" (dấu chấm là phân cách nghìn)
+  if (v == null || v === '') return null;
+  if (typeof v === 'number') return isFinite(v) ? v : null;
+  var d = String(v).replace(/[^\d]/g, ''); return d ? Number(d) : null;
+}
+
+/* ───────── chuẩn hoá dữ liệu từ allData ───────── */
+function qdoGrpOf(t) { return t == null ? 'na' : t <= 2 ? 'g12' : t <= 5 ? 'g35' : 'g5p'; }
+function qdoB5Of(t) { return t == null ? -1 : t <= 1 ? 0 : t <= 2 ? 1 : t <= 5 ? 2 : t <= 7 ? 3 : 4; }
+function qdoRows() {
+  var src = (typeof allData !== 'undefined' && allData) ? allData : [];
+  if (QDO.rows && QDO.rowsRef === src && QDO.rowsLen === src.length) return QDO.rows;
+  var out = [];
+  for (var i = 0; i < src.length; i++) {
+    var r = src[i]; if (!r) continue;
+    var aom = getAomVal(r); if (aom.toUpperCase() === 'AOM') continue;      // dòng tiêu đề lọt vào nguồn
+    var chot = r.isChotLost === true || String(r.isChotLost).toLowerCase() === 'true';
+    var t = qdoNum(r.timingDate);
+    var fin = String(r.finalStatus == null ? '' : r.finalStatus);
+    var hub = getHubVal(r);
+    var sup = getSupVal(r);
+    // [FIX 2026-10] Tự động bổ sung AOM / SUP từ danh bạ trạm cho các đơn Chốt Lost hoặc đơn chưa có AOM/SUP
+    if (!aom || aom === '-' || aom === 'Chưa phân AOM' || !sup || sup === '-' || sup === 'Chưa phân SUP') {
+      var org = (typeof spxGetHubOrgInfo === 'function') ? spxGetHubOrgInfo(hub) : null;
+      if (org) {
+        if (!aom || aom === '-' || aom === 'Chưa phân AOM') aom = org.aom || aom;
+        if (!sup || sup === '-' || sup === 'Chưa phân SUP') sup = org.sup || sup;
+      }
+    }
+    out.push({ r: r, id: String(r.shipmentId || ''), hub: hub, aom: aom || 'Chưa phân AOM', sup: sup || 'Chưa phân SUP', chot: chot,
+      up: !chot && (String(r.lostToday || '').toLowerCase().indexOf('today') >= 0 || String(r.aging || '').toLowerCase().indexOf('today') >= 0),
+      proc: String(r.processStatus || r.status || '').trim() || 'Đang xử lý (Khác)', fin: fin, onhold: !chot && fin.toLowerCase().indexOf('onhold') >= 0,
+      t: t, age: qdoNum(r.aging), grp: qdoGrpOf(t), b5: qdoB5Of(t), cogs: qdoMoneyOf(r.cogs) });
+  }
+  QDO.rows = out; QDO.rowsRef = src; QDO.rowsLen = src.length; return out;
+}
+function qdoHasCogs() { var rows = qdoRows(); for (var i = 0; i < rows.length; i++) if (rows[i].cogs != null) return true; return false; }
+
+/** Phạm vi "xem thử" của Admin (giữ nguyên cách module cũ lọc: ROM theo danh sách Hub, AOM/SUP theo tên). */
+function qdoPreviewFilter(rows) {
+  var f = (typeof qhGetActivePreviewOrgFilter === 'function') ? qhGetActivePreviewOrgFilter() : null;
+  if (!f) return rows;
+  if (f.field === 'rom' && f.hubs) { var set = {}; f.hubs.forEach(function (h) { set[cleanHubString(h)] = 1; }); return rows.filter(function (x) { return set[cleanHubString(x.hub)]; }); }
+  if (f.field === 'aom') return rows.filter(function (x) { return x.aom === f.value; });
+  if (f.field === 'sup') return rows.filter(function (x) { return x.sup === f.value; });
+  return rows;
+}
+function qdoCardFilter(rows) {      // bộ lọc theo THẺ KPI đang chọn (QDO.kf): backlog | g12 | g35 | g5p | onhold | up | chot
+  var k = QDO.kf; if (!k) return rows;
+  return rows.filter(function (x) {
+    if (k === 'chot') return x.chot;
+    if (x.chot) return false;
+    if (k === 'backlog') return true; if (k === 'onhold') return x.onhold; if (k === 'up') return x.up;
+    return x.grp === k;
+  });
+}
+function qdoBase() { return qdoCardFilter(qdoPreviewFilterCached()); }
+var _qdoPf = { src: null, key: '', out: null };
+function qdoPreviewFilterCached() {
+  var rows = qdoRows(), f = (typeof qhGetActivePreviewOrgFilter === 'function') ? qhGetActivePreviewOrgFilter() : null;
+  var key = f ? JSON.stringify([f.field, f.value, f.hubs ? f.hubs.length : 0]) : '';
+  if (_qdoPf.src === rows && _qdoPf.key === key) return _qdoPf.out;
+  _qdoPf = { src: rows, key: key, out: qdoPreviewFilter(rows) }; return _qdoPf.out;
+}
+function qdoScoped(noCard) {        // noCard=true: bỏ bộ lọc thẻ (dùng để các thẻ KPI luôn hiện số của TOÀN phạm vi)
+  var s = QDO.sel;
+  var cHub = s.hub ? cleanHubString(s.hub) : '';
+  return (noCard ? qdoPreviewFilterCached() : qdoBase()).filter(function (x) {
+    if (cHub) {
+      return cleanHubString(x.hub) === cHub;
+    }
+    if (s.sup) {
+      return x.sup === s.sup && (!s.aom || x.aom === s.aom);
+    }
+    if (s.aom) {
+      return x.aom === s.aom;
+    }
+    return true;
+  });
+}
+function qdoLevel() { return QDO.sel.hub ? 'lead' : QDO.sel.sup ? 'sup' : QDO.sel.aom ? 'aom' : 'rom'; }
+var QDO_LV = { rom: 'L1 · ROM', aom: 'L2 · AOM', sup: 'L3 · SUP', lead: 'L4 · LEAD' };
+
+function qdoAgg(rows) {
+  var a = { total: 0, g12: 0, g35: 0, g5p: 0, onhold: 0, up: 0, upAmt: 0, chot: 0, chotAmt: 0, b5: [0, 0, 0, 0, 0], proc: {} };
+  for (var i = 0; i < rows.length; i++) {
+    var x = rows[i];
+    if (x.chot) { a.chot++; a.chotAmt += x.cogs || 0; continue; }
+    a.total++; if (x.grp !== 'na') a[x.grp]++; if (x.b5 >= 0) a.b5[x.b5]++;
+    if (x.onhold) a.onhold++;
+    if (x.up) { a.up++; a.upAmt += x.cogs || 0; }
+    a.proc[x.proc] = (a.proc[x.proc] || 0) + 1;
+  }
+  return a;
+}
+
+/* ───────── PHÂN CẤP — MỘT NGUỒN DUY NHẤT: HEADER TRANG CHỦ ─────────
+   Cấp xem = vai trò thật (dữ liệu đã được máy chủ lọc theo quyền) hoặc "XEM THỬ" cấp của Admin (qhGetActivePreviewOrgFilter),
+   cộng Hub đang chọn ở header (spx_default_hub). Module KHÔNG có bộ chọn cấp riêng; chỉ cho "đi xuống" bằng cách bấm
+   một dòng (drill) và "Quay lại cấp trên". Đổi cấp/Hub ở header → xoá drill và vẽ lại. */
+function qdoIsAdmin() { return !!(window.SPX_ACCESS && window.SPX_ACCESS.role === 'admin'); }
+function qdoPreviewActive() { return typeof qhGetActivePreviewOrgFilter === 'function' && !!qhGetActivePreviewOrgFilter(); }
+function qdoHostSel() {
+  var rows = qdoPreviewFilterCached(), s = { aom: '', sup: '', hub: '' };
+  var hh = ''; try { hh = localStorage.getItem('spx_default_hub') || ''; } catch (e) {}
+  if (hh && hh !== 'ALL') {
+    var t = cleanHubString(hh), x = rows.filter(function (r) { return cleanHubString(r.hub) === t; })[0];
+    if (x) { s.aom = x.aom; s.sup = x.sup; s.hub = x.hub; } else { s.hub = hh; }
+  }
+  if ((!qdoIsAdmin() || qdoPreviewActive()) && rows.length) {      // phạm vi hẹp: tự đi xuống cấp thấp nhất còn 1 lựa chọn
+    var pool = rows.filter(function (x) { return (!s.aom || x.aom === s.aom) && (!s.sup || x.sup === s.sup); });
+    var aoms = qdoUniq(pool.map(function (x) { return x.aom; })); if (!s.aom && aoms.length === 1) s.aom = aoms[0];
+    if (s.aom && !s.sup) { var sups = qdoUniq(rows.filter(function (x) { return x.aom === s.aom; }).map(function (x) { return x.sup; })); if (sups.length === 1) s.sup = sups[0]; }
+    if (s.sup && !s.hub) { var hubs = qdoUniq(rows.filter(function (x) { return x.aom === s.aom && x.sup === s.sup; }).map(function (x) { return x.hub; })); if (hubs.length === 1) s.hub = hubs[0]; }
+  }
+  return s;
+}
+function qdoComputeSel() { var h = qdoHostSel(), d = QDO.drill; return { aom: h.aom || d.aom || '', sup: h.sup || d.sup || '', hub: h.hub || d.hub || '' }; }
+function qdoSetSel(kind, val) {           // drill: bấm một dòng để xuống cấp dưới
+  var d = QDO.drill, rows = qdoPreviewFilterCached();
+  if (kind === 'aom') { d.aom = val; d.sup = ''; d.hub = ''; }
+  else if (kind === 'sup') { d.sup = val; d.hub = ''; var h = rows.filter(function (x) { return x.sup === val && (!QDO.sel.aom || x.aom === QDO.sel.aom); })[0]; if (h) d.aom = h.aom; }
+  else if (kind === 'hub') { d.hub = val; var h2 = rows.filter(function (x) { return cleanHubString(x.hub) === cleanHubString(val); })[0]; if (h2) { d.aom = h2.aom; d.sup = h2.sup; } }
+  QDO.L.page = 1; qdoRender();
+}
+function qdoCanBack() { var d = QDO.drill; return !!(d.hub || d.sup || d.aom); }
+function qdoBack() { var d = QDO.drill; if (d.hub) d.hub = ''; else if (d.sup) d.sup = ''; else if (d.aom) d.aom = ''; QDO.L.page = 1; }
+
+/* ───────── vẽ ───────── */
+function qdoHeat(v, max, red) {          // tô nhiệt NHẠT theo giá trị lớn nhất của cột; chữ giữ nguyên màu để dễ đọc
+  if (!v || !max) return '';
+  var k = Math.min(1, v / max), a = (0.07 + 0.33 * k).toFixed(2);
+  return ' style="background:rgba(' + (red ? '220,38,38' : '234,88,12') + ',' + a + ');font-weight:800"';
+}
+/* ───────── NGÔN NGỮ: [Tiếng Việt, English] — mỗi giao diện chỉ hiện đúng 1 ngôn ngữ (theo SPX_LANG của trang chủ) ───────── */
+var QDO_D = {
+  title: ['Kiểm soát giao hàng', 'Delivery Operation Control'], c1: ['FLM Assistant', 'FLM Assistant'], c2: ['Kiểm soát vận hành', 'Operation Control'], c3: ['Giao hàng', 'Delivery'],
+  lvRom: ['Cấp ROM', 'ROM level'], lvAom: ['Cấp AOM', 'AOM level'], lvSup: ['Cấp SUP', 'SUP level'], lvLead: ['Cấp Lead', 'Lead level'],
+  back: ['‹ Quay lại cấp trên', '‹ Back to parent level'], upd: ['Cập nhật {0}', 'Updated {0}'],
+  catAll: ['Tất cả đơn', 'All orders'], catBack: ['Chỉ đơn tồn đọng', 'Backlog only'], catUp: ['Sắp chốt thất lạc', 'About to be lost'], catChot: ['Đã chốt thất lạc', 'Marked lost'],
+  empty: ['Hiện không có đơn tồn đọng hoặc thất lạc trong phạm vi của bạn.', 'No backlog or lost orders in your scope right now.'], loading: ['Đang tải dữ liệu giao hàng…', 'Loading delivery data…'],
+  lAom: ['AOM', 'AOM'], lSup: ['SUP', 'SUP'], lHub: ['Hub', 'Hub'],
+  t1: ['Tổng hợp đơn tồn đọng theo {0}', 'Backlog summary by {0}'], t1s: ['{0} · bấm một dòng để xem cấp dưới', '{0} · click a row to drill down'],
+  cTotal: ['Tổng tồn đọng', 'Total backlog'], c12: ['1–2 ngày', '1–2 days'], c35: ['3–5 ngày', '3–5 days'], c5p: ['Trên 5 ngày', 'Over 5 days'], cOh: ['Tạm giữ', 'On hold'], cUp: ['Sắp chốt thất lạc', 'About to be lost'], sum: ['TỔNG', 'TOTAL'],
+  noScope: ['Không có đơn trong phạm vi.', 'No orders in scope.'],
+  t2: ['Rủi ro thất lạc & bồi hoàn theo {0}', 'Lost risk & compensation by {0}'], t2s: ['Sắp chốt thất lạc: đơn đến hạn chốt trong hôm nay · Giá trị: tổng giá trị hàng của các đơn đó', 'About to be lost: orders due to be marked lost today · Value: total goods value of those orders'],
+  cUpAmt: ['Giá trị sắp chốt', 'Value at risk'], cChot: ['Đã chốt thất lạc', 'Marked lost'], cChotAmt: ['Giá trị đã chốt', 'Value marked lost'],
+  kTotal: ['Tổng tồn đọng', 'Total backlog'], kTotalD: ['Số đơn giao đang tồn trong phạm vi theo dõi', 'Delivery orders currently held in scope'],
+  k12D: ['Tồn tại trạm không quá 2 ngày', 'Held at the hub up to 2 days'], k35D: ['Tồn tại trạm từ 3 đến 5 ngày', 'Held at the hub 3 to 5 days'], k5pD: ['Tồn tại trạm trên 5 ngày', 'Held at the hub over 5 days'],
+  kOhD: ['Đơn đang tạm giữ chờ xử lý', 'Orders held pending action'], kUpD: ['Đơn đến hạn chốt thất lạc trong hôm nay', 'Orders due to be marked lost today'],
+  kUpAmt: ['Giá trị sắp chốt thất lạc', 'Value about to be lost'], kUpAmtD: ['Tổng giá trị hàng của các đơn sắp chốt', 'Total goods value of those orders'],
+  kChot: ['Đã chốt thất lạc', 'Marked lost'], kChotV: ['Giá trị {0}', 'Value {0}'], kChotD: ['Đơn trong danh sách thất lạc', 'Orders on the lost list'],
+  dist: ['Phân bổ tồn đọng theo thời gian tại trạm', 'Backlog by time at hub'], distS: ['Số ngày đơn nằm tại trạm hiện tại', 'Days an order has been at its current hub'],
+  st: ['Cơ cấu trạng thái xử lý', 'Processing status mix'], stS: ['Trạng thái xử lý của các đơn tồn đọng', 'Processing status of backlog orders'],
+  top1: ['Top {0} tồn đọng', 'Top {0} by backlog'], top1s: ['Số đơn tồn đọng theo {0}', 'Backlog orders by {0}'], top2: ['Top {0} tạm giữ', 'Top {0} on hold'], top2s: ['Số đơn tạm giữ theo {0}', 'Orders on hold by {0}'], noData: ['Không có dữ liệu.', 'No data.'],
+  lTitle: ['Danh sách đơn tồn đọng', 'Backlog order list'], lSub: ['{0} · số ngày đơn nằm tại trạm', '{0} · days at the hub'], copyAll: ['⧉ Copy mã đơn đang lọc', '⧉ Copy filtered order IDs'], csv: ['Xuất CSV', 'Export CSV'],
+  fAll: ['Tất cả ({0})', 'All ({0})'], fBack: ['Tồn đọng ({0})', 'Backlog ({0})'], fOh: ['Tạm giữ ({0})', 'On hold ({0})'], fUp: ['Sắp chốt thất lạc ({0})', 'About to be lost ({0})'], fChot: ['Đã chốt thất lạc ({0})', 'Marked lost ({0})'],
+  allGrp: ['Tất cả nhóm thời gian', 'All time groups'], allProc: ['Tất cả trạng thái xử lý', 'All processing statuses'], allFin: ['Tất cả trạng thái đơn', 'All order statuses'], searchId: ['Tìm mã đơn…', 'Search order ID…'],
+  hId: ['Mã đơn', 'Order ID'], hHub: ['Hub', 'Hub'], hGrp: ['Nhóm thời gian', 'Time group'], hAtHub: ['Số ngày tại trạm', 'Days at hub'], hAge: ['Số ngày kể từ khi tạo', 'Days since created'], hProc: ['Trạng thái xử lý', 'Processing status'],
+  hFin: ['Trạng thái đơn', 'Order status'], hIn: ['Nhập trạm lúc', 'Arrived at hub'], hVal: ['Giá trị hàng', 'Goods value'], hFlag: ['Cảnh báo', 'Flags'], hNote: ['Ghi chú', 'Note'], hAct: ['Thao tác', 'Action'],
+  bUp: ['Sắp chốt thất lạc', 'About to be lost'], bChot: ['Đã chốt thất lạc', 'Marked lost'], bOh: ['Tạm giữ', 'On hold'], none: ['Chưa có', 'None'], noteBtn: ['Ghi chú', 'Note'],
+  noRows: ['Không có đơn phù hợp bộ lọc.', 'No orders match the filters.'], rowsPg: ['{0} đơn · trang {1}/{2}', '{0} orders · page {1}/{2}'], prev: ['‹ Trước', '‹ Previous'], next: ['Sau ›', 'Next ›'],
+  g12: ['1–2 ngày', '1–2 days'], g35: ['3–5 ngày', '3–5 days'], g5p: ['Trên 5 ngày', 'Over 5 days'],
+  copied: ['Đã copy {0}', 'Copied {0}'], copiedAll: ['Đã copy danh sách mã đơn đang lọc', 'Copied the filtered order IDs'], copyFail: ['Không copy được', 'Copy failed'], copyHint: ['Bấm để copy mã đơn', 'Click to copy the order ID']
+};
+QDO_D.lrTitle = ['Rủi ro thất lạc & bồi hoàn', 'Lost risk & compensation']; QDO_D.lrSub = ['{0} · đơn sắp chốt và đã chốt thất lạc, xếp theo giá trị', '{0} · orders about to be / already marked lost, by value'];
+QDO_D.lrNone = ['Không có đơn nào sắp chốt hoặc đã chốt thất lạc.', 'No orders about to be or already marked lost.']; QDO_D.hDue = ['Hạn chốt', 'Lost deadline']; QDO_D.hRisk = ['Mức rủi ro', 'Risk']; QDO_D.hEst = ['Giá trị ước tính', 'Estimated value']; QDO_D.hCur = ['Trạng thái hiện tại', 'Current status'];
+QDO_D.dueToday = ['Hôm nay', 'Today']; QDO_D.dueDone = ['Đã chốt', 'Marked']; QDO_D.riskHigh = ['Cao', 'High']; QDO_D.riskLost = ['Đã thất lạc', 'Lost'];
+QDO_D.kfActive = ['Đang lọc: {0}', 'Filtering: {0}']; QDO_D.kfHint = ['Bấm để lọc theo mục này (bấm lần nữa để bỏ lọc)', 'Click to filter by this (click again to clear)']; QDO_D.lCount = ['{0} đơn', '{0} orders'];
+QDO_D.kUpV = ['Giá trị {0}', 'Value {0}'];
+var QDO_B5L = [['≤ 1 ngày', '≤ 1 day'], ['1–2 ngày', '1–2 days'], ['2–5 ngày', '2–5 days'], ['5–7 ngày', '5–7 days'], ['> 7 ngày', '> 7 days']];
+var QDO_PROC_EN = { 'Đang xử lý': 'In progress', 'Chưa xử lý': 'Not processed', 'Nghi ngờ thất lạc': 'Suspected lost', 'Đơn EHA': 'EHA order', 'Đã chốt Lost': 'Marked lost', 'Đang xử lý (Khác)': 'In progress (other)' };
+var QDO_FIN = {   // mã trạng thái hệ thống → nhãn dễ hiểu [VI, EN]
+  'OnHold': ['Tạm giữ', 'On hold'], 'LMHub_Received': ['Đã nhận tại Hub giao', 'Received at delivery hub'], 'Parcel_Sweeper_Scan': ['Đã quét rà soát kho', 'Warehouse sweep scan'],
+  'Missing': ['Báo thiếu hàng', 'Reported missing'], 'Exception_Reason_Added': ['Có ghi nhận ngoại lệ', 'Exception recorded'], 'Intercepting': ['Đang chặn đơn', 'Being intercepted'],
+  'Exception_Reason_Resolved': ['Ngoại lệ đã xử lý', 'Exception resolved'], 'Exception_Reason_Cancelled': ['Ngoại lệ đã hủy', 'Exception cancelled'], 'EHA Inbound': ['EHA nhập Hub', 'EHA inbound'],
+  'LMHub_Assigned': ['Đã phân cho Rider', 'Assigned to rider'], 'LMHub_LHArrived': ['Xe tuyến đã đến Hub', 'Linehaul arrived at hub'], 'Return_Failed': ['Hoàn hàng thất bại', 'Return failed'],
+  'Return_LMHub_Received': ['Hàng hoàn đã về Hub', 'Returned parcel received at hub'], 'SOC_LHTransporting': ['Đang vận chuyển tuyến', 'In linehaul transit'], 'SOC_LHTransported': ['Đã vận chuyển tuyến', 'Linehaul transported'],
+  'SOC_Packed': ['Đã đóng gói tại SOC', 'Packed at SOC'], 'SOC_LHPacking': ['Đang đóng tuyến tại SOC', 'Linehaul packing at SOC'], 'Delivering': ['Đang giao', 'Delivering'], 'Delivered': ['Đã giao', 'Delivered']
+};
+function qdoLang() { return (typeof SPX_LANG !== 'undefined' && SPX_LANG === 'en') ? 'en' : 'vi'; }
+function qdoT(k) {
+  var e = QDO_D[k]; if (!e) return k; var s = e[qdoLang() === 'en' ? 1 : 0];
+  for (var i = 1; i < arguments.length; i++) s = s.split('{' + (i - 1) + '}').join(arguments[i]);
+  return s;
+}
+function qdoPretty(s) { return String(s == null ? '' : s).replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/\s+/g, ' ').trim(); }
+function qdoFinLabel(c) { var e = QDO_FIN[c]; return e ? e[qdoLang() === 'en' ? 1 : 0] : (c ? qdoPretty(c) : '—'); }
+function qdoProcLabel(p) { if (qdoLang() === 'en') return QDO_PROC_EN[p] || p; return (p === 'Đã chốt Lost' || p === 'Lost') ? 'Đã chốt thất lạc' : p; }
+function qdoGrpLabel(g) { return g === 'g12' ? qdoT('g12') : g === 'g35' ? qdoT('g35') : g === 'g5p' ? qdoT('g5p') : '—'; }
+var QDO_LVK = { rom: 'lvRom', aom: 'lvAom', sup: 'lvSup', lead: 'lvLead' };
+
+function qdoKfLabel(k) { return k === 'backlog' ? qdoT('cTotal') : k === 'g12' ? qdoT('c12') : k === 'g35' ? qdoT('c35') : k === 'g5p' ? qdoT('c5p') : k === 'onhold' ? qdoT('cOh') : k === 'up' ? qdoT('cUp') : k === 'chot' ? qdoT('kChot') : ''; }
+function qdoHeadHtml() {
+  var lv = qdoLevel(), s = QDO.sel;
+  var trail = [qdoT('c1'), qdoT('c2'), qdoT('c3')]; if (s.aom) trail.push(s.aom); if (s.sup) trail.push(s.sup); if (s.hub) trail.push(s.hub);
+  var kf = QDO.kf ? '<span class="qdo-chip">' + qdoEsc(qdoT('kfActive', qdoKfLabel(QDO.kf))) + '<button class="qdo-btn" style="padding:0 7px;margin-left:8px" data-qdo-act="kclear">✕</button></span>' : '';
+  return '<div class="qdo-nav">' + (qdoCanBack() ? '<button class="qdo-btn" data-qdo-act="back">' + qdoT('back') + '</button>' : '') + '<span class="qdo-chip">' + qdoT(QDO_LVK[lv]) + '</span>' + kf + '</div>' +
+    '<div class="qdo-head"><div><div class="qdo-crumb">' + trail.map(qdoEsc).join(' / ') + '</div><h1 class="qdo-title">' + qdoT('title') + '</h1></div><div style="display:flex;flex-direction:column;align-items:flex-end"><span class="qdo-upd" id="qdo-upd"></span></div></div>';
+}
+function qdoKpiCards(a, hasCogs) {
+  var cur = QDO.kf;
+  var c = function (cap, num, tip, cls, k, dl) {
+    var isAct = cur === k;
+    var actBadge = isAct ? ' <span style="font-size:9px;font-weight:900;padding:1px 6px;border-radius:9999px;background:#2563eb;color:#fff;letter-spacing:0.02em;vertical-align:middle;display:inline-block">LỌC</span>' : '';
+    return '<div class="qdo-kpi clk' + (isAct ? ' act' : '') + '" title="' + qdoEsc(tip + ' — ' + (isAct ? 'Bấm lần nữa để bỏ lọc' : qdoT('kfHint'))) + '" data-qdo-act="kcard" data-qdo-v="' + k + '"><div class="cap">' + cap + actBadge + '</div><div class="num ' + (cls || '') + '">' + num + '</div><div class="dl">' + (dl || '') + '</div></div>';
+  };
+  return '<div class="qdo-kpis">' + c(qdoT('kTotal'), qdoInt(a.total), qdoT('kTotalD'), 'bad', 'backlog') + c(qdoT('c12'), qdoInt(a.g12), qdoT('k12D'), '', 'g12') + c(qdoT('c35'), qdoInt(a.g35), qdoT('k35D'), 'warn', 'g35') + c(qdoT('c5p'), qdoInt(a.g5p), qdoT('k5pD'), 'bad', 'g5p') +
+    c(qdoT('cOh'), qdoInt(a.onhold), qdoT('kOhD'), 'warn', 'onhold') +
+    c(qdoT('cUp'), qdoInt(a.up), qdoT('kUpD') + (hasCogs ? ' · ' + qdoT('kUpAmtD') : ''), 'bad', 'up', hasCogs ? qdoT('kUpV', qdoMoney(a.upAmt)) : '') +
+    c(qdoT('kChot'), qdoInt(a.chot), qdoT('kChotD'), '', 'chot', hasCogs ? qdoT('kChotV', qdoMoney(a.chotAmt)) : '') + '</div>';
+}
+function qdoChildren(useAll) {
+  var lv = qdoLevel(), rows = qdoScoped(useAll), key = lv === 'rom' ? 'aom' : lv === 'aom' ? 'sup' : 'hub', g = {}, order = [];
+  rows.forEach(function (x) { var k = x[key]; if (!g[k]) { g[k] = []; order.push(k); } g[k].push(x); });
+  return { label: qdoT(lv === 'rom' ? 'lAom' : lv === 'aom' ? 'lSup' : 'lHub'), order: order, groups: g, rows: rows };
+}
+function qdoTables(ch, hasCogs) {
+  var sortMetric = QDO.kf;
+  var list = ch.order.map(function (n) { return { n: n, a: qdoAgg(ch.groups[n]) }; }).sort(function (x, y) {
+    if (sortMetric && sortMetric !== 'backlog') {
+      var diff = (y.a[sortMetric] || 0) - (x.a[sortMetric] || 0);
+      if (diff !== 0) return diff;
+    }
+    return y.a.total - x.a.total || String(x.n).localeCompare(String(y.n), 'vi');
+  });
+  var mx = { total: 0, g12: 0, g35: 0, g5p: 0, onhold: 0, up: 0 };
+  list.forEach(function (r) { Object.keys(mx).forEach(function (k) { if (r.a[k] > mx[k]) mx[k] = r.a[k]; }); });
+  var tot = qdoAgg(ch.rows);
+  var colAct = function (colKey) {
+    var match = (QDO.kf === colKey) || (QDO.kf === 'backlog' && colKey === 'total');
+    return match ? ' style="background:rgba(37,99,235,0.08);box-shadow:inset 0 0 0 1.5px #2563eb;font-weight:800;"' : '';
+  };
+  var row1 = function (r) {
+    var a = r.a;
+    return '<tr class="cl" data-qdo-act="drill" data-qdo-v="' + qdoEsc(r.n) + '"><td class="nm">' + qdoEsc(r.n) + '</td><td' + (QDO.kf === 'backlog' ? colAct('total') : qdoHeat(a.total, mx.total, true)) + '>' + qdoInt(a.total) + '</td><td' + colAct('g12') + '>' + qdoInt(a.g12) + '</td><td' + colAct('g35') + '>' + qdoInt(a.g35) + '</td><td' + (QDO.kf === 'g5p' ? colAct('g5p') : qdoHeat(a.g5p, mx.g5p, false)) + '>' + qdoInt(a.g5p) + '</td><td' + colAct('onhold') + '>' + qdoInt(a.onhold) + '</td><td' + (QDO.kf === 'up' ? colAct('up') : qdoHeat(a.up, mx.up, true)) + '>' + qdoInt(a.up) + '</td><td class="chev">›</td></tr>';
+  };
+  var t1 = '<div class="qdo-card"><div class="qdo-ch"><div><div class="qdo-ct">' + qdoT('t1', ch.label) + (QDO.kf ? ' · <span style="color:#2563eb;font-size:12px;font-weight:700">Xếp theo ' + qdoEsc(qdoKfLabel(QDO.kf)) + ' ↓</span>' : '') + '</div><div class="qdo-cs">' + qdoT('t1s', qdoT(QDO_LVK[qdoLevel()])) + '</div></div><div class="qdo-seg"><span class="qdo-chip">' + list.length + ' ' + ch.label + '</span></div></div><div class="qdo-wrap"><table class="qdo-tbl"><thead><tr><th class="nm">' + ch.label + '</th><th' + colAct('total') + '>' + qdoT('cTotal') + '</th><th' + colAct('g12') + '>' + qdoT('c12') + '</th><th' + colAct('g35') + '>' + qdoT('c35') + '</th><th' + colAct('g5p') + '>' + qdoT('c5p') + '</th><th' + colAct('onhold') + '>' + qdoT('cOh') + '</th><th' + colAct('up') + '>' + qdoT('cUp') + '</th><th class="chev"></th></tr></thead><tbody>' +
+    '<tr class="tot"><td class="nm">' + qdoT('sum') + '</td><td' + colAct('total') + '>' + qdoInt(tot.total) + '</td><td' + colAct('g12') + '>' + qdoInt(tot.g12) + '</td><td' + colAct('g35') + '>' + qdoInt(tot.g35) + '</td><td' + colAct('g5p') + '>' + qdoInt(tot.g5p) + '</td><td' + colAct('onhold') + '>' + qdoInt(tot.onhold) + '</td><td' + colAct('up') + '>' + qdoInt(tot.up) + '</td><td class="chev"></td></tr>' + list.map(row1).join('') + '</tbody></table></div>' + (list.length ? '' : '<div class="qdo-empty">' + qdoT('noScope') + '</div>') + '</div>';
+  var lst2 = list.slice().sort(function (x, y) {
+    if (sortMetric === 'chot') return (y.a.chot - x.a.chot) || (y.a.up - x.a.up) || String(x.n).localeCompare(String(y.n), 'vi');
+    return (y.a.up - x.a.up) || (y.a.chot - x.a.chot) || String(x.n).localeCompare(String(y.n), 'vi');
+  });
+  var t2 = '<div class="qdo-card"><div class="qdo-ch"><div><div class="qdo-ct">' + qdoT('t2', ch.label) + '</div><div class="qdo-cs">' + qdoT('t2s') + '</div></div></div><div class="qdo-wrap"><table class="qdo-tbl"><thead><tr><th class="nm">' + ch.label + '</th><th' + colAct('up') + '>' + qdoT('cUp') + '</th><th' + colAct('up') + '>' + qdoT('cUpAmt') + '</th><th' + colAct('chot') + '>' + qdoT('cChot') + '</th><th' + colAct('chot') + '>' + qdoT('cChotAmt') + '</th><th class="chev"></th></tr></thead><tbody>' +
+    lst2.map(function (r) { var a = r.a; return '<tr class="cl" data-qdo-act="drill" data-qdo-v="' + qdoEsc(r.n) + '"><td class="nm">' + qdoEsc(r.n) + '</td><td' + colAct('up') + (a.up && QDO.kf !== 'up' ? ' class="bad"' : '') + '>' + qdoInt(a.up) + '</td><td' + colAct('up') + (a.up && QDO.kf !== 'up' ? ' class="bad"' : '') + '>' + (hasCogs ? qdoMoney(a.upAmt) : '—') + '</td><td' + colAct('chot') + '>' + qdoInt(a.chot) + '</td><td' + colAct('chot') + '>' + (hasCogs ? qdoMoney(a.chotAmt) : '—') + '</td><td class="chev">›</td></tr>'; }).join('') + '</tbody></table></div></div>';
+  return '<div class="qdo-grid2 qdo-tables">' + t1 + t2 + '</div>';
+}
+function qdoCharts(a, ch, showHubs) {
+  var mxb = Math.max.apply(null, a.b5.concat([1])), li = qdoLang() === 'en' ? 1 : 0;
+  var bars = '<div class="qdo-card"><div class="qdo-ch"><div><div class="qdo-ct">' + qdoT('dist') + '</div><div class="qdo-cs">' + qdoT('distS') + '</div></div></div><div class="qdo-pad"><div class="qdo-bars">' +
+    a.b5.map(function (v, i) { return '<div class="qdo-bcol"><div class="v">' + qdoInt(v) + '</div><div class="bar" style="height:' + Math.max(2, Math.round(v / mxb * 150)) + 'px;background:' + QDO_B5[i][1] + '"></div><div class="l">' + QDO_B5L[i][li] + '</div></div>'; }).join('') + '</div></div></div>';
+  var pal = { 'Đang xử lý': '#2563eb', 'Chưa xử lý': '#f59e0b', 'Nghi ngờ thất lạc': '#dc2626', 'Đơn EHA': '#7c3aed' }, extra = ['#0ea5e9', '#10b981', '#94a3b8'], ei = 0;
+  var keys = Object.keys(a.proc).sort(function (x, y) { return a.proc[y] - a.proc[x]; }), sum = a.total || 1, off = 0, R = 52, C = 2 * Math.PI * R;
+  var segs = keys.map(function (k) { var col = pal[k] || extra[ei++ % extra.length], len = a.proc[k] / sum * C, s = '<circle r="' + R + '" cx="70" cy="70" fill="none" stroke="' + col + '" stroke-width="22" stroke-dasharray="' + len.toFixed(2) + ' ' + (C - len).toFixed(2) + '" stroke-dashoffset="' + (-off).toFixed(2) + '" transform="rotate(-90 70 70)"/>'; off += len; return { s: s, k: k, col: col }; });
+  var donut = '<div class="qdo-card"><div class="qdo-ch"><div><div class="qdo-ct">' + qdoT('st') + '</div><div class="qdo-cs">' + qdoT('stS') + '</div></div></div><div class="qdo-pad"><div class="qdo-donut"><svg width="140" height="140" viewBox="0 0 140 140">' + segs.map(function (x) { return x.s; }).join('') + '<text x="70" y="75" text-anchor="middle" font-size="20" font-weight="900" fill="currentColor">' + qdoInt(a.total) + '</text></svg><div class="qdo-leg">' +
+    segs.map(function (x) { return '<div><i style="background:' + x.col + '"></i>' + qdoEsc(qdoProcLabel(x.k)) + ' · <b>' + qdoInt(a.proc[x.k]) + '</b></div>'; }).join('') + '</div></div></div></div>';
+  var out = '<div class="qdo-grid2">' + bars + donut + '</div>';
+  if (showHubs) {
+    var hubs = ch.order.map(function (n) { return { n: n, a: qdoAgg(ch.groups[n]) }; });
+    var top = function (key, title, sub, color) {
+      var l = hubs.filter(function (h) { return h.a[key] > 0; }).sort(function (x, y) { return y.a[key] - x.a[key]; }).slice(0, 8), m = l.length ? l[0].a[key] : 1;
+      return '<div class="qdo-card"><div class="qdo-ch"><div><div class="qdo-ct">' + title + '</div><div class="qdo-cs">' + sub + '</div></div></div><div class="qdo-pad">' + (l.length ? l.map(function (h) { return '<div class="qdo-hb"><div class="nmx" title="' + qdoEsc(h.n) + '">' + qdoEsc(h.n) + '</div><div class="tr"><div class="fl" style="width:' + Math.max(3, Math.round(h.a[key] / m * 100)) + '%;background:' + color + '"></div></div><div class="n">' + qdoInt(h.a[key]) + '</div></div>'; }).join('') : '<div class="qdo-empty">' + qdoT('noData') + '</div>') + '</div></div>';
+    };
+    out += '<div class="qdo-grid2">' + top('total', qdoT('top1', ch.label), qdoT('top1s', ch.label), '#2563eb') + top('onhold', qdoT('top2', ch.label), qdoT('top2s', ch.label), '#f59e0b') + '</div>';
+  }
+  return out;
+}
+
+/* ───── cấp LEAD: danh sách đơn tồn đọng ───── */
+function qdoLeadRows(rows) {            // rows đã được lọc theo thẻ KPI; ở đây chỉ lọc thêm trạng thái xử lý / trạng thái đơn / mã đơn
+  var L = QDO.L, q = L.q.toLowerCase().trim();
+  return rows.filter(function (x) {
+    if (L.proc && x.proc !== L.proc) return false; if (L.fin && x.fin !== L.fin) return false;
+    return !q || x.id.toLowerCase().indexOf(q) >= 0;
+  }).sort(function (a, b) { return (b.up - a.up) || ((b.t || 0) - (a.t || 0)) || a.id.localeCompare(b.id); });
+}
+function qdoLostRiskLead(rowsAll, hasCogs) {
+  var a = qdoAgg(rowsAll), notes = (typeof globalNotes !== 'undefined' && globalNotes) ? globalNotes : {};
+  var risk = rowsAll.filter(function (x) { return x.up || x.chot; }).sort(function (x, y) { return (y.cogs || 0) - (x.cogs || 0); }).slice(0, 10);
+  var card = function (cap, num, k, cls) { var isAct = QDO.kf === k; var actBadge = isAct ? ' <span style="font-size:9px;font-weight:900;padding:1px 6px;border-radius:9999px;background:#2563eb;color:#fff;letter-spacing:0.02em;vertical-align:middle;display:inline-block">LỌC</span>' : ''; return '<div class="qdo-kpi clk' + (isAct ? ' act' : '') + '" title="' + qdoEsc(qdoT('kfHint')) + '" data-qdo-act="kcard" data-qdo-v="' + k + '"><div class="cap">' + cap + actBadge + '</div><div class="num ' + cls + '">' + num + '</div></div>'; };
+  var head = '<tr><th class="nm">' + qdoT('hId') + '</th><th>' + qdoT('hDue') + '</th><th>' + qdoT('hRisk') + '</th><th>' + qdoT('hEst') + '</th><th>' + qdoT('hCur') + '</th><th>' + qdoT('hAtHub') + '</th><th>' + qdoT('hAct') + '</th></tr>';
+  var tbl = risk.length ? '<div class="qdo-wrap"><table class="qdo-tbl"><thead>' + head + '</thead><tbody>' + risk.map(function (x) {
+    return '<tr><td class="nm"><span class="qdo-id" title="' + qdoEsc(qdoT('copyHint')) + '" data-qdo-act="copy" data-qdo-v="' + qdoEsc(x.id) + '">' + qdoEsc(x.id) + '</span></td><td>' + (x.chot ? qdoT('dueDone') : qdoT('dueToday')) + '</td><td><span class="qdo-badge ' + (x.chot ? 'ch' : 'up') + '">' + (x.chot ? qdoT('riskLost') : qdoT('riskHigh')) + '</span></td><td>' + (hasCogs && x.cogs != null ? qdoMoney(x.cogs) : '—') + '</td><td>' + qdoEsc(x.chot ? (x.fin || qdoProcLabel(x.proc)) : qdoFinLabel(x.fin)) + '</td><td>' + (x.t == null ? '—' : x.t) + '</td><td><button class="qdo-btn" data-qdo-act="note" data-qdo-v="' + qdoEsc(x.id) + '">' + qdoT('noteBtn') + '</button></td></tr>';
+  }).join('') + '</tbody></table></div>' : '<div class="qdo-empty">' + qdoT('lrNone') + '</div>';
+  return '<div class="qdo-card"><div class="qdo-ch"><div><div class="qdo-ct">' + qdoT('lrTitle') + '</div><div class="qdo-cs">' + qdoT('lrSub', qdoEsc(QDO.sel.hub)) + '</div></div></div>' +
+    '<div class="qdo-pad"><div class="qdo-kpis" style="margin-bottom:12px">' + card(qdoT('cUp'), qdoInt(a.up), 'up', 'bad') + card(qdoT('kUpAmt'), hasCogs ? qdoMoney(a.upAmt) : '—', 'up', 'bad') + card(qdoT('kChot'), qdoInt(a.chot), 'chot', '') + card(qdoT('cChotAmt'), hasCogs ? qdoMoney(a.chotAmt) : '—', 'chot', '') + '</div></div>' + tbl + '</div>';
+}
+function qdoRenderLead(rows, hasCogs) {
+  var L = QDO.L;
+  var procs = qdoSortVi(qdoUniq(rows.map(function (x) { return x.proc; }))), fins = qdoSortVi(qdoUniq(rows.map(function (x) { return x.fin; })).filter(Boolean));
+  var lst = qdoLeadRows(rows), pages = Math.max(1, Math.ceil(lst.length / QDO_PAGE)); if (L.page > pages) L.page = pages;
+  var slice = lst.slice((L.page - 1) * QDO_PAGE, L.page * QDO_PAGE), notes = (typeof globalNotes !== 'undefined' && globalNotes) ? globalNotes : {};
+  var optP = '<option value="">' + qdoT('allProc') + '</option>' + procs.map(function (x) { return '<option' + (L.proc === x ? ' selected' : '') + ' value="' + qdoEsc(x) + '">' + qdoEsc(qdoProcLabel(x)) + '</option>'; }).join('');
+  var optF = '<option value="">' + qdoT('allFin') + '</option>' + fins.map(function (x) { return '<option' + (L.fin === x ? ' selected' : '') + ' value="' + qdoEsc(x) + '">' + qdoEsc(qdoFinLabel(x)) + '</option>'; }).join('');
+  var head = '<tr><th class="nm">' + qdoT('hId') + '</th><th>' + qdoT('hHub') + '</th><th>' + qdoT('hGrp') + '</th><th>' + qdoT('hAtHub') + '</th><th>' + qdoT('hAge') + '</th><th>' + qdoT('hProc') + '</th><th>' + qdoT('hFin') + '</th><th>' + qdoT('hIn') + '</th><th>' + qdoT('hVal') + '</th><th>' + qdoT('hFlag') + '</th><th>' + qdoT('hNote') + '</th><th>' + qdoT('hAct') + '</th></tr>';
+  var tbl = slice.length ? '<div class="qdo-wrap"><table class="qdo-tbl"><thead>' + head + '</thead><tbody>' +
+    slice.map(function (x) {
+      var n = notes[x.id], flags = (x.chot ? '<span class="qdo-badge ch">' + qdoT('bChot') + '</span> ' : '') + (x.up ? '<span class="qdo-badge up">' + qdoT('bUp') + '</span> ' : '') + (x.onhold ? '<span class="qdo-badge oh">' + qdoT('bOh') + '</span>' : '');
+      return '<tr><td class="nm"><span class="qdo-id" title="' + qdoEsc(qdoT('copyHint')) + '" data-qdo-act="copy" data-qdo-v="' + qdoEsc(x.id) + '">' + qdoEsc(x.id) + '</span></td><td>' + qdoEsc(x.hub) + '</td><td>' + (x.chot ? '—' : '<span class="qdo-badge ' + (x.grp === 'g12' ? 'a1' : x.grp === 'g35' ? 'a2' : 'a3') + '">' + qdoGrpLabel(x.grp) + '</span>') + '</td><td>' + (x.t == null ? '—' : x.t) + '</td><td>' + (x.age == null ? '—' : x.age) + '</td><td>' + qdoEsc(qdoProcLabel(x.proc)) + '</td><td>' + qdoEsc(qdoFinLabel(x.fin)) + '</td><td>' + qdoEsc(String(x.r.inboundAt || '').replace('T', ' ') || '—') + '</td><td>' + (hasCogs ? (x.cogs == null ? '—' : qdoMoney(x.cogs)) : '—') + '</td><td style="text-align:left">' + (flags || '—') + '</td>' +
+        '<td style="text-align:left;white-space:normal;max-width:200px">' + (n && n.text ? qdoEsc(n.text).slice(0, 80) + '<small style="display:block;color:var(--kmut)">' + qdoEsc(n.user || '') + ' · ' + qdoEsc(n.time || '') + '</small>' : '<span style="color:var(--kmut)">' + qdoT('none') + '</span>') + '</td><td><button class="qdo-btn" data-qdo-act="note" data-qdo-v="' + qdoEsc(x.id) + '">' + qdoT('noteBtn') + '</button></td></tr>';
+    }).join('') + '</tbody></table></div>' : '<div class="qdo-empty">' + qdoT('noRows') + '</div>';
+  var subScope = QDO.sel.hub ? qdoT('lSub', qdoEsc(QDO.sel.hub)) :
+    (QDO.sel.sup ? ('SUP: ' + qdoEsc(QDO.sel.sup) + (qdoLang() === 'en' ? ' · days at hub' : ' · số ngày đơn nằm tại trạm')) :
+    (QDO.sel.aom ? ('AOM: ' + qdoEsc(QDO.sel.aom) + (qdoLang() === 'en' ? ' · days at hub' : ' · số ngày đơn nằm tại trạm')) :
+    (qdoLang() === 'en' ? 'All scope · days at hub' : 'Toàn bộ phạm vi · số ngày đơn nằm tại trạm')));
+  var clearBtn = QDO.kf ? '<button class="qdo-btn" style="background:#fee2e2;color:#dc2626;border-color:#fca5a5;font-weight:700;margin-right:8px" data-qdo-act="kclear" title="' + (qdoLang() === 'en' ? 'Clear filter to view all' : 'Bỏ lọc để xem tất cả') + '">✕ ' + (qdoLang() === 'en' ? 'Clear filter' : 'Bỏ lọc') + ' (' + qdoEsc(qdoKfLabel(QDO.kf)) + ')</button>' : '';
+  return '<div class="qdo-card" id="qdo-list"><div class="qdo-ch"><div><div class="qdo-ct">' + qdoT('lTitle') + (QDO.kf ? ' · ' + qdoEsc(qdoKfLabel(QDO.kf)) : '') + '</div><div class="qdo-cs">' + subScope + '</div></div><div class="qdo-seg">' + clearBtn + '<button class="qdo-btn" data-qdo-act="copyall">' + qdoT('copyAll') + '</button><button class="qdo-btn" data-qdo-act="csv">' + qdoT('csv') + '</button></div></div>' +
+    '<div class="qdo-bar"><span class="qdo-chip">' + qdoT('lCount', lst.length) + '</span><select class="qdo-sel" data-qdo-sel="lproc">' + optP + '</select><select class="qdo-sel" data-qdo-sel="lfin">' + optF + '</select>' +
+    '<input class="qdo-in" id="qdo-q" placeholder="' + qdoEsc(qdoT('searchId')) + '" value="' + qdoEsc(L.q) + '"></div>' + tbl +
+    '<div class="qdo-pg"><button class="qdo-btn" data-qdo-act="lpage" data-qdo-v="-1"' + (L.page <= 1 ? ' disabled' : '') + '>' + qdoT('prev') + '</button><button class="qdo-btn" data-qdo-act="lpage" data-qdo-v="1"' + (L.page >= pages ? ' disabled' : '') + '>' + qdoT('next') + '</button><span class="qdo-upd">' + qdoT('rowsPg', lst.length, L.page, pages) + '</span></div></div>';
+}
+
+/* ───── vẽ toàn bộ ───── */
+function qdoRender() {
+  var body = document.getElementById('qdo-body'); if (!body) return;
+  var loaded = !!(window.RUNTIME_CACHE && RUNTIME_CACHE.agingDataLoaded) || (typeof allData !== 'undefined' && allData && allData.length);
+  if (!loaded) { body.innerHTML = '<div class="qdo-load">' + qdoT('loading') + '</div>'; return; }
+  var keepTop = body.scrollTop, fe = document.activeElement, fid = fe && fe.id, caret = fe && fe.selectionStart;
+  QDO.sel = qdoComputeSel();
+  var lv = qdoLevel(), rows = qdoScoped(), rowsAll = qdoScoped(true), hasCogs = qdoHasCogs(), a = qdoAgg(rows), aAll = qdoAgg(rowsAll), html = qdoHeadHtml();
+  if (!qdoRows().length) { body.innerHTML = html + '<div class="qdo-card"><div class="qdo-empty">' + qdoT('empty') + '</div></div>'; return; }
+  if (lv === 'lead') { html += qdoKpiCards(aAll, hasCogs) + qdoCharts(a, null, false) + qdoLostRiskLead(rowsAll, hasCogs) + qdoRenderLead(rows, hasCogs); }
+  else { var ch = qdoChildren(true); html += qdoKpiCards(aAll, hasCogs) + qdoTables(ch, hasCogs) + qdoCharts(a, ch, true) + (QDO.kf ? qdoRenderLead(rows, hasCogs) : ''); }
+  body.innerHTML = html; body.scrollTop = keepTop;
+  if (fid === 'qdo-q') { var el = document.getElementById('qdo-q'); if (el) { el.focus(); try { el.setSelectionRange(caret, caret); } catch (e) {} } }
+  var upd = document.getElementById('qdo-upd');
+  if (upd) { var ts = window.RUNTIME_CACHE && RUNTIME_CACHE.timestamp, d = new Date(ts || Date.now()); upd.textContent = qdoT('upd', ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2)); }
+}
+
+/* ───── CSV / copy ───── */
+function qdoCsv() {
+  var rows = qdoLeadRows(qdoScoped()), esc = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }, notes = (typeof globalNotes !== 'undefined' && globalNotes) ? globalNotes : {};
+  var out = [[qdoT('hId'), qdoT('hHub'), 'AOM', 'SUP', qdoT('hGrp'), qdoT('hAtHub'), qdoT('hAge'), qdoT('hProc'), qdoT('hFin'), qdoT('bOh'), qdoT('bUp'), qdoT('bChot'), qdoT('hVal'), qdoT('hNote')].join(',')].concat(rows.map(function (x) {
+    var n = notes[x.id] || {}; return [x.id, x.hub, x.aom, x.sup, x.chot ? '' : qdoGrpLabel(x.grp), x.t, x.age, qdoProcLabel(x.proc), qdoFinLabel(x.fin), x.onhold ? 'x' : '', x.up ? 'x' : '', x.chot ? 'x' : '', x.cogs, n.text].map(esc).join(',');
+  })).join('\n');
+  var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + out], { type: 'text/csv;charset=utf-8' }));
+  var scopeName = QDO.sel.hub || QDO.sel.sup || QDO.sel.aom || 'all';
+  a.download = 'delivery_' + scopeName.replace(/[^A-Za-z0-9]+/g, '_') + (QDO.kf ? '_' + QDO.kf : '') + '.csv'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function qdoCopy(text, msg) {            // Clipboard API → execCommand (trong iframe Apps Script thường bị chặn Clipboard API)
+  var ok = function () { qdoToast(msg || qdoT('copied', text)); }, fb = function () {
+    try { var t = document.createElement('textarea'); t.value = text; t.style.cssText = 'position:fixed;left:-9999px;top:0'; document.body.appendChild(t); t.focus(); t.select(); var r = document.execCommand('copy'); t.remove(); if (r) ok(); else qdoToast(qdoT('copyFail'), 'error'); }
+    catch (e) { qdoToast(qdoT('copyFail'), 'error'); }
+  };
+  try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(ok, fb); return; } } catch (e) {}
+  fb();
+}
+
+/* ───── sự kiện ───── */
+function qdoOnClick(ev) {
+  var t = ev.target.closest('[data-qdo-act]'); if (!t || !document.getElementById('qdo-root').contains(t)) return;
+  var act = t.getAttribute('data-qdo-act'), v = t.getAttribute('data-qdo-v');
+  if (act === 'refresh') { if (typeof runBackgroundSync === 'function') runBackgroundSync(true); else applyFiltersQH(); return; }
+  if (act === 'back') { qdoBack(); }
+  else if (act === 'drill') { var lv = qdoLevel(); if (lv === 'rom') qdoSetSel('aom', v); else if (lv === 'aom') qdoSetSel('sup', v); else if (lv === 'sup') qdoSetSel('hub', v); return; }
+  else if (act === 'kcard') {
+    QDO.kf = (QDO.kf === v) ? '' : v;
+    QDO.L.page = 1;
+    qdoRender();
+    if (QDO.kf) {
+      setTimeout(function () {
+        var el = document.getElementById('qdo-list');
+        if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+    }
+    return;
+  }
+  else if (act === 'kclear') {
+    QDO.kf = '';
+    QDO.L.page = 1;
+    qdoRender();
+    return;
+  }
+  else if (act === 'lpage') { QDO.L.page += Number(v); }
+  else if (act === 'note') { var x = qdoRows().filter(function (r) { return r.id === v; })[0]; openNoteModal(v, x ? x.hub : ''); return; }
+  else if (act === 'copy') { qdoCopy(v); return; }
+  else if (act === 'copyall') { qdoCopy(qdoLeadRows(qdoScoped()).map(function (r) { return r.id; }).join('\n'), qdoT('copiedAll')); return; }
+  else if (act === 'csv') { qdoCsv(); return; }
+  applyFiltersQH();
+}
+function qdoOnChange(ev) {
+  var t = ev.target, k = t.getAttribute && t.getAttribute('data-qdo-sel'); if (!k) return; var v = t.value;
+  if (k === 'lproc') { QDO.L.proc = v; QDO.L.page = 1; } else if (k === 'lfin') { QDO.L.fin = v; QDO.L.page = 1; }
+  applyFiltersQH();
+}
+function qdoOnInput(ev) { if (ev.target.id === 'qdo-q') { QDO.L.q = ev.target.value; QDO.L.page = 1; qdoRender(); } }
+
+/* ═══════════ COMPAT — các hàm trang chủ / module khác đang gọi vào (giữ nguyên tên) ═══════════ */
+function initQuahanUI() {
+  var root = document.getElementById('qdo-root'); if (!root) return;
+  if (!root.__qdoBound) { root.__qdoBound = true; root.addEventListener('click', qdoOnClick); root.addEventListener('change', qdoOnChange); root.addEventListener('input', qdoOnInput); }
+  qdoRender();
+  try { qhEnsureFresh('mở module'); } catch (e) {}
+}
+function applyFiltersQH() { qdoRender(); }
+function applyFiltersFM() { qdoRender(); }
+function renderKpiSummaryQH() { qdoRender(); }
+function populateHubLists() {}
+function _buildLMHeader() { return ''; }
+function qhLoadLmOverview() {}            // bức tranh toàn cảnh LM nay nằm trong các bảng/biểu đồ của giao diện mới
+function qhRenderLmFullPicPanel() {}
+function qhApplyPreviewLevel(level) { QDO.drill = { aom: '', sup: '', hub: '' }; QDO.L.page = 1; _qdoPf = { src: null, key: '', out: null }; qdoRender(); }
+function setCatQH(cat) {                  // thẻ trang chủ: ALL | LOST_TODAY | đã chốt Lost (NL/SL/CHOT) | trạng thái xử lý
+  var c = String(cat || 'ALL'); QDO.kf = c === 'LOST_TODAY' ? 'up' : (c === 'NL' || c === 'SL' || c === 'CHOT') ? 'chot' : ''; QDO.L.page = 1; qdoRender();
+}
+function syncHubSelection() { QDO.drill = { aom: '', sup: '', hub: '' }; QDO.L.page = 1; qdoRender(); }   // trang chủ đổi Hub ở header
+function copyIdQH(id, el) { try { qdoCopy(String(id)); if (el && el.classList) { el.classList.add('copied'); setTimeout(function () { el.classList.remove('copied'); }, 1200); } } catch (e) {} }
+function qhEnsureFresh(reason) { if (typeof window.spxEnsureFresh === 'function') window.spxEnsureFresh(reason); }
+
+/* ── Giữ NGUYÊN VĂN từ module cũ (ghi chú, dịch nhãn, phạm vi xem thử ROM) ── */
+function qhT(viText) {
+  return (typeof spxUiLabel === 'function') ? spxUiLabel(viText) : viText;
+}
+
+function _qhEsc(s) {
+  // [DỌN TRÙNG LẶP] Uỷ quyền lại spxEscHtml() dùng chung trong index.html — giữ
+  // NGUYÊN tên hàm này, KHÔNG đổi bất kỳ điểm gọi nào (16 điểm gọi trong file này
+  // vẫn hoạt động y hệt, chỉ đổi cách hàm này TỰ THỰC HIỆN bên trong).
+  return spxEscHtml(s);
+}
+
+function _qhEscJsAttr(s) {
+  // [DỌN TRÙNG LẶP] Uỷ quyền spxEscJsAttr() dùng chung (index.html).
+  return (typeof spxEscJsAttr === 'function') ? spxEscJsAttr(s) : String(s == null ? '' : s);
+}
+
+function openNoteModal(id, hub) {
+  currentEditingId = id;
+  currentEditingHub = hub || '';
+  document.getElementById('modalOrderId').innerText = id;
+  document.getElementById('noteInputText').value = globalNotes[id]?.text || '';
+  const modal = document.getElementById('noteModal');
+  const content = document.getElementById('noteModalContent');
+  modal.classList.remove('hidden');
+  setTimeout(() => content.classList.replace('scale-95','scale-100'), 10);
+  document.getElementById('noteInputText').focus();
+}
+
+function closeNoteModal() {
+  const modal = document.getElementById('noteModal');
+  const content = document.getElementById('noteModalContent');
+  content.classList.replace('scale-100','scale-95');
+  setTimeout(() => modal.classList.add('hidden'), 150);
+  currentEditingId = '';
+  currentEditingHub = '';
+}
+
+function saveNote() {
+  const txt = document.getElementById('noteInputText').value.trim();
+  if (!txt) return showToast(qhT('Vui lòng nhập nội dung note!'), 'error', 'quahan');
+  const btn = document.getElementById('btnSaveNote');
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> LƯU NOTE';
+  google.script.run
+    .withFailureHandler(() => { showToast(qhT('Lỗi máy chủ!'),'error','quahan'); btn.disabled=false; btn.innerText='LƯU NOTE'; })
+    .withSuccessHandler(resStr => {
+      const res = JSON.parse(resStr);
+      if (res.success) {
+        globalNotes[currentEditingId] = { text: txt, user: res.user, time: res.time };
+        if (currentModeQH === 'GIAO') applyFiltersQH(); else applyFiltersFM();
+        closeNoteModal(); showToast(qhT('Đã lưu note!'),'success','quahan');
+      }
+      btn.disabled=false; btn.innerText='LƯU NOTE';
+    }).aging_saveNote(currentEditingId, txt, currentEditingHub);
+}
+
+function refreshNotesOnly() {      // chạy NGẦM mỗi lần đồng bộ: không hiện thông báo (trước đây báo "Đang tải lại ghi chú…" mỗi lần)
+  if (window._qhNoteSyncing) return;
+  window._qhNoteSyncing = true;
+  google.script.run
+    .withSuccessHandler(function (resStr) {
+      var res; try { res = JSON.parse(resStr); } catch (e) { res = null; }
+      if (res && res.success) { var next = res.notes || {}; if (JSON.stringify(next) !== JSON.stringify(globalNotes)) { globalNotes = next; if (qdoLevel() === 'lead') applyFiltersQH(); } }
+      window._qhNoteSyncing = false;
+    })
+    .withFailureHandler(function () { window._qhNoteSyncing = false; })
+    .aging_getNotesOnly();
+}
+function qhPreloadRomScope(romEmail, cb){
+  romEmail = String(romEmail || '').toLowerCase().trim();
+  if (!romEmail) return;
+  if (window._qhRomScope && window._qhRomScope.email === romEmail) { if (cb) cb(); return; }
+  if (typeof google === 'undefined' || !google.script) return;
+  google.script.run
+    .withFailureHandler(function(){ window._qhRomScope = { email: romEmail, hubs: [] }; if (cb) cb(); })
+    .withSuccessHandler(function(res){
+      var r; try { r = JSON.parse(res); } catch(e){ r = null; }
+      window._qhRomScope = { email: romEmail, hubs: (r && r.success && r.hubs) ? r.hubs : [] };
+      if (cb) cb();
+    })
+    .rom_getScopeForPreview(romEmail);
+}
+
+function qhGetActivePreviewOrgFilter(){
+  var isRealAdmin = !!(window.SPX_ACCESS && window.SPX_ACCESS.role === 'admin');
+  if (!isRealAdmin) return null;
+  var level = window.SPX_PREVIEW_LEVEL;
+  if (!level || level === 'admin' || level === 'lead' || level === 'staff') return null;
+  // [SỬA — rà soát: "ROM đã được cấu hình thật, sao code vẫn ghi chưa có phân vùng?"]
+  // Ghi chú cũ đúng ở thời điểm chưa có tính năng Phân cấp ROM. Nay ROM đã được cấu
+  // hình thật (sheet ROM_Roles: ROM quản danh sách AOM), và backend _rom_getScope()
+  // trả ra đúng danh sách trạm của ROM đó. Không còn lý do bỏ qua cấp này.
+  // ROM lọc theo DANH SÁCH TRẠM (một ROM quản nhiều AOM) chứ không theo 1 giá trị,
+  // nên dùng trường riêng 'hubs'; danh sách được nạp sẵn bởi qhPreloadRomScope().
+  if (level === 'rom') {
+    var romEnt = (typeof window.SPX_PREVIEW_ENTITY === 'string' && window.SPX_PREVIEW_ENTITY) ? window.SPX_PREVIEW_ENTITY : '';
+    var romHubs = (window._qhRomScope && window._qhRomScope.email === romEnt) ? (window._qhRomScope.hubs || []) : null;
+    if (romEnt && romHubs && romHubs.length) return { field: 'rom', value: romEnt, hubs: romHubs };
+    return null;   // chưa nạp xong phạm vi ROM -> chưa lọc, tránh hiện số sai
+  }
+  if (level !== 'sup' && level !== 'aom') return null;
+  var directEntity = (typeof window.SPX_PREVIEW_ENTITY === 'string' && window.SPX_PREVIEW_ENTITY) ? window.SPX_PREVIEW_ENTITY : '';
+  if (directEntity) return { field: level, value: directEntity };
+  var hub = localStorage.getItem('spx_default_hub') || 'ALL';
+  if (hub !== 'ALL' && typeof spxGetHubOrgInfo === 'function') {
+    var orgInfo = spxGetHubOrgInfo(hub);
+    if (orgInfo) {
+      var v = level === 'sup' ? orgInfo.sup : orgInfo.aom;
+      if (v) return { field: level, value: v };
+    }
+  }
+  return null; // Chưa có gì để neo phạm vi (chưa chọn entity, chưa chọn Hub) -> không lọc gì thêm
+}
+
+function quahanApplyAccessUI(access) { try { QDO.access = access; qdoRender(); } catch (e) {} }
+
+</script>
+</div>

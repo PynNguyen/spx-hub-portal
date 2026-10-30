@@ -1,0 +1,881 @@
+<!-- ── STICKY TOPBAR ─────────────────────────────────────────────────────── -->
+<div class="shrink-0 bg-white dark:bg-[#0b1121] border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center gap-3 shadow-sm z-20">
+  <div class="flex items-center gap-2 flex-1 min-w-0">
+    <div class="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
+      <i class="fas fa-hand-holding-dollar text-emerald-500 dark:text-emerald-400 text-[11px]"></i>
+    </div>
+    <div class="min-w-0">
+      <div class="text-[11px] font-black uppercase tracking-widest text-slate-800 dark:text-slate-100" data-i18n-ui="ĐỐI SOÁT LƯƠNG SẢN LƯỢNG">ĐỐI SOÁT LƯƠNG SẢN LƯỢNG</div>
+      <div id="luong-topbar-sub" class="text-[9px] text-slate-400 font-semibold mt-0.5" data-i18n-ui="Chưa có dữ liệu — Vui lòng nạp file CSV">Chưa có dữ liệu — Vui lòng nạp file CSV</div>
+    </div>
+  </div>
+  <!-- KPI Pills (ẩn khi chưa có data) -->
+  <div id="luong-kpi-bar" class="hidden items-center gap-2 flex-wrap">
+    <div class="px-2.5 py-1 rounded-lg bg-sky-50 dark:bg-sky-900/30 border border-sky-100 dark:border-sky-800 text-[10px] font-black text-sky-600 dark:text-sky-400">
+      <i class="fas fa-users mr-1"></i><span id="luong-kpi-total">0</span> <span data-i18n-ui="Tài xế">Tài xế</span>
+    </div>
+    <div class="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-100 dark:border-emerald-800 text-[10px] font-black text-emerald-600 dark:text-emerald-400">
+      <i class="fas fa-money-bill mr-1"></i><span id="luong-kpi-tongluong">0đ</span>
+    </div>
+    <div class="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-100 dark:border-amber-800 text-[10px] font-black text-amber-600 dark:text-amber-400">
+      <i class="fas fa-warehouse mr-1"></i><span id="luong-kpi-hub">--</span>
+    </div>
+  </div>
+  <button id="toggle-rank-btn" onclick="toggleRankVisibility()" class="shrink-0 px-3 py-1.5 rounded-lg bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5">
+    <i class="fas fa-eye-slash text-[9px]"></i><span data-i18n-ui="Ẩn Hạng">Ẩn Hạng</span>
+  </button>
+</div>
+
+<!-- ── MAIN CONTENT ──────────────────────────────────────────────────────── -->
+<div id="luong-main-content" class="flex-1 flex flex-row w-full overflow-hidden">
+
+  <!-- Cột trái: content chính (scrollable) -->
+  <div class="flex-1 overflow-y-auto custom-scrollbar" data-scroll-root="true">
+  <div class="max-w-5xl mx-auto px-4 py-5 w-full space-y-4">
+
+    <!-- ROW 1: Upload + Controls -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+      <!-- Card Upload -->
+      <div class="bg-white dark:bg-[#151e2f] rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm">
+        <div class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5">
+          <i class="fas fa-upload text-[#ee4d2d]"></i> <span data-i18n-ui="Nguồn Dữ Liệu">Nguồn Dữ Liệu</span>
+        </div>
+        <!-- Drop zone -->
+        <div id="luong-dropzone" class="relative border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-[#ee4d2d] dark:hover:border-orange-500 rounded-xl p-5 text-center transition-all cursor-pointer group"
+          ondragover="event.preventDefault();this.classList.add('border-[#ee4d2d]','bg-orange-50','dark:bg-orange-900/10')"
+          ondragleave="this.classList.remove('border-[#ee4d2d]','bg-orange-50','dark:bg-orange-900/10')"
+          ondrop="event.preventDefault();this.classList.remove('border-[#ee4d2d]','bg-orange-50','dark:bg-orange-900/10');handleFileLUONG({target:{files:event.dataTransfer.files}})">
+          <input type="file" id="csvFileLUONG" accept=".csv" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="handleFileLUONG(event)">
+          <i id="fileIconLUONG" class="fas fa-file-csv text-2xl text-[#ee4d2d] mb-2 block group-hover:scale-110 transition-transform"></i>
+          <div id="fileNameDisplayLUONG" class="text-[10px] font-bold text-slate-500 dark:text-slate-400" data-i18n-ui="Kéo thả hoặc click để chọn CSV">Kéo thả hoặc click để chọn CSV</div>
+          <div class="text-[9px] text-slate-300 dark:text-slate-600 mt-1" data-i18n-ui="Định dạng: CSV UTF-8">Định dạng: CSV UTF-8</div>
+        </div>
+        <div class="flex gap-2 mt-3">
+          <button onclick="clearDataLUONG()" id="btnClearLUONG" class="hidden flex-1 px-3 py-2 bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 text-[10px] font-black rounded-xl transition-all flex items-center justify-center gap-1.5">
+            <i class="fas fa-trash-alt text-[9px]"></i> <span data-i18n-ui="Làm mới dữ liệu">Làm mới dữ liệu</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Card Bộ Lọc -->
+      <div class="bg-white dark:bg-[#151e2f] rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm">
+        <div class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5">
+          <i class="fas fa-sliders text-sky-500 dark:text-sky-400"></i> <span data-i18n-ui="Bộ Lọc & Hiển Thị">Bộ Lọc & Hiển Thị</span>
+        </div>
+        <div class="space-y-2.5">
+          <div class="flex flex-col gap-1">
+            <label class="text-[9px] font-black text-slate-400 uppercase" data-i18n-ui="Lương cơ bản (Vùng)">Lương cơ bản (Vùng)</label>
+            <select id="regionWageSelectLUONG" onchange="renderResultsLUONG()" disabled class="w-full pl-3 pr-8 py-2 text-[11px] font-bold text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-xl appearance-none outline-none cursor-pointer focus:border-sky-500 transition-colors">
+              <option value="0" data-i18n-ui="-- LCB = 0đ --">-- LCB = 0đ --</option>
+              <option value="5310000" data-i18n-ui="Vùng I — 5,310,000đ">Vùng I — 5,310,000đ</option>
+              <option value="4730000" data-i18n-ui="Vùng II — 4,730,000đ">Vùng II — 4,730,000đ</option>
+              <option value="4140000" data-i18n-ui="Vùng III — 4,140,000đ">Vùng III — 4,140,000đ</option>
+              <option value="3700000" data-i18n-ui="Vùng IV — 3,700,000đ">Vùng IV — 3,700,000đ</option>
+            </select>
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-[9px] font-black text-slate-400 uppercase" data-i18n-ui="Chọn Trạm">Chọn Trạm</label>
+            <select id="hubSelectLUONG" onchange="filterDriversByHubLUONG()" disabled class="w-full pl-3 pr-8 py-2 text-[11px] font-bold text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-xl outline-none cursor-pointer appearance-none focus:border-sky-500 transition-colors">
+              <option value="" data-i18n-ui="-- Chọn Trạm --">-- Chọn Trạm --</option>
+            </select>
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-[9px] font-black text-slate-400 uppercase" data-i18n-ui="Tìm Tài Xế">Tìm Tài Xế</label>
+            <select id="searchIdLUONG" onchange="renderResultsLUONG()" disabled class="w-full pl-3 pr-8 py-2 text-[11px] font-bold text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-xl outline-none cursor-pointer appearance-none focus:border-sky-500 transition-colors">
+              <option value="" data-i18n-ui="-- Tất cả tài xế --">-- Tất cả tài xế --</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card Lọc Ngày + Cấu Hình Hạng -->
+      <div class="space-y-4">
+        <!-- Lọc ngày -->
+        <div class="bg-white dark:bg-[#151e2f] rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm">
+          <div class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5">
+            <i class="fas fa-calendar-range text-[#ee4d2d]"></i> <span data-i18n-ui="Khoảng Thời Gian">Khoảng Thời Gian</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 mb-3">
+            <div class="flex flex-col gap-1">
+              <label class="text-[9px] font-black text-slate-400" data-i18n-ui="Từ ngày">Từ ngày</label>
+              <div class="relative">
+                <input type="date" id="salary-date-from" onclick="this.showPicker()" class="w-full bg-slate-50 dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-xl pl-8 pr-2 py-2 text-[11px] font-bold text-slate-700 dark:text-slate-200 focus:border-[#ee4d2d] outline-none cursor-pointer">
+                <i class="fas fa-calendar-alt absolute left-2.5 top-1/2 -translate-y-1/2 text-[#ee4d2d] text-[9px] pointer-events-none"></i>
+              </div>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-[9px] font-black text-slate-400" data-i18n-ui="Đến ngày">Đến ngày</label>
+              <div class="relative">
+                <input type="date" id="salary-date-to" onclick="this.showPicker()" class="w-full bg-slate-50 dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-xl pl-8 pr-2 py-2 text-[11px] font-bold text-slate-700 dark:text-slate-200 focus:border-[#ee4d2d] outline-none cursor-pointer">
+                <i class="fas fa-calendar-alt absolute left-2.5 top-1/2 -translate-y-1/2 text-[#ee4d2d] text-[9px] pointer-events-none"></i>
+              </div>
+            </div>
+          </div>
+          <button onclick="calculateSalaryByDate()" class="w-full bg-gradient-to-r from-[#ee4d2d] to-orange-500 hover:opacity-90 text-white py-2.5 rounded-xl text-[10px] font-black shadow-md shadow-orange-500/20 transition-all flex items-center justify-center gap-2 active:scale-95 uppercase tracking-widest">
+            <i class="fas fa-calculator"></i> <span data-i18n-ui="Lọc & Tính">Lọc & Tính</span>
+          </button>
+        </div>
+
+        <!-- Cấu hình thứ hạng -->
+        <div class="bg-white dark:bg-[#151e2f] rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm">
+          <div class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center justify-between">
+            <span><i class="fas fa-trophy text-amber-500 dark:text-amber-400 mr-1.5"></i> <span data-i18n-ui="Cấu Hình Thứ Hạng">Cấu Hình Thứ Hạng</span></span>
+            <span id="luong-rank-total-badge" class="text-[8px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full" data-i18n-ui="Tổng: 0 TX">Tổng: 0 TX</span>
+          </div>
+          <div class="grid grid-cols-5 gap-1.5">
+            <div class="flex flex-col gap-1 items-center">
+              <span class="text-[8px] font-black text-cyan-600 dark:text-cyan-400 uppercase" data-i18n-ui="💎 Kim Cương">💎 Kim Cương</span>
+              <input type="number" id="cfgKCLUONG" value="1" min="0" onchange="renderResultsLUONG();_luongUpdateRankTotal()" class="w-full bg-slate-50 dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-[11px] font-black text-center text-slate-700 dark:text-slate-200 outline-none focus:border-cyan-500">
+            </div>
+            <div class="flex flex-col gap-1 items-center">
+              <span class="text-[8px] font-black text-slate-600 dark:text-slate-300 uppercase" data-i18n-ui="🏆 Bạch Kim">🏆 Bạch Kim</span>
+              <input type="number" id="cfgBKLUONG" value="1" min="0" onchange="renderResultsLUONG();_luongUpdateRankTotal()" class="w-full bg-slate-50 dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-[11px] font-black text-center text-slate-700 dark:text-slate-200 outline-none focus:border-slate-500">
+            </div>
+            <div class="flex flex-col gap-1 items-center">
+              <span class="text-[8px] font-black text-amber-500 dark:text-amber-400 uppercase" data-i18n-ui="🥇 Vàng">🥇 Vàng</span>
+              <input type="number" id="cfgVLUONG" value="2" min="0" onchange="renderResultsLUONG();_luongUpdateRankTotal()" class="w-full bg-slate-50 dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-[11px] font-black text-center text-slate-700 dark:text-slate-200 outline-none focus:border-amber-500">
+            </div>
+            <div class="flex flex-col gap-1 items-center">
+              <span class="text-[8px] font-black text-slate-500 uppercase" data-i18n-ui="🥈 Bạc">🥈 Bạc</span>
+              <input type="number" id="cfgBLUONG" value="3" min="0" onchange="renderResultsLUONG();_luongUpdateRankTotal()" class="w-full bg-slate-50 dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-[11px] font-black text-center text-slate-700 dark:text-slate-200 outline-none focus:border-slate-400">
+            </div>
+            <div class="flex flex-col gap-1 items-center">
+              <span class="text-[8px] font-black text-orange-500 dark:text-orange-400 uppercase" data-i18n-ui="🥉 Đồng">🥉 Đồng</span>
+              <input type="number" id="cfgDLUONG" value="3" min="0" onchange="renderResultsLUONG();_luongUpdateRankTotal()" class="w-full bg-slate-50 dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-[11px] font-black text-center text-slate-700 dark:text-slate-200 outline-none focus:border-orange-500">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 2: Kết quả -->
+    <div id="resLUONG" class="space-y-4 pb-8">
+      <!-- Empty state -->
+      <div class="bg-white dark:bg-[#151e2f] rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 p-14 flex flex-col items-center justify-center text-center">
+        <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+          <i class="fas fa-file-invoice-dollar text-2xl text-slate-300 dark:text-slate-600"></i>
+        </div>
+        <h3 class="text-sm font-black text-slate-600 dark:text-slate-400 mb-1" data-i18n-ui="Chưa có dữ liệu đối soát">Chưa có dữ liệu đối soát</h3>
+        <p class="text-[11px] text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed" data-i18n-ui="Tải lên file CSV năng suất từ hệ thống SPX, chọn trạm và khoảng thời gian để bắt đầu tính lương">Tải lên file CSV năng suất từ hệ thống SPX, chọn trạm và khoảng thời gian để bắt đầu tính lương</p>
+        <div class="flex items-center gap-6 mt-6 text-[10px] text-slate-400 font-bold">
+          <div class="flex items-center gap-1.5"><span class="w-5 h-5 rounded-full bg-[#ee4d2d] text-white flex items-center justify-center text-[8px] font-black">1</span> <span data-i18n-ui="Nạp CSV">Nạp CSV</span></div>
+          <i class="fas fa-arrow-right text-slate-300 text-[8px]"></i>
+          <div class="flex items-center gap-1.5"><span class="w-5 h-5 rounded-full bg-slate-300 dark:bg-slate-600 text-white flex items-center justify-center text-[8px] font-black">2</span> <span data-i18n-ui="Chọn trạm / tài xế">Chọn trạm / tài xế</span></div>
+          <i class="fas fa-arrow-right text-slate-300 text-[8px]"></i>
+          <div class="flex items-center gap-1.5"><span class="w-5 h-5 rounded-full bg-slate-300 dark:bg-slate-600 text-white flex items-center justify-center text-[8px] font-black">3</span> <span data-i18n-ui="Xem kết quả">Xem kết quả</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /max-w-5xl -->
+  </div><!-- /cột trái -->
+
+  <!-- Cột phải: bảng tóm tắt lương (sticky, không scroll cùng content) -->
+  <div class="w-[220px] shrink-0 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-[#151e2f] flex flex-col overflow-hidden">
+    <div id="luong-summary-panel" class="flex-1 overflow-y-auto custom-scrollbar text-[10px]">
+      <div class="flex flex-col items-center justify-center h-full gap-2 text-slate-300 dark:text-slate-600 py-10">
+        <i class="fas fa-table text-3xl"></i>
+        <span class="text-xs font-bold" data-i18n-ui="Chưa có dữ liệu">Chưa có dữ liệu</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /luong-main-content -->
+
+<script>
+// MODULE ĐỐI SOÁT LƯƠNG V22 (BẢN CHUẨN: CHỐNG LAG + XÓA HÀNG RÁC + GIẢ LẬP PRO)
+// ==========================================
+let csvDataLUONG = ""; let feeMatrixLUONG = null; let globalRiderMapLUONG = {}; let validDriversListLUONG = [];
+let totalHubsInFile = 0; let hubSetLUONG = new Set();
+let isRankVisible = true; 
+let projectionOffsets = {}; 
+let LUONG_ACCESS = null;
+
+// ── Phân quyền UI — nhận cùng object access đã lấy 1 lần ở index.html (giống FMS) ──
+function luongApplyAccessUI(access) {
+  LUONG_ACCESS = access;
+  if (hubSetLUONG.size > 0 && typeof calculateDataLUONG === 'function') {
+    calculateDataLUONG(); // dữ liệu đã nạp trước khi access tới → tính lại để áp khoá ngay
+  }
+}
+
+// Cache restore chạy sau khi kiemTraBaoMatLuong() mở content
+// (tránh auto-process khi view-luong chưa visible → DOM elements chưa ready)
+window.luongRestoreFromCache = function() {
+    let cachedData = localStorage.getItem('SPX_LUONG_CACHE');
+    if (cachedData) {
+        csvDataLUONG = cachedData;
+        const fileNameDisplay = document.getElementById('fileNameDisplayLUONG');
+        if(fileNameDisplay) fileNameDisplay.innerText = luongT('Đã tải lại dữ liệu đã lưu');
+        setTimeout(() => {
+            if(typeof showToast === 'function') showToast(luongT('Đang tải lại dữ liệu Lương đã lưu...'), 'loading', 'luong');
+            startProcessLUONG();
+        }, 300);
+    }
+};
+
+function normalizeKeyLUONG(str) { if (!str) return ""; let m = str.toString().match(/\d+/g); return m ? m.join('-') : str.toString().replace(/[\s'"]/g, "").toLowerCase(); }
+
+function handleFileLUONG(e) {
+    const f = e.target.files[0]; if(!f) return;
+    let fileNameDisplay = document.getElementById('fileNameDisplayLUONG');
+    if(fileNameDisplay) fileNameDisplay.innerText = f.name.length > 20 ? f.name.substring(0, 20) + '...' : f.name;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        let text = ev.target.result;
+        if(text.startsWith('PK') || text.includes('\0')) { 
+            if(typeof showToast === 'function') showToast(luongT("File sai định dạng! Save As -> CSV UTF-8"), "error", "luong"); 
+            return; 
+        }
+        csvDataLUONG = text;
+        try { localStorage.setItem('SPX_LUONG_CACHE', text); } catch(err) {}
+        if(typeof showToast === 'function') showToast(luongT("Đã tải xong file! Đang xử lý..."), "loading", "luong");
+        // [MỚI — theo quyết định trực tiếp "chỉ tính khi thực sự tải dữ liệu"]
+        // Lương không có RPC nào khác để gắn tracking — gọi endpoint riêng chỉ
+        // để ghi nhận, fire-and-forget (không chờ, không ảnh hưởng luồng chính).
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+            google.script.run.withFailureHandler(function(){}).withSuccessHandler(function(){}).spx_trackLuongUsage();
+        }
+        startProcessLUONG();
+    };
+    reader.readAsText(f);
+}
+
+function updateLoadingStateLUONG(isLoading) {
+    const icon = document.getElementById('fileIconLUONG'); const fileInput = document.getElementById('csvFileLUONG'); 
+    const searchId = document.getElementById('searchIdLUONG'); const regionWage = document.getElementById('regionWageSelectLUONG'); 
+    const btnClear = document.getElementById('btnClearLUONG'); const hubSelect = document.getElementById('hubSelectLUONG');
+    if (isLoading) {
+        if(icon) icon.className = "fas fa-circle-notch fa-spin text-[#ee4d2d] text-base"; 
+        if(fileInput) fileInput.disabled = true; 
+        if(searchId) { searchId.disabled = true; searchId.innerHTML = '<option value="">Đang tải dữ liệu...</option>'; }
+    } else {
+        if(icon) icon.className = "fas fa-file-csv text-[#ee4d2d] text-base"; 
+        if(fileInput) fileInput.disabled = false;
+        if (csvDataLUONG) { 
+            if(searchId) searchId.disabled = false; if(regionWage) regionWage.disabled = false; 
+            if(btnClear) btnClear.classList.remove('hidden'); if(hubSelect) hubSelect.disabled = false; 
+        }
+    }
+}
+
+function clearDataLUONG() {
+    localStorage.removeItem('SPX_LUONG_CACHE');
+    csvDataLUONG = ""; globalRiderMapLUONG = {}; validDriversListLUONG = []; totalHubsInFile = 0; hubSetLUONG.clear();
+    projectionOffsets = {};
+    if(document.getElementById('csvFileLUONG')) document.getElementById('csvFileLUONG').value = ""; 
+    if(document.getElementById('fileNameDisplayLUONG')) document.getElementById('fileNameDisplayLUONG').innerText = luongT('Chọn file dữ liệu (CSV)');
+    if(document.getElementById('searchIdLUONG')) document.getElementById('searchIdLUONG').innerHTML = '<option value="">-- CHƯA CÓ DATA --</option>'; 
+    
+    let dateFrom = document.getElementById('salary-date-from');
+    if (dateFrom) { dateFrom.value = ""; if (dateFrom._flatpickr) dateFrom._flatpickr.clear(); }
+    let dateTo = document.getElementById('salary-date-to');
+    if (dateTo) { dateTo.value = ""; if (dateTo._flatpickr) dateTo._flatpickr.clear(); }
+
+    updateLoadingStateLUONG(false);
+    _luongUpdateTopbar();
+    let res = document.getElementById('resLUONG');
+    if(res) res.innerHTML = `<div class="bg-white dark:bg-[#0f172a] rounded-[2rem] border border-dashed border-slate-300 dark:border-slate-700 p-16 flex flex-col items-center justify-center text-center shadow-sm"><h3 class="text-xl font-black text-slate-700 dark:text-slate-200 mb-2">Chưa có dữ liệu đối soát</h3></div>`;
+}
+
+function startProcessLUONG() {
+    if(!csvDataLUONG) return; updateLoadingStateLUONG(true);
+    if(typeof google !== 'undefined' && google.script) {
+        google.script.run.withSuccessHandler(res => {
+            if(res.success) { feeMatrixLUONG = res.data; setTimeout(calculateDataLUONG, 100); }
+        }).getFeeMatrix();
+    } else setTimeout(calculateDataLUONG, 100); // Đặt trễ 100ms để trình duyệt kịp thở
+}
+
+function parseCSVLineLUONG(line, sep) {
+    let row = [], inQuotes = false, val = '';
+    for (let i = 0; i < line.length; i++) {
+        let char = line[i]; 
+        if (char === '"') inQuotes = !inQuotes; 
+        else if (char === sep && !inQuotes) { row.push(val); val = ''; } 
+        else val += char;
+    }
+    row.push(val); return row;
+}
+
+function calculateDataLUONG() {
+    try {
+        let currentHub = document.getElementById('hubSelectLUONG') ? document.getElementById('hubSelectLUONG').value : "";
+        let currentDriver = document.getElementById('searchIdLUONG') ? document.getElementById('searchIdLUONG').value : "";
+
+        let fromDateInput = document.getElementById('salary-date-from'); let toDateInput = document.getElementById('salary-date-to');
+        let startTs = 0; let endTs = Infinity;
+        if (fromDateInput && toDateInput && fromDateInput.value && toDateInput.value) {
+            startTs = new Date(fromDateInput.value).getTime();
+            endTs = new Date(toDateInput.value).getTime() + 86399999;
+        }
+
+        let lines = csvDataLUONG.split('\n'); let sep = lines[0].includes(';') ? ';' : ','; 
+        globalRiderMapLUONG = {}; hubSetLUONG.clear(); window.weightLabelsGlobal = {};
+
+        for(let i=0; i<lines.length; i++) {
+            let line = lines[i].trim(); if(!line) continue; 
+            
+            // BỘ LỌC CHỐNG RÁC: Bỏ qua dòng tiêu đề và các dòng rỗng
+            if (line.toLowerCase().includes('cmonth') || line.toLowerCase().includes('weight_range')) continue;
+
+            let row = parseCSVLineLUONG(line, sep); if(row.length < 9) continue;
+            
+            if (startTs > 0 && endTs < Infinity) {
+                let dateStr = row[1]; if (!dateStr) continue;
+                let rowDate = new Date(dateStr.trim()).getTime();
+                if (rowDate < startTs || rowDate > endTs) continue;
+            }
+
+            let id = row[2] ? row[2].replace(/['"\s]/g, "") : ""; 
+            let stationName = row[4] ? row[4].replace(/['"]/g, "").trim() : "KHÁC";
+
+            // [FIX 2026-06] Lọc theo quyền NGAY TỪ NGUỒN (không chỉ ẩn option dropdown) —
+            // nếu chỉ ẩn option mà vẫn giữ data trong globalRiderMapLUONG, chọn "TẤT CẢ CÁC
+            // TRẠM" sẽ vẫn lộ dữ liệu trạm ngoài quyền. Dùng chung normStationKey() như FMS.
+            if (LUONG_ACCESS && LUONG_ACCESS.role !== 'admin' && LUONG_ACCESS.hubs && LUONG_ACCESS.hubs.length > 0 && typeof normStationKey === 'function') {
+                const _allowedNormLUONG = LUONG_ACCESS.hubs.map(h => normStationKey(h));
+                if (!_allowedNormLUONG.includes(normStationKey(stationName))) continue;
+            }
+
+            let rawW = row[6] ? row[6].replace(/['"]/g, "").trim() : ""; 
+            let type = row[7] ? row[7].replace(/['"\s]/g, "").toLowerCase() : ""; 
+            let vol = parseFloat(row[8] ? row[8].replace(/[^0-9.]/g, "") : "0") || 0;
+
+            if(!id || !rawW || vol === 0) continue; // Phải có sản lượng mới tính
+
+            let wKey = normalizeKeyLUONG(rawW);
+            window.weightLabelsGlobal[wKey] = rawW; 
+            hubSetLUONG.add(stationName);
+
+            if(!globalRiderMapLUONG[id]) globalRiderMapLUONG[id] = { id: id, station: stationName, totalPts: 0, t_d_v: 0, t_p_v: 0, t_r_v: 0, rows: {} };
+            if(!globalRiderMapLUONG[id].rows[wKey]) globalRiderMapLUONG[id].rows[wKey] = { rawWeight: rawW, d_v: 0, d_p: 0, d_m: "", p_v: 0, p_p: 0, p_m: "", r_v: 0, r_p: 0, r_m: "" };
+
+            if(type === 'deli') { globalRiderMapLUONG[id].rows[wKey].d_v += vol; globalRiderMapLUONG[id].t_d_v += vol; }
+            else if(type === 'pickup') { globalRiderMapLUONG[id].rows[wKey].p_v += vol; globalRiderMapLUONG[id].t_p_v += vol; }
+            else if(type === 'return') { globalRiderMapLUONG[id].rows[wKey].r_v += vol; globalRiderMapLUONG[id].t_r_v += vol; }
+        }
+
+        validDriversListLUONG = [];
+        for(let id in globalRiderMapLUONG) {
+            let r = globalRiderMapLUONG[id]; let valid = false;
+            for(let wK in r.rows) {
+                let row = r.rows[wK];
+                if(feeMatrixLUONG) {
+                    if(row.d_v > 0 && feeMatrixLUONG.deli && feeMatrixLUONG.deli[wK]) { 
+                        let t = feeMatrixLUONG.deli[wK].find(x => row.d_v >= x.min && row.d_v < x.max);
+                        if(t) { row.d_p = t.points * 1000; row.d_m = `Mốc: ${t.min}-${t.max}`; r.totalPts += row.d_p; valid = true; } 
+                    }
+                    if(row.p_v > 0 && feeMatrixLUONG.pickup && feeMatrixLUONG.pickup[wK]) { 
+                        let t = feeMatrixLUONG.pickup[wK].find(x => row.p_v >= x.min && row.p_v < x.max);
+                        if(t) { row.p_p = t.points * 1000; row.p_m = `Mốc: ${t.min}-${t.max}`; r.totalPts += row.p_p; valid = true; } 
+                    }
+                    if(row.r_v > 0 && feeMatrixLUONG.return && feeMatrixLUONG.return[wK]) { 
+                        let t = feeMatrixLUONG.return[wK].find(x => row.r_v >= x.min && row.r_v < x.max);
+                        if(t) { row.r_p = t.points * 1000; row.r_m = `Mốc: ${t.min}-${t.max}`; r.totalPts += row.r_p; valid = true; } 
+                    }
+                }
+            }
+            if(valid || r.t_d_v > 0 || r.t_p_v > 0 || r.t_r_v > 0) { 
+                r.rankingScore = r.t_d_v + r.t_r_v + (r.t_p_v / 6); 
+                validDriversListLUONG.push(id); 
+            }
+        }
+
+        totalHubsInFile = hubSetLUONG.size;
+        let hubSelect = document.getElementById('hubSelectLUONG');
+
+        if(hubSelect) {
+            if (totalHubsInFile <= 1) {
+                hubSelect.classList.add('hidden');
+                hubSelect.innerHTML = `<option value="${Array.from(hubSetLUONG)[0] || ''}">-- TRẠM MẶC ĐỊNH --</option>`;
+            } else {
+                hubSelect.classList.remove('hidden');
+                let hubHtml = '<option value="">-- TẤT CẢ CÁC TRẠM --</option>';
+                Array.from(hubSetLUONG).sort().forEach(h => { hubHtml += `<option value="${_luongEsc(h)}">${_luongEsc(h)}</option>`; });
+                hubSelect.innerHTML = hubHtml;
+                if (currentHub && Array.from(hubSetLUONG).includes(currentHub)) { hubSelect.value = currentHub; }
+            }
+        }
+
+        // TẮT LOADING NGAY LẬP TỨC ĐỂ TRÌNH DUYỆT KHÔNG BỊ TREO
+        updateLoadingStateLUONG(false); 
+        
+        // Dùng setTimeout để tách quá trình vẽ UI, tránh giật lag
+        setTimeout(() => {
+            filterDriversByHubLUONG(currentDriver);
+            if(typeof showToast === 'function') showToast(luongT("Phân tích Lương & Dữ liệu thành công!"), "success", "luong");
+        }, 50);
+
+    } catch(e) { 
+        console.error("LỖI XỬ LÝ:", e);
+        if(typeof showToast === 'function') showToast(luongT("Lỗi xử lý") + ": " + e.message, "error", "luong");
+        updateLoadingStateLUONG(false); 
+    }
+}
+
+function calculateSalaryByDate() {
+    const fromDate = document.getElementById('salary-date-from').value; const toDate = document.getElementById('salary-date-to').value;
+    if (!fromDate || !toDate) { 
+        if(typeof showToast === 'function') showToast(luongT("Sếp vui lòng chọn từ ngày đến ngày!"), "error", "luong");
+        else showToast(luongT('Vui lòng chọn khoảng ngày (từ ngày – đến ngày).'), 'error', 'luong'); 
+        return; 
+    }
+    if (!csvDataLUONG) return;
+    
+    updateLoadingStateLUONG(true);
+    if(typeof showToast === 'function') showToast(luongT("Đang lọc dữ liệu theo ngày..."), "loading", "luong");
+    setTimeout(calculateDataLUONG, 100);
+}
+
+function filterDriversByHubLUONG(savedDriver = "") {
+    let hubSelect = document.getElementById('hubSelectLUONG'); let selectedHub = hubSelect ? hubSelect.value : "";
+    if (totalHubsInFile === 1) selectedHub = Array.from(hubSetLUONG)[0]; 
+
+    let selectElem = document.getElementById('searchIdLUONG');
+    let filteredList = selectedHub ? validDriversListLUONG.filter(id => globalRiderMapLUONG[id].station === selectedHub) : [...validDriversListLUONG];
+    filteredList.sort((a, b) => globalRiderMapLUONG[b].rankingScore - globalRiderMapLUONG[a].rankingScore);
+
+    if(selectElem) {
+        let optionsHtml = '<option value="">-- TẤT CẢ TÀI XẾ --</option>';
+        filteredList.forEach((id, index) => { optionsHtml += `<option value="${_luongEsc(id)}">Top ${index + 1} - ID: ${_luongEsc(id)}</option>`; });
+        selectElem.innerHTML = optionsHtml;
+        if (savedDriver && filteredList.includes(savedDriver)) selectElem.value = savedDriver; else selectElem.value = "";
+    }
+    renderResultsLUONG();
+}
+
+/**
+ * luongApplyPreviewLevel(level)
+ * [MỚI — Bước 5 cho Lương, cùng lớp phòng vệ như Quá Hạn/KPI Fail/Rider Plan/
+ * Pick/FMS — theo đúng yêu cầu "Lương KHÔNG loại bỏ khỏi view theo level"]
+ * Gọi từ openModule() mỗi khi vào module.
+ *
+ * ROM/AOM/SUP: không cần thêm gì — dropdown Hub chỉ chứa đúng Hub CÓ TRONG
+ * file CSV đã upload, không phải toàn bộ Hub hệ thống (cùng lý do như FMS
+ * Manual) — không thể "thu hẹp" theo kiểu Rider Plan's dropdown SUP.
+ * Chỉ Lead/Staff có ý nghĩa thật (đúng 1 Hub cố định) — tự động chọn đúng Hub
+ * đó nếu có trong file, tái dùng nguyên filterDriversByHubLUONG() đã có sẵn.
+ */
+function luongApplyPreviewLevel(level) {
+  var isRealAdmin = !!(window.SPX_ACCESS && window.SPX_ACCESS.role === 'admin');
+  if (!isRealAdmin || !level || level === 'admin') return;
+  if (level !== 'lead' && level !== 'staff') return;
+
+  var hub = (localStorage.getItem('spx_default_hub') || '').trim();
+  if (!hub || hub.toUpperCase() === 'ALL') return; // chưa chọn Hub cụ thể ở header — không có gì để tự chọn
+
+  var luongSel = document.getElementById('hubSelectLUONG');
+  if (luongSel && typeof filterDriversByHubLUONG === 'function') {
+    var hasOpt = Array.prototype.some.call(luongSel.options, function (o) { return o.value === hub; });
+    if (hasOpt) { luongSel.value = hub; filterDriversByHubLUONG(); }
+  }
+}
+
+function toggleRankVisibility() {
+    isRankVisible = !isRankVisible;
+    const btn = document.getElementById('toggle-rank-btn');
+    if(btn) {
+        if (isRankVisible) { btn.innerHTML = '<i class="fas fa-eye-slash"></i> ẨN THỨ HẠNG'; btn.className = "bg-slate-800 hover:bg-slate-900 text-white px-5 py-2.5 rounded-xl text-[11px] uppercase tracking-widest font-black ml-auto shadow-lg transition-all active:scale-95"; }
+        else { btn.innerHTML = '<i class="fas fa-eye"></i> HIỆN THỨ HẠNG'; btn.className = "bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-[11px] uppercase tracking-widest font-black ml-auto shadow-lg transition-all active:scale-95"; }
+    }
+    renderResultsLUONG();
+}
+
+// LOGIC CỘNG TRỪ MỐC (GIẢ LẬP)
+function changeProjection(weightKey, type, delta) {
+    const key = `${weightKey}_${type}`;
+    if (!projectionOffsets[key]) projectionOffsets[key] = 0;
+    projectionOffsets[key] += delta;
+    if (projectionOffsets[key] < 0) projectionOffsets[key] = 0; 
+    renderResultsLUONG();
+}
+
+function renderResultsLUONG() {
+    let filterId = document.getElementById('searchIdLUONG') ? document.getElementById('searchIdLUONG').value : "";
+    let hubSelect = document.getElementById('hubSelectLUONG'); let selectedHub = hubSelect ? hubSelect.value : "";
+    if (totalHubsInFile === 1) selectedHub = Array.from(hubSetLUONG)[0];
+    
+    let baseWage = document.getElementById('regionWageSelectLUONG') ? (parseInt(document.getElementById('regionWageSelectLUONG').value) || 0) : 0;
+    
+    if (!filterId || window.lastSelectedRider !== filterId) { projectionOffsets = {}; window.lastSelectedRider = filterId; }
+
+    let listToRender = selectedHub ? validDriversListLUONG.filter(id => globalRiderMapLUONG[id].station === selectedHub) : [...validDriversListLUONG];
+    
+    listToRender.sort((a, b) => globalRiderMapLUONG[b].rankingScore - globalRiderMapLUONG[a].rankingScore);
+    let limKC = parseInt(document.getElementById('cfgKCLUONG')?.value) || 0; let limBK = parseInt(document.getElementById('cfgBKLUONG')?.value) || 0;
+    let limV  = parseInt(document.getElementById('cfgVLUONG')?.value) || 0; let limB  = parseInt(document.getElementById('cfgBLUONG')?.value) || 0; let limD  = parseInt(document.getElementById('cfgDLUONG')?.value) || 0;
+
+    listToRender.forEach((id, index) => {
+        let r = globalRiderMapLUONG[id]; let percent = 0; let rankName = "KHÔNG ĐẠT"; let fixedBonus = 0;
+        if (index < limKC) { percent = 0.26; rankName = "💎 Kim Cương"; fixedBonus = 300000; }
+        else if (index < limKC + limBK) { percent = 0.22; rankName = "🏆 Bạch Kim"; fixedBonus = 200000; }
+        else if (index < limKC + limBK + limV) { percent = 0.20; rankName = "🥇 Vàng"; fixedBonus = 100000; }
+        else if (index < limKC + limBK + limV + limB) { percent = 0.15; rankName = "🥈 Bạc"; }
+        else if (index < limKC + limBK + limV + limB + limD) { percent = 0.10; rankName = "🥉 Đồng"; }
+        
+        r.rankPercent = percent; r.rankName = rankName; r.fixedBonus = fixedBonus;
+        r.bonusPercentAmt = Math.round(r.totalPts * percent);
+        r.totalBonus = r.bonusPercentAmt + r.fixedBonus;
+    });
+
+    let outputHtml = [];
+    if (filterId) { if (globalRiderMapLUONG[filterId]) outputHtml.push(buildHtmlForDriverLUONG(globalRiderMapLUONG[filterId], baseWage, true)); } 
+    else { listToRender.forEach(id => { outputHtml.push(buildHtmlForDriverLUONG(globalRiderMapLUONG[id], baseWage, false)); }); }
+
+    let resElement = document.getElementById('resLUONG');
+    if(resElement) resElement.innerHTML = outputHtml.join('');
+
+    // [FIX] Cập nhật topbar sau mỗi lần render để đồng bộ LCB + thứ hạng mới nhất
+    _luongUpdateTopbar();
+
+    // Cập nhật bảng tóm tắt bên phải
+    _renderLuongSummaryPanel(listToRender, baseWage, filterId);
+}
+
+function buildHtmlForDriverLUONG(r, baseWage, isSingleRider) {
+    let allKeys = []; let keyMap = {};
+    if (isSingleRider && window.weightLabelsGlobal) {
+        for(let k in window.weightLabelsGlobal) { allKeys.push(k); keyMap[k] = window.weightLabelsGlobal[k]; }
+    } else {
+        for(let k in r.rows) { allKeys.push(k); keyMap[k] = r.rows[k].rawWeight; }
+    }
+    allKeys = [...new Set(allKeys)].sort();
+
+    let rowsToRender = []; let validRowCount = 0;
+    allKeys.forEach(wK => {
+        let row = r.rows[wK] || { rawWeight: keyMap[wK] || wK, d_v: 0, p_v: 0, r_v: 0, d_p: 0, p_p: 0, r_p: 0 };
+        if (isSingleRider || row.d_v || row.p_v || row.r_v) { rowsToRender.push({ wK, row }); validRowCount++; }
+    });
+
+    let tableRows = ""; 
+    let drawBonusColumn = isRankVisible && validRowCount > 0; 
+    let isFirstRow = true; 
+    
+    // BIẾN TÍCH LŨY TỔNG
+    let sum_d_v = 0, sum_p_v = 0, sum_r_v = 0;
+    let sum_d_p_base = 0, sum_p_p_base = 0, sum_r_p_base = 0;
+    let sum_d_p_proj = 0, sum_p_p_proj = 0, sum_r_p_proj = 0;
+
+    const getProjInfo = (type, currentVol, currentBasePts, currentWeightKey) => {
+        let offset = projectionOffsets[`${currentWeightKey}_${type}`] || 0;
+        if (offset === 0) return { pts: currentBasePts, msg: "", delta: 0 };
+        if (!feeMatrixLUONG || !feeMatrixLUONG[type] || !feeMatrixLUONG[type][currentWeightKey]) return { pts: currentBasePts, msg: "", delta: 0 };
+        
+        let tiers = feeMatrixLUONG[type][currentWeightKey];
+        let currIdx = tiers.findIndex(x => currentVol >= x.min && currentVol < x.max);
+        let targetIdx = currIdx === -1 ? Math.max(0, offset - 1) : Math.min(currIdx + offset, tiers.length - 1);
+        
+        let targetTier = tiers[targetIdx];
+        let targetPts = targetTier.points * 1000;
+        return { pts: targetPts, msg: `Dự kiến: ${targetTier.min}-${targetTier.max}`, delta: targetPts - currentBasePts };
+    };
+
+    rowsToRender.forEach(item => {
+        let { wK, row } = item;
+        let d_proj = getProjInfo('deli', row.d_v, row.d_p, wK); 
+        let p_proj = getProjInfo('pickup', row.p_v, row.p_p, wK); 
+        let r_proj = getProjInfo('return', row.r_v, row.r_p, wK);
+
+        // Cộng dồn vào tổng
+        sum_d_v += row.d_v; sum_p_v += row.p_v; sum_r_v += row.r_v;
+        sum_d_p_base += row.d_p; sum_p_p_base += row.p_p; sum_r_p_base += row.r_p;
+        sum_d_p_proj += d_proj.pts; sum_p_p_proj += p_proj.pts; sum_r_p_proj += r_proj.pts;
+
+        const drawCell = (type, ptsBase, proj, color) => {
+            let controls = isSingleRider ? `<div class="flex gap-1 mt-1 justify-center no-capture"><button onclick="changeProjection('${wK}','${type}',-1)" class="w-5 h-5 bg-slate-200 text-xs font-black rounded hover:bg-slate-300 transition-colors">-</button><button onclick="changeProjection('${wK}','${type}',1)" class="w-5 h-5 bg-[#ee4d2d] text-white text-xs font-black rounded hover:bg-orange-600 transition-colors">+</button></div>` : '';
+            if (proj.delta > 0) {
+                return `<td class="bg-${color}-50/40 p-2 border-l border-white"><div class="flex flex-col items-center"><span class="text-slate-400 line-through text-[9px]">${ptsBase.toLocaleString()}</span><div class="flex items-center gap-1 font-black text-${color}-700"><i class="fas fa-arrow-up text-emerald-500 dark:text-emerald-400 text-[10px] animate-bounce"></i> ${proj.pts.toLocaleString()} đ</div><span class="text-emerald-600 dark:text-emerald-400 bg-emerald-100 px-1.5 rounded text-[10px] mt-0.5">+${proj.delta.toLocaleString()}</span></div><div class="text-[9px] text-slate-500 mt-1">${proj.msg}</div>${controls}</td>`;
+            }
+            return `<td class="bg-${color}-50/40 p-2 border-l border-white"><div class="font-black text-${color}-700">${ptsBase > 0 ? ptsBase.toLocaleString() + ' đ' : '-'}</div>${controls}</td>`;
+        };
+
+        let bonusCell = "";
+        if (isFirstRow && drawBonusColumn) {
+            // Tăng rowspan lên +2 để phủ luôn 2 hàng tổng cộng ở dưới
+            bonusCell = `<td id="hs-cell-${_luongEsc(r.id)}" rowspan="${validRowCount + 2}" class="bg-rose-50/30 p-2 text-center align-middle border-l-2 border-dashed border-rose-200"></td>`;
+            isFirstRow = false;
+        }
+
+        tableRows += `<tr class="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40"><td class="font-black text-slate-700 dark:text-slate-200 text-left p-3">${_luongEsc(row.rawWeight)}</td><td class="text-blue-600 dark:text-blue-400 font-bold p-2">${row.d_v || '-'}</td>${drawCell('deli', row.d_p, d_proj, 'blue')}<td class="text-amber-600 dark:text-amber-400 font-bold p-2">${row.p_v || '-'}</td>${drawCell('pickup', row.p_p, p_proj, 'amber')}<td class="text-purple-600 dark:text-purple-400 font-bold p-2">${row.r_v || '-'}</td>${drawCell('return', row.r_p, r_proj, 'purple')}${bonusCell}</tr>`;
+    });
+
+    // ==========================================
+    // 1. HÀNG TỔNG CHI TIẾT TỪNG MỤC
+    // ==========================================
+    const drawTotalCell = (basePts, projPts, color) => {
+        let delta = projPts - basePts;
+        if (isSingleRider && delta > 0) {
+            return `<td class="bg-${color}-100/50 p-3"><div class="flex flex-col items-center"><span class="text-slate-400 line-through text-[10px]">${basePts.toLocaleString()}</span><div class="text-${color}-800 font-black flex items-center gap-1"><i class="fas fa-arrow-up text-emerald-500 dark:text-emerald-400"></i> ${projPts.toLocaleString()} đ</div><span class="text-[10px] font-black text-emerald-600 dark:text-emerald-400">(+${delta.toLocaleString()})</span></div></td>`;
+        }
+        return `<td class="bg-${color}-100/50 p-3 font-black text-${color}-800">${basePts.toLocaleString()} đ</td>`;
+    };
+
+    let summaryRow = `<tr class="bg-slate-100/80 dark:bg-slate-800/60 font-black border-t-2 border-slate-200 dark:border-slate-700">
+        <td class="p-3 text-left text-slate-600 uppercase text-[10px]">TỔNG TỪNG MỤC:</td>
+        <td class="p-3 text-blue-700 dark:text-blue-400">${sum_d_v.toLocaleString()}</td>
+        ${drawTotalCell(sum_d_p_base, sum_d_p_proj, 'blue')}
+        <td class="p-3 text-amber-700 dark:text-amber-400">${sum_p_v.toLocaleString()}</td>
+        ${drawTotalCell(sum_p_p_base, sum_p_p_proj, 'amber')}
+        <td class="p-3 text-purple-700 dark:text-purple-400">${sum_r_v.toLocaleString()}</td>
+        ${drawTotalCell(sum_r_p_base, sum_r_p_proj, 'purple')}
+    </tr>`;
+
+    // ==========================================
+    // 2. HÀNG TỔNG LƯƠNG SẢN LƯỢNG (MỚI THÊM LẠI)
+    // ==========================================
+    let finalProjPoints = sum_d_p_proj + sum_p_p_proj + sum_r_p_proj;
+    let finalBasePoints = sum_d_p_base + sum_p_p_base + sum_r_p_base;
+    let deltaTotalPts = finalProjPoints - finalBasePoints;
+
+    let grandTotalCell = (isSingleRider && deltaTotalPts > 0)
+        ? `<div class="flex items-center justify-center gap-3">
+            <span class="line-through text-slate-400 text-sm">${finalBasePoints.toLocaleString()} đ</span>
+            <div class="text-emerald-600 dark:text-emerald-400 font-black text-lg flex items-center gap-1"><i class="fas fa-arrow-up text-emerald-500 dark:text-emerald-400 animate-bounce"></i> ${finalProjPoints.toLocaleString()} đ</div>
+            <span class="text-emerald-700 dark:text-emerald-400 text-[11px] font-black bg-emerald-100 px-2 py-1 rounded-lg">+ ${deltaTotalPts.toLocaleString()} đ</span>
+           </div>`
+        : `<div class="text-slate-800 font-black text-lg">${finalBasePoints.toLocaleString()} đ</div>`;
+
+    let grandTotalRow = `<tr class="bg-slate-200/60">
+        <td class="font-black text-slate-700 dark:text-slate-200 text-left uppercase text-[10px] p-4">TỔNG LƯƠNG SẢN LƯỢNG:</td>
+        <td colspan="6" class="p-4 border-l border-white/50">${grandTotalCell}</td>
+    </tr>`;
+
+    // ==========================================
+    // TÍNH THƯỞNG HS VÀ TỔNG THU NHẬP
+    // ==========================================
+    let projectedHS = Math.round(finalProjPoints * r.rankPercent);
+    let baseHS = Math.round(finalBasePoints * r.rankPercent);
+    let deltaHS = projectedHS - baseHS;
+
+    let hsContent = `<div class="text-[10px] font-black text-rose-400 dark:text-rose-300 uppercase">Thưởng HS</div><div class="font-black text-xs text-rose-700 dark:text-rose-400 bg-white px-2 py-1 rounded shadow-sm my-2 inline-block border border-rose-100">${_luongRankLabel(r.rankName)}</div><br>`;
+    if (isSingleRider && deltaHS > 0) {
+        hsContent += `<span class="text-slate-400 line-through text-[9px]">${baseHS.toLocaleString()}</span><div class="text-rose-600 dark:text-rose-400 font-black text-sm"><i class="fas fa-arrow-up text-emerald-500 dark:text-emerald-400 animate-bounce"></i> ${projectedHS.toLocaleString()} đ</div><span class="text-emerald-600 dark:text-emerald-400 bg-emerald-100 px-2 rounded text-[10px] mt-1">+${deltaHS.toLocaleString()}</span>`;
+    } else {
+        hsContent += `<div class="font-black text-rose-600 dark:text-rose-400 text-[14px]">${baseHS.toLocaleString()} đ</div>`;
+    }
+
+    let finalProjectedIncome = finalProjPoints + baseWage + (isRankVisible ? projectedHS + r.fixedBonus : 0);
+    let currentFinalIncome = finalBasePoints + baseWage + (isRankVisible ? (baseHS + r.fixedBonus) : 0);
+    let deltaTotal = finalProjectedIncome - currentFinalIncome;
+
+    let incBox = (isSingleRider && deltaTotal > 0) ? `<span class="text-slate-400 line-through text-xs">${currentFinalIncome.toLocaleString()} đ</span><div class="text-3xl font-black text-emerald-600 dark:text-emerald-400"><i class="fas fa-arrow-up text-xl animate-bounce"></i> ${finalProjectedIncome.toLocaleString()} đ</div><div class="bg-emerald-100 text-emerald-600 dark:text-emerald-400 text-[10px] font-black px-2 py-0.5 rounded-full mt-1 border border-emerald-200">+ Tăng ${deltaTotal.toLocaleString()} đ</div>` : `<div class="text-3xl font-black text-slate-800">${currentFinalIncome.toLocaleString()} đ</div>`;
+
+    let html = `
+    <div class="bg-white dark:bg-[#0f172a] rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden mb-6">
+        <div class="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-50 border-b border-slate-100">
+            <div class="flex items-center gap-4 mb-4 sm:mb-0">
+                <div class="w-12 h-12 bg-orange-100 text-[#ee4d2d] rounded-xl flex items-center justify-center text-xl"><i class="fas fa-motorcycle"></i></div>
+                <div><p class="text-[10px] uppercase font-black text-slate-400">ID Tài Xế</p><h2 class="text-2xl font-black text-slate-800 tracking-tight">${_luongEsc(r.id)}</h2></div>
+            </div>
+            <div class="text-right flex flex-col items-end">
+                <p class="text-[10px] uppercase font-black text-[#ee4d2d] tracking-widest mb-1">THU NHẬP ${isSingleRider && deltaTotal > 0 ? luongT('DỰ KIẾN') : luongT('CHÍNH THỨC')}</p>
+                ${incBox}
+            </div>
+        </div>
+        
+        <div class="p-4 bg-white dark:bg-[#0f172a] dark:text-slate-200 text-xs border-b dark:border-slate-700 flex flex-col items-end gap-1 font-bold">
+            <div class="flex gap-4">Lương cơ bản: <span class="text-emerald-600 dark:text-emerald-400">${baseWage.toLocaleString()} đ</span></div>
+            ${isRankVisible && r.rankPercent > 0 ? `<div class="flex gap-4">Thưởng Cứng: <span class="text-rose-600 dark:text-rose-400">${r.fixedBonus.toLocaleString()} đ</span></div>` : ''}
+        </div>
+
+        <div class="p-4 overflow-x-auto">
+            <table class="w-full min-w-[850px] border-collapse text-sm">
+                <thead>
+                    <tr class="bg-slate-50 dark:bg-slate-800/60 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase">
+                        <th class="text-left p-3">Khối lượng</th>
+                        <th class="p-3">SL Giao</th><th class="p-3 bg-blue-50/50">Điểm Giao</th>
+                        <th class="p-3">SL Lấy</th><th class="p-3 bg-amber-50/50">Điểm Lấy</th>
+                        <th class="p-3">SL Trả</th><th class="p-3 bg-purple-50/50">Điểm Trả</th>
+                        ${drawBonusColumn ? `<th class="p-3 bg-rose-50/50">Thưởng HS</th>` : `<th></th>`}
+                    </tr>
+                </thead>
+                <tbody class="text-center">${tableRows}${summaryRow}${grandTotalRow}</tbody>
+            </table>
+        </div>
+    </div>`;
+
+    setTimeout(() => {
+        let cell = document.getElementById(`hs-cell-${r.id}`);
+        if(cell) cell.innerHTML = hsContent;
+    }, 0);
+
+    return html;
+}
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof flatpickr !== 'undefined') {
+        flatpickr("#salary-date-from", { dateFormat: "Y-m-d", locale: "vn", disableMobile: "true" });
+        flatpickr("#salary-date-to", { dateFormat: "Y-m-d", locale: "vn", disableMobile: "true" });
+    }
+});
+
+// [SECURITY FIX — theo yêu cầu trực tiếp "rà bảo mật, không phình code, cái
+// nào ghép được thì lồng vào nhau"] ID tài xế/tên hạng/nhãn khối lượng/tên
+// trạm đều là dữ liệu từ FILE .xlsx/.csv NGƯỜI DÙNG TỰ UPLOAD — chèn thẳng
+// vào innerHTML (kể cả bên trong onclick="...") ở nhiều nơi trong file này mà
+// KHÔNG escape, cùng lớp lỗi XSS nghiêm trọng đã vá cho JS_FMS.html/
+// JS_Quahan.html/JS_Pick.html trước đây (module này bị bỏ sót khi đó). Không
+// viết logic escape mới — uỷ quyền lại đúng 2 hàm dùng chung đã có trong
+// index.html (spxEscHtml cho text/attribute HTML thường, spxEscJsAttr riêng
+// cho giá trị nằm trong onclick="fn('...')" — 2 lớp lồng nhau, escape kiểu
+// HTML đơn thuần KHÔNG đủ an toàn cho trường hợp đó, xem giải thích đầy đủ
+// tại spxEscJsAttr() trong index.html).
+function _luongEsc(s) { return spxEscHtml(s); }
+function _luongEscJsAttr(s) { return (typeof spxEscJsAttr === 'function') ? spxEscJsAttr(s) : String(s == null ? '' : s); }
+
+// ── Cập nhật topbar header (status + KPI bar) sau khi có data ────────────────
+// [MỚI] Wrapper i18n module-scoped. Tên hạng VẪN dịch được — nhưng phải giữ
+// NGUYÊN chuỗi gốc làm khoá tra bảng màu, chỉ dịch ở lúc hiển thị qua
+// _luongRankLabel(). Không bao giờ dịch trực tiếp vào biến rankName.
+// [SỬA — theo phản hồi đúng: "rank Kim Cương sang EN vẫn là Kim Cương thì sai"]
+// Tên hạng vừa là KHOÁ tra bảng màu (rankColor), vừa là chữ HIỂN THỊ. Trước đây
+// tôi bỏ qua vì sợ dịch sẽ hỏng tra cứu — cách đúng là GIỮ NGUYÊN khoá, chỉ dịch
+// ở ĐÚNG lúc hiển thị. Hàm này làm việc đó: nhận khoá gốc, trả nhãn theo ngôn ngữ.
+// [SECURITY FIX] Escape luôn ở ĐÂY (điểm hội tụ duy nhất) — cả 2 nơi gọi hàm
+// này (dòng ~653, ~826) đều render thẳng ra HTML, escape 1 lần ở nguồn thay vì
+// lặp lại ở từng nơi gọi — đúng tôn chỉ "cái nào ghép được thì lồng vào nhau".
+function _luongRankLabel(rank){
+  var out = (typeof spxUiLabel === "function") ? spxUiLabel(rank) : rank;
+  return _luongEsc(out);
+}
+function luongT(viText){ return (typeof spxUiLabel === 'function') ? spxUiLabel(viText) : viText; }
+function _luongUpdateTopbar() {
+    const totalTX = validDriversListLUONG.length;
+    const subEl   = document.getElementById('luong-topbar-sub');
+    const kpiBar  = document.getElementById('luong-kpi-bar');
+    const kpiTotal = document.getElementById('luong-kpi-total');
+    const kpiHub   = document.getElementById('luong-kpi-hub');
+    const kpiTong  = document.getElementById('luong-kpi-tongluong');
+
+    if (!csvDataLUONG || totalTX === 0) {
+        if (subEl) subEl.textContent = luongT('Chưa có dữ liệu — Vui lòng nạp file CSV');
+        if (kpiBar) kpiBar.classList.add('hidden');
+        return;
+    }
+
+    // [FIX] Tính đúng tổng thu nhập = sản lượng + LCB + thưởng HS + thưởng cứng
+    // r.rankPercent / r.fixedBonus đã được gán bởi renderResultsLUONG() trước khi hàm này chạy
+    const baseWage = parseInt(document.getElementById('regionWageSelectLUONG')?.value) || 0;
+    let tongLuong = 0;
+    validDriversListLUONG.forEach(id => {
+        const r = globalRiderMapLUONG[id];
+        if (!r) return;
+        const pts        = r.totalPts || 0;
+        const bonusPct   = Math.round(pts * (r.rankPercent || 0));
+        const fixedBonus = r.fixedBonus || 0;
+        tongLuong += pts + baseWage + bonusPct + fixedBonus;
+    });
+
+    const hubCount = hubSetLUONG.size;
+    if (subEl) subEl.textContent = `${totalTX} tài xế · ${hubCount} trạm · Tổng lương: ${tongLuong.toLocaleString('vi-VN')} đ`;
+    if (kpiBar) { kpiBar.classList.remove('hidden'); kpiBar.style.display = 'flex'; }
+    if (kpiTotal) kpiTotal.textContent = totalTX;
+    if (kpiTong) kpiTong.textContent = tongLuong.toLocaleString('vi-VN') + 'đ';
+    if (kpiHub) kpiHub.textContent = hubCount > 1 ? `${hubCount} trạm` : (Array.from(hubSetLUONG)[0] || '--');
+
+    _luongUpdateRankTotal();
+}
+
+// ── Cập nhật badge "Tổng: X TX" trong cấu hình thứ hạng ─────────────────────
+function _luongUpdateRankTotal() {
+    const badge = document.getElementById('luong-rank-total-badge');
+    if (!badge) return;
+    const total = validDriversListLUONG.length;
+    badge.textContent = `Tổng: ${total} TX`;
+}
+
+// ── Bảng tóm tắt lương bên phải ──────────────────────────────────────────────
+function _renderLuongSummaryPanel(listToRender, baseWage, filterId) {
+    const panel = document.getElementById('luong-summary-panel');
+    if (!panel) return;
+
+    if (!listToRender || listToRender.length === 0) {
+        panel.innerHTML = `<div class="flex flex-col items-center justify-center h-full gap-2 text-slate-300 dark:text-slate-600 py-10">
+            <i class="fas fa-table text-3xl"></i>
+            <span class="text-xs font-bold" data-i18n-ui="Chưa có dữ liệu">Chưa có dữ liệu</span>
+        </div>`;
+        return;
+    }
+
+    const rankColor = {
+        '💎 Kim Cương': 'text-cyan-600 bg-cyan-50 dark:bg-cyan-900/30 border-cyan-200',
+        '🏆 Bạch Kim':  'text-slate-500 bg-slate-50 dark:bg-slate-800 border-slate-200',
+        '🥇 Vàng':      'text-amber-600 bg-amber-50 dark:bg-amber-900/30 border-amber-200',
+        '🥈 Bạc':       'text-slate-400 bg-slate-50 dark:bg-slate-800 border-slate-200',
+        '🥉 Đồng':      'text-orange-500 bg-orange-50 dark:bg-orange-900/30 border-orange-200',
+        'KHÔNG ĐẠT':    'text-slate-300 bg-white dark:bg-slate-900 border-slate-100',
+    };
+
+    let maxIncome = 0;
+    const rows = listToRender.map((id, idx) => {
+        const r = globalRiderMapLUONG[id];
+        if (!r) return null;
+        const pts        = r.totalPts || 0;
+        const bonusPct   = Math.round(pts * (r.rankPercent || 0));
+        const fixed      = r.fixedBonus || 0;
+        const total      = pts + baseWage + bonusPct + fixed;
+        if (total > maxIncome) maxIncome = total;
+        return { id, rank: r.rankName || 'KHÔNG ĐẠT', pts, baseWage, bonusPct, fixed, total, idx: idx + 1 };
+    }).filter(Boolean);
+
+    const isFiltered = !!filterId;
+
+    let html = `
+    <div class="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 px-3 pt-3 pb-2 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 sticky top-0 bg-white dark:bg-[#151e2f] z-10">
+        <span><i class="fas fa-list-ol text-orange-400 dark:text-orange-300 mr-1.5"></i>Bảng tóm tắt lương</span>
+        <span class="bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded-full">${rows.length} TX</span>
+    </div>
+    <table class="w-full text-[10px] border-collapse">
+        <thead class="sticky top-[33px] z-10 bg-slate-50 dark:bg-slate-800/80">
+            <tr class="text-slate-400 dark:text-slate-500 font-black uppercase text-[8px]">
+                <th class="px-2 py-1.5 text-left w-6">#</th>
+                <th class="px-2 py-1.5 text-left">ID TX</th>
+                <th class="px-2 py-1.5 text-center">Hạng</th>
+                <th class="px-2 py-1.5 text-right">Thu nhập</th>
+            </tr>
+        </thead>
+        <tbody>`;
+
+    rows.forEach(row => {
+        const barW  = maxIncome > 0 ? Math.round((row.total / maxIncome) * 100) : 0;
+        const cls   = rankColor[row.rank] || rankColor['KHÔNG ĐẠT'];
+        const rankShort = _luongRankLabel(row.rank).replace(/💎|🏆|🥇|🥈|🥉/g, '').trim().split(' ')[0];
+        const isActive  = isFiltered && row.id === filterId;
+
+        html += `<tr class="border-b border-slate-50 dark:border-slate-800/60 cursor-pointer transition-colors ${isActive ?'bg-orange-50 dark:bg-orange-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}"
+            onclick="document.getElementById('searchIdLUONG').value='${_luongEscJsAttr(row.id)}'; renderResultsLUONG();"
+            title="Sản lượng: ${row.pts.toLocaleString('vi-VN')}đ | LCB: ${row.baseWage.toLocaleString('vi-VN')}đ | Thưởng %: ${row.bonusPct.toLocaleString('vi-VN')}đ | Thưởng cứng: ${row.fixed.toLocaleString('vi-VN')}đ">
+            <td class="px-2 py-1.5 text-slate-300 dark:text-slate-600 font-black text-[8px] w-6">${row.idx}</td>
+            <td class="px-2 py-1.5">
+                <div class="font-black text-slate-700 dark:text-slate-200 text-[10px]">${_luongEsc(row.id)}</div>
+                <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-[3px] mt-1">
+                    <div class="bg-gradient-to-r from-orange-400 to-orange-500 h-[3px] rounded-full" style="width:${barW}%"></div>
+                </div>
+            </td>
+            <td class="px-1.5 py-1.5 text-center">
+                <span class="inline-block px-1.5 py-0.5 rounded border text-[8px] font-black ${cls}">${rankShort}</span>
+            </td>
+            <td class="px-2 py-1.5 text-right font-black text-slate-800 dark:text-slate-100 whitespace-nowrap">
+                ${(row.total / 1000000).toFixed(2)}<span class="text-slate-400 font-semibold text-[8px]">M</span>
+            </td>
+        </tr>`;
+    });
+
+    html += `</tbody></table>`;
+    panel.innerHTML = html;
+}
+
+function kiemTraBaoMatLuong() {
+    // Quyền đã được kiểm tra từ index (spxPrefetchLuongAccess + xacNhanMoLuong)
+    // trước khi openModule('luong') được gọi — không cần check lại ở đây.
+    const overlay = document.getElementById('luong-security-overlay');
+    const content = document.getElementById('luong-main-content');
+    if (overlay) { overlay.classList.add('hidden'); overlay.style.display = 'none'; }
+    if (content) { content.classList.remove('hidden'); content.style.opacity = '1'; }
+}
+
+// [ĐÃ XOÁ — quayVeTrangChu(), xác nhận mồ côi (0 nơi gọi) + đúng yêu cầu "xoá
+// hết nút back về home" — sidebar đã có sẵn điều hướng, không cần trang chủ
+// riêng trong từng module]
+</script>

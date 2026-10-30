@@ -1,19 +1,73 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
+const gas = require('./services/gas_runtime');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SPX_LIVE_APP_URL = "https://script.google.com/a/macros/spxexpress.com/s/AKfycbz5xLn8WQ9b9eVaMEDeD8ruaOlpL1-ZzprJWUMh8KgcIBUAEU_0JjlvxZlAI75nTw32/exec";
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Cổng điều hướng tập trung: Tự động chuyển tiếp thẳng vào Web App thật của SPX
-app.get(['/', '/?*', '/api/rpc/*'], (req, res) => {
-  res.redirect(SPX_LIVE_APP_URL);
-});
-
-// Trang trung chuyển với giao diện Portal chính thức
+// 1. Phục vụ tài nguyên tĩnh
 app.use(express.static(path.join(__dirname, 'public')));
 
+// 2. Hàm render template HTML (hỗ trợ cú pháp include của Google Apps Script)
+function renderTemplate(viewName) {
+  const viewsDir = path.join(__dirname, 'public/views');
+  let target = String(viewName || 'index').trim();
+  if (!target.endsWith('.html')) target += '.html';
+  const filePath = path.join(viewsDir, target);
+
+  if (!fs.existsSync(filePath)) {
+    return `<div style="color:red;padding:20px;font-weight:bold;">Không tìm thấy view: ${viewName}</div>`;
+  }
+
+  let content = fs.readFileSync(filePath, 'utf8');
+
+  // Xử lý đệ quy <?!= include('Tên_File'); ?>
+  const incRegex = /<\?!=\s*include\s*\(\s*['"]([^'"]+)['"]\s*\);?\s*\?>/g;
+  content = content.replace(incRegex, (m, inc) => {
+    return renderTemplate(inc);
+  });
+
+  return content;
+}
+
+// 3. Trang chủ Standalone Portal
+app.get(['/', '/index.html'], (req, res) => {
+  let html = renderTemplate('index');
+  // Đảm bảo có cầu nối spx_rpc_bridge
+  if (!html.includes('spx_rpc_bridge.js')) {
+    html = html.replace('</head>', '<script src="/js/spx_rpc_bridge.js"></script></head>');
+  }
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.send(html);
+});
+
+// 4. Tuyến đường RPC Dispatcher — Gọi trực tiếp 19,469 dòng code .gs gốc
+app.post('/api/rpc/:func', async (req, res) => {
+  const funcName = req.params.func;
+  const payload = req.body.params || [];
+  try {
+    const result = gas.call(funcName, payload);
+    if (result !== null && result !== undefined) {
+      if (typeof result === 'string') {
+        try {
+          return res.json(JSON.parse(result));
+        } catch (e) {
+          return res.send(result);
+        }
+      }
+      return res.json(result);
+    }
+    return res.json({ success: true, data: [] });
+  } catch (err) {
+    console.error(`❌ [RPC Error ${funcName}]:`, err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.listen(PORT, () => {
-  console.log(`🚀 [SPX Portal Gateway] Active on port ${PORT} -> Forwarding to Live GAS App`);
+  console.log(`🚀 [SPX Standalone Portal] Đang chạy độc lập trên port ${PORT} với 100% code gốc!`);
 });

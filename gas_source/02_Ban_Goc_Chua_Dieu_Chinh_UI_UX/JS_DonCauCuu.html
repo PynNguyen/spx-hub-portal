@@ -1,0 +1,510 @@
+<script>
+// [MỚI — chuẩn hoá ngôn ngữ EN/VI] Uỷ quyền spxUiLabel() dùng chung
+// (index.html) — CÙNG PATTERN với vpT/fmsT/qhT ở các module khác.
+function dccT(viText){ return (typeof spxUiLabel === 'function') ? spxUiLabel(viText) : viText; }
+// =========================================================================
+// MODULE ĐƠN CẦN CẦU CỨU — REDESIGN THEO BẢN GỐC (index_đơn_cần_cầu_cứu.html,
+// 2706 dòng) — LOGIC DỮ LIỆU GIỮ NGUYÊN 100%, gọi đúng getOrders()/
+// setResolvedStatus(Bulk) thật. Khôi phục lại 2 phần cốt lõi của bản gốc:
+//   1. Panel "Sức khỏe từng trạm" (chỉ hiện khi header đang ở "Tất cả").
+//   2. Khu cảnh báo riêng (risk alert) — nổi bật đơn trễ hạn nhất.
+// [QUY TẮC BẮT BUỘC — đã sửa lỗi vi phạm] Hub Selector trên HEADER là nơi
+// DUY NHẤT để chọn trạm trong toàn bộ app — module KHÔNG được có bất kỳ ô
+// tìm/chọn trạm riêng nào (đúng bài học đã áp dụng cho BI: gỡ 5 nơi tự bật
+// lại nút "Chuyển trạm" riêng). Module này CHỈ ĐỌC lại đúng trạm header đang
+// chọn (spxHeaderSelectedHub, cùng biến/quy ước Quá Hạn·FMS·BI·Rider Plan
+// đang dùng) khi tải, và CHỈ đổi khi spxHeaderHubChange() gọi rqSelectStation()
+// — không có đường nào khác để đổi trạm từ trong module.
+// BỎ HẲN tính năng đăng ký nhận mail (theo yêu cầu) — payload.mail từ backend
+// bị NGÓ LƠ hoàn toàn ở đây.
+// Mức khẩn cấp tính từ export_date+23:59:59 so với hiện tại:
+//   Đỏ ≤12h hoặc quá hạn | Cam 12-24h | Xanh >24h  (khớp đúng công thức thật
+//   trong computeUrgency() của bản gốc).
+// =========================================================================
+var RQ_allOrders = [];        // TOÀN BỘ đơn thuộc quyền (bao gồm cả đã xử lý — cần cho panel sức khỏe)
+var RQ_access = null;         // {role, email, stations: [...]} — từ res.access thật
+var RQ_selectedStation = '';  // '' = Tất cả trạm | tên trạm cụ thể — LUÔN khớp đúng Hub header, không tự đổi trong module
+var RQ_activeLevel = 'ALL';
+var RQ_hideResolved = true;   // mặc định ẩn đơn đã xử lý khỏi bảng (khớp hành vi bản cũ)
+var RQ_isLoading = false;     // [FIX ỔN ĐỊNH] chặn bấm "Làm mới" liên tục gây gọi API trùng lặp cùng lúc
+// [MỚI — theo yêu cầu trực tiếp "phân hoá view theo level"] null = không giới
+// hạn thêm gì (Admin thật, hoặc ROM — quản lý toàn bộ). Mảng = giới hạn theo
+// đúng phạm vi AOM/SUP đang "Xem thử" (RQ_selectedStation vẫn xử lý ĐÚNG
+// Lead/Staff sẵn có từ trước qua header hub — không cần đổi gì thêm cho 2
+// cấp đó, module này đã LUÔN đọc header hub từ đầu).
+var RQ_previewAllowedStations = null;
+// [FIX HIỆU NĂNG] Bản tra cứu O(1) đi kèm — tránh indexOf() lặp trên từng dòng.
+var RQ_previewAllowedSet = null;
+// [MỚI] Nhãn hiển thị phạm vi đang "Xem thử" (VD "AOM Nguyễn Văn A") — null khi
+// không giới hạn gì thêm (Admin/ROM thật) — dùng để hiện banner + đổi tiêu đề,
+// tránh mơ hồ "Tất cả trạm" khi thực ra đang bị thu hẹp theo tổ chức.
+var RQ_previewEntityLabel = null;
+// [MỚI] Cấp cao mặc định ẩn thẻ số + bảng đơn chi tiết — mở khi cần tra cứu.
+var RQ_showDetail = false;
+
+// [MỚI] Kiểm tra 1 đơn có nằm trong phạm vi đang xem hay không — gộp CẢ 2
+// điều kiện (header hub 1-trạm CHO Lead/Staff, và phạm vi tổ chức nhiều-trạm
+// CHO AOM/SUP) vào ĐÚNG 1 chỗ, thay vì lặp lại điều kiện rải rác nhiều nơi.
+function _rqMatchesScope(stationName) {
+  if (RQ_selectedStation && stationName !== RQ_selectedStation) return false;
+  if (RQ_previewAllowedSet && RQ_previewAllowedSet[stationName] !== 1) return false;
+  return true;
+}
+
+/**
+ * rqApplyPreviewLevel(level)
+ * [MỚI — hoàn thành "phân hoá view theo level" cho Đơn cần cầu cứu, đúng
+ * pattern đã kiểm chứng ở Rider Plan] ROM/Admin: bỏ giới hạn thêm (mặc định
+ * đã là toàn bộ, đúng nguyên tắc "ROM quản lý TOÀN BỘ AOM hiện tại"). AOM/SUP:
+ * thu hẹp theo đúng danh sách trạm thuộc tổ chức đó (spxGetHubsInOrgScope() —
+ * đã có sẵn, dùng chung với Rider Plan/Tổng quan, không viết lại logic tra
+ * cứu tổ chức). Lead/Staff: KHÔNG cần xử lý gì thêm ở đây — module này đã
+ * LUÔN đọc đúng header hub (_rqReadHeaderHub()) từ trước khi có tính năng
+ * "Xem thử", nên đã tự động đúng phạm vi ngay khi Admin chọn 1 Hub cụ thể ở
+ * header, không cần thêm code riêng cho 2 cấp này.
+ */
+function rqApplyPreviewLevel(level) {
+  if (typeof RQ_allOrders === 'undefined' || !RQ_allOrders.length) return; // chưa tải xong — bỏ qua, applyFiltersQH-style tự áp dụng lại sau khi tải xong nếu cần
+  var isRealAdmin = !!(window.SPX_ACCESS && window.SPX_ACCESS.role === 'admin');
+  var directEntity = (typeof window.SPX_PREVIEW_ENTITY === 'string' && window.SPX_PREVIEW_ENTITY) ? window.SPX_PREVIEW_ENTITY : '';
+
+  // [SỬA — theo yêu cầu "mọi cấp phải thấy đúng phạm vi của mình"] Trước đây ROM
+  // bị xếp chung với Admin (bỏ mọi giới hạn) vì giả định "ROM quản toàn bộ AOM".
+  // Giả định đó đúng khi ROM chưa có cấu hình; nay ROM có phạm vi thật (quản một
+  // nhóm AOM) nên phải lọc như AOM/SUP, nếu không ROM sẽ thấy số toàn hệ thống.
+  if (!isRealAdmin || !level || level === 'admin') {
+    if (RQ_previewAllowedStations !== null || RQ_previewEntityLabel !== null) {
+      RQ_previewAllowedStations = null; RQ_previewAllowedSet = null; RQ_previewEntityLabel = null;
+      rqRenderLevelTabs(); rqRenderHealthPanel(); rqRenderMain();
+    }
+    return;
+  }
+
+  if ((level === 'aom' || level === 'sup' || level === 'rom') && directEntity && typeof spxGetHubsInOrgScope === 'function') {
+    // [DỌN TRÙNG LẶP] Dùng chung spxResolvePreviewScope() (index.html).
+    var sc = (typeof spxResolvePreviewScope === 'function')
+      ? spxResolvePreviewScope(level, directEntity, RQ_allOrders, function(o){ return o.station_name; }) : null;
+    if (!sc) return;
+    RQ_previewEntityLabel = (level === 'aom' ? 'AOM ' : level === 'rom' ? 'ROM ' : 'SUP ') + directEntity;
+    RQ_previewAllowedStations = sc.list; RQ_previewAllowedSet = sc.set;
+    rqRenderLevelTabs(); rqRenderHealthPanel(); rqRenderMain();
+    return;
+  }
+}
+
+function _rqEsc(s) {
+  // [DỌN TRÙNG LẶP] Uỷ quyền lại spxEscHtml() dùng chung trong index.html.
+  return spxEscHtml(s);
+}
+// [SECURITY FIX — rà soát bảo mật toàn diện] Bản cũ escape SAI THỨ TỰ:
+// HTML-escape (_rqEsc) trước, rồi mới thay dấu nháy đơn — vô tác dụng vì lúc
+// đó dấu ' đã thành &#39;, không còn gì để thay; và trình duyệt giải mã HTML
+// entity TRƯỚC KHI biên dịch onclick="...'...'" thành JS, nên &#39; vẫn quay
+// lại thành ' thật, vẫn thoát được chuỗi. Đổi sang đúng hàm dùng chung
+// spxEscJsAttr() (xử lý đúng thứ tự — JS trước, HTML sau).
+function _rqEscAttr(s) { return (typeof spxEscJsAttr === 'function') ? spxEscJsAttr(s) : String(s == null ? '' : s); }
+// [MỚI] Wrapper i18n module-scoped — cùng pattern qhT()/kfT()/vpT().
+function rqT(viText){ return (typeof spxUiLabel === 'function') ? spxUiLabel(viText) : viText; }
+
+function _rqComputeUrgency(exportDateStr){
+  var d = new Date(exportDateStr + 'T23:59:59');
+  var hours = (d - new Date()) / 3600000;
+  var level = (hours < 0 || hours <= 12) ? 'red' : (hours <= 24 ? 'orange' : 'green');
+  return { level: level, hours: hours };
+}
+function _rqFormatHours(hours){
+  return hours < 0 ? (rqT('Quá hạn') + ' ' + Math.abs(hours).toFixed(1) + 'h') : (rqT('Còn') + ' ' + hours.toFixed(1) + 'h');
+}
+
+// [MỚI] Đọc đúng trạm HEADER đang chọn ngay lúc này — cùng thứ tự ưu tiên
+// biến thật đã dùng xuyên suốt app (spxHeaderSelectedHub -> localStorage
+// 'spx_default_hub' -> 'ALL'), KHÔNG có ô chọn trạm riêng nào trong module.
+function _rqReadHeaderHub(){
+  // [DỌN TRÙNG LẶP] Uỷ quyền spxReadHeaderHub() dùng chung (index.html).
+  return (typeof spxReadHeaderHub === 'function') ? spxReadHeaderHub() : '';
+}
+
+// ── Khung tĩnh ────────────────────────────────────────────────────────────
+function rqInit(){
+  RQ_selectedStation = _rqReadHeaderHub();
+  var main = document.getElementById('view-rescue');
+  main.innerHTML = ''
+    + '<main class="flex-1 min-w-0 flex flex-col h-full w-full bg-white dark:bg-[#0b1121] relative overflow-y-auto">'
+    + '    <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 shrink-0 flex-wrap">'
+    + '      <div class="flex items-center gap-2 mr-auto">'
+    + '        <i class="fas fa-warehouse text-[#ee4d2d] text-xs"></i>'
+    + '        <span class="text-xs font-black text-slate-700 dark:text-slate-200" id="rq-scope-title" data-i18n-ui="Tất cả trạm">Tất cả trạm</span>'
+    + '      </div>'
+    + '      <label class="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 cursor-pointer select-none"><input type="checkbox" id="rq-hide-resolved-chk" checked onchange="rqToggleHideResolved(this.checked)"> <span data-i18n-ui="Ẩn đơn đã xử lý">Ẩn đơn đã xử lý</span></label>'
+    + '      <button onclick="rqBulkResolve()" class="shrink-0 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-500 hover:text-white text-slate-600 dark:text-slate-300 px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all"><i class="fas fa-check-double mr-1"></i> <span data-i18n-ui="Đánh dấu đã xử lý">Đánh dấu đã xử lý</span></button>'
+    + '    </div>'
+    + '    <div class="px-4 pt-3 shrink-0" id="rq-scope-banner"></div>'
+    + '    <div class="px-4 pt-3 shrink-0" id="rq-bigpicture"></div>'
+    + '    <div class="px-4 pb-1 shrink-0" id="rq-detail-toggle"></div>'
+    + '    <div class="p-4 grid grid-cols-4 gap-3 shrink-0" id="rq-level-cards">'
+    + '    </div>'
+    + '    <div class="px-4 shrink-0" id="rq-risk-alert"></div>'
+    + '    <div class="px-4 shrink-0" id="rq-health-panel"></div>'
+    + '    <div class="flex-1 px-4 pb-4" id="rq-table-wrap"></div>'
+    + '  </main>';
+  rqLoadOrders(false);
+}
+
+// ── Tải dữ liệu ───────────────────────────────────────────────────────────
+function rqLoadOrders(force){
+  if (RQ_isLoading) return; // [FIX ỔN ĐỊNH] đang tải rồi thì bỏ qua lượt bấm mới, tránh gọi API trùng
+  RQ_isLoading = true;
+  var wrap = document.getElementById('rq-table-wrap');
+  if (wrap) wrap.innerHTML = '<div class="p-8 text-center text-slate-400 text-sm"><i class="fas fa-spinner fa-spin mr-2"></i>' + rqT('Đang tải dữ liệu thật...') + '</div>';
+  google.script.run
+    .withSuccessHandler(function(res){
+      RQ_isLoading = false;
+      // [Đối chiếu đúng cấu trúc thật] getOrders() trả payload.rows + payload.access
+      // (access.stations = danh sách trạm được phân quyền THẬT, kể cả trạm 0 đơn)
+      // + payload.resolved (mảng tracking_no đã đánh dấu xử lý). KHÔNG loại bỏ đơn
+      // đã xử lý khỏi RQ_allOrders nữa (khác bản cũ) — panel "Sức khỏe từng trạm"
+      // cần biết cả đơn đã xử lý để tính đúng %, chỉ ẨN khỏi BẢNG theo tuỳ chọn.
+      var resolvedSet = new Set(res && res.resolved ? res.resolved : []);
+      RQ_access = (res && res.access) ? res.access : { stations: [], role: '', email: '' };
+      RQ_allOrders = ((res && res.rows) ? res.rows : []).map(function(o){
+        o._urgency = _rqComputeUrgency(o.export_date);
+        o._resolved = resolvedSet.has(o.tracking_no);
+        return o;
+      });
+      // Trạm header đang chọn không nằm trong quyền hạn thật (vd tài khoản đổi
+      // quyền) -> quay về "Tất cả trạm" thay vì hiện bảng rỗng gây hiểu lầm.
+      if (RQ_selectedStation && RQ_access.stations.indexOf(RQ_selectedStation) === -1) RQ_selectedStation = '';
+      rqRenderLevelTabs();
+      rqRenderMain();
+    })
+    .withFailureHandler(function(err){
+      RQ_isLoading = false;
+      if (wrap) wrap.innerHTML = '<div class="p-8 text-center text-rose-500 dark:text-rose-400 text-sm">' + rqT('Lỗi tải dữ liệu') + ': ' + _rqEsc(err.message || String(err)) + '</div>';
+    })
+    .getOrders();
+}
+
+// [MỚI] DUY NHẤT điểm vào để đổi trạm — chỉ được gọi từ spxHeaderHubChange()
+// khi người dùng đổi Hub trên HEADER (không có nút/ô nào khác trong module gọi
+// hàm này). Cùng quy ước selectSt() của Rider Plan: name='' hoặc 'ALL' =>
+// "Tất cả trạm".
+function rqSelectStation(name){
+  RQ_selectedStation = (name === 'ALL') ? '' : (name || '');
+  rqRenderMain();
+}
+
+
+function _rqStationSeverity(stats){
+  if (!stats || stats.total === 0) return 'idle';
+  if (stats.red > 0) return 'red';
+  if (stats.orange > 0) return 'orange';
+  return 'green';
+}
+
+// ── Mức khẩn cấp ──────────────────────────────────────────────────────────
+function rqRenderLevelTabs(){
+  var scoped = RQ_allOrders.filter(function(o){ return _rqMatchesScope(o.station_name); });
+  var active = scoped.filter(function(o){ return !o._resolved; });
+  var counts = { red:0, orange:0, green:0 };
+  active.forEach(function(o){ counts[o._urgency.level]++; });
+  var totalCount = RQ_hideResolved ? active.length : scoped.length;
+
+  // [SỬA — theo yêu cầu trực tiếp "kết hợp số tĩnh ở header thành có tác dụng
+  // lọc, loại bỏ phần dư thừa"] Trước đây có 2 nơi hiển thị CÙNG 4 con số này:
+  // sidebar (nút bấm lọc được) và đây (chỉ hiển thị tĩnh) — giờ gộp thành
+  // ĐÚNG 1 nơi duy nhất, vừa hiển thị vừa lọc được, không còn trùng lặp.
+  var cards = [
+    ['ALL', rqT('Tất cả'), totalCount, 'slate'],
+    ['red', rqT('Đỏ — khẩn cấp'), counts.red, 'rose'],
+    ['orange', 'Cam — 12-24h', counts.orange, 'orange'],
+    ['green', rqT('Xanh — an toàn'), counts.green, 'emerald']
+  ];
+  var colorHex = { slate: '#64748b', rose: '#e11d48', orange: '#f97316', emerald: '#10b981' };
+  document.getElementById('rq-level-cards').innerHTML = cards.map(function(c){
+    var isActive = RQ_activeLevel === c[0];
+    // [FIX — tránh phụ thuộc class Tailwind động (ring-*/border-* theo màu) có
+    // thể không tồn tại trong build tĩnh] Dùng inline style cố định cho trạng
+    // thái active, an toàn tuyệt đối bất kể build có class đó hay không.
+    var activeStyle = isActive ? ' style="border-width:2px;border-color:' + colorHex[c[3]] + ';box-shadow:0 2px 8px rgba(0,0,0,0.08)"' : '';
+    return '<div onclick="rqSetLevel(\'' + c[0] + '\')"' + activeStyle + ' class="cursor-pointer transition-all hover:shadow-md rounded-xl p-3 bg-' + c[3] + '-50 dark:bg-' + c[3] + '-900/15 border border-' + c[3] + '-100 dark:border-' + c[3] + '-900/30">'
+      + '<div class="text-[10px] font-black uppercase text-' + c[3] + '-500">' + c[1] + '</div>'
+      + '<div class="text-xl font-black text-' + c[3] + '-600' + (c[3]==='slate' ? ' dark:text-slate-200' : '') + '">' + c[2] + '</div></div>';
+  }).join('');
+}
+function rqSetLevel(level){ RQ_activeLevel = level; rqRenderLevelTabs(); rqRenderMain(); }
+function rqToggleHideResolved(checked){ RQ_hideResolved = checked; rqRenderLevelTabs(); rqRenderMain(); }
+
+// ── Sức khỏe từng trạm (chỉ hiện khi xem "Tất cả trạm") ────────────────────
+function _rqScopedStationList(){
+  var all = (RQ_access && RQ_access.stations ? RQ_access.stations : []);
+  return RQ_previewAllowedSet ? all.filter(function(s){ return RQ_previewAllowedSet[s] === 1; }) : all;
+}
+function rqComputeStationHealth(){
+  var stats = {};
+  _rqScopedStationList().forEach(function(s){ stats[s] = { total:0, red:0, orange:0, green:0, resolved:0 }; });
+  RQ_allOrders.forEach(function(o){
+    var s = o.station_name;
+    if (!s) return;
+    if (!stats[s]) stats[s] = { total:0, red:0, orange:0, green:0, resolved:0 };
+    stats[s].total++;
+    if (o._resolved) stats[s].resolved++;
+    else stats[s][o._urgency.level]++;
+  });
+  return stats;
+}
+
+function rqRenderHealthPanel(){
+  var panel = document.getElementById('rq-health-panel');
+  if (!panel) return;
+  if (RQ_selectedStation) { panel.innerHTML = ''; return; } // chỉ hiện khi "Tất cả trạm"
+  var stats = rqComputeStationHealth();
+  var stations = _rqScopedStationList();
+  var order = { red:0, orange:1, green:2, idle:3 };
+  stations.sort(function(a, b){
+    var sa = order[_rqStationSeverity(stats[a])], sb = order[_rqStationSeverity(stats[b])];
+    return sa !== sb ? sa - sb : (stats[b].total - stats[a].total);
+  });
+  var urgent = 0, doneAll = 0, idle = 0;
+  stations.forEach(function(s){
+    var st = stats[s];
+    if (st.total === 0) idle++;
+    else if (st.red > 0 || st.orange > 0) urgent++;
+    else if (st.resolved === st.total) doneAll++;
+  });
+  var rowsHtml = stations.slice(0, 30).map(function(s){
+    var st = stats[s];
+    var pct = st.total ? Math.round(st.resolved / st.total * 100) : 0;
+    var sev = _rqStationSeverity(st);
+    var sevLabel = { red:rqT('Khẩn cấp'), orange:rqT('Cần chú ý'), green:rqT('Ổn định'), idle:rqT('Chưa có đơn') }[sev];
+    var sevClass = { red:'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400', orange:'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', green:'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400', idle:'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400' }[sev];
+    return '<tr class="border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/30">' +
+      '<td class="p-2.5 font-bold text-slate-700 dark:text-slate-200 text-xs">' + _rqEsc(s) + '</td>' +
+      '<td class="p-2.5 text-center"><span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase ' + sevClass + '">' + sevLabel + '</span></td>' +
+      '<td class="p-2.5 text-center text-xs font-bold text-rose-600 dark:text-rose-400">' + st.red + '</td>' +
+      '<td class="p-2.5 text-center text-xs font-bold text-orange-600 dark:text-orange-400">' + st.orange + '</td>' +
+      '<td class="p-2.5 text-center text-xs font-bold text-emerald-600 dark:text-emerald-400">' + st.green + '</td>' +
+      '<td class="p-2.5 text-center text-xs text-slate-500">' + st.resolved + '/' + st.total + ' (' + pct + '%)</td>' +
+      '</tr>';
+  }).join('');
+  var moreNote = stations.length > 30 ? '<div class="px-3 py-2 text-[10px] text-slate-400 text-center">' + rqT('Hiện') + ' 30/' + stations.length + ' ' + rqT('trạm khẩn cấp/nhiều đơn nhất.') + '</div>' : '';
+  var scopeTitle = RQ_previewEntityLabel ? (rqT('So sánh trạm') + ' — ' + RQ_previewEntityLabel) : rqT('Sức khỏe từng trạm');
+  panel.innerHTML = '<div class="rounded-xl border border-slate-100 dark:border-slate-800 mb-4 overflow-hidden">' +
+    '<div class="px-4 py-3 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">' +
+    '<span class="text-xs font-black text-slate-700 dark:text-slate-200"><i class="fas fa-heart-pulse text-[#ee4d2d] mr-1.5"></i>' + _rqEsc(scopeTitle) + '</span>' +
+    '<span class="text-[10px] font-bold text-slate-500 flex items-center gap-3"><span>🔴 ' + urgent + ' ' + rqT('trạm cần chú ý') + '</span><span>✅ ' + doneAll + ' ' + rqT('trạm xong 100%') + '</span><span>⚪ ' + idle + ' ' + rqT('trạm chưa có đơn') + '</span></span>' +
+    '</div>' +
+    '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-left text-[9px] uppercase font-black text-slate-400 bg-white dark:bg-[#0b1121]"><th class="p-2.5">Trạm</th><th class="p-2.5 text-center">Mức</th><th class="p-2.5 text-center">Đỏ</th><th class="p-2.5 text-center">Cam</th><th class="p-2.5 text-center">Xanh</th><th class="p-2.5 text-center">Đã xử lý</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' +
+    moreNote +
+    '</div>';
+}
+
+// ── Khu cảnh báo riêng (risk alert) ─────────────────────────────────────────
+function rqRenderRiskAlert(){
+  var alertEl = document.getElementById('rq-risk-alert');
+  if (!alertEl) return;
+  var scoped = RQ_allOrders.filter(function(o){ return _rqMatchesScope(o.station_name); });
+  var reds = scoped.filter(function(o){ return !o._resolved && o._urgency.level === 'red'; })
+    .sort(function(a, b){ return a._urgency.hours - b._urgency.hours; });
+  if (!reds.length) { alertEl.innerHTML = ''; return; }
+  var top = reds.slice(0, 3);
+  alertEl.innerHTML = '<div class="rounded-xl bg-rose-50 dark:bg-rose-900/15 border border-rose-100 dark:border-rose-900/30 p-4 mb-4 flex items-start gap-3">' +
+    '<i class="fas fa-triangle-exclamation text-rose-500 dark:text-rose-400 text-lg mt-0.5"></i>' +
+    '<div class="flex-1 min-w-0">' +
+    '<div class="text-xs font-black text-rose-700 dark:text-rose-400 uppercase mb-1">' + reds.length + ' ' + rqT('đơn khẩn cấp cần xử lý ngay') + (RQ_selectedStation ? ' ' + rqT('tại') + ' ' + _rqEsc(RQ_selectedStation) : '') + '</div>' +
+    '<div class="flex flex-wrap gap-2">' + top.map(function(o){
+      return '<span class="inline-flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-800/50 rounded-lg px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:text-slate-300"><span class="font-mono text-rose-600 dark:text-rose-400">' + _rqEsc(o.tracking_no) + '</span><span class="text-slate-400">·</span>' + _rqEsc(o.station_name) + '<span class="text-slate-400">·</span>' + _rqFormatHours(o._urgency.hours) + '</span>';
+    }).join('') + (reds.length > 3 ? '<span class="text-[10px] font-bold text-rose-500 dark:text-rose-400 self-center">+' + (reds.length - 3) + ' ' + rqT('đơn khác') + '</span>' : '') + '</div>' +
+    '</div>' +
+    '<button onclick="rqSetLevel(\'red\')" class="shrink-0 bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-lg text-[10px] font-black uppercase transition-all">Xử lý ngay</button>' +
+    '</div>';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// [MỚI — phân hoá view theo cấp, đúng yêu cầu "cấp cao cần thấy vùng mình
+// quản lý đang thế nào, không cần detail từng đơn"]
+// Module này chạy theo HẠN CHÓT (export_date + 23:59:59) nên góc nhìn cấp cao
+// phải xoay quanh RỦI RO VỠ HẠN, không phải danh sách đơn.
+function rqRenderBigPicture(){
+  var el = document.getElementById('rq-bigpicture');
+  if (!el) return;
+  if (RQ_selectedStation) { el.innerHTML = ''; return; } // Lead/Staff -> nhường chỗ danh sách đơn
+
+  var rows = RQ_allOrders.filter(function(o){ return _rqMatchesScope(o.station_name); });
+  if (!rows.length) { el.innerHTML = ''; return; }
+
+  var active = rows.filter(function(o){ return !o._resolved; });
+  var overdue = active.filter(function(o){ return o._urgency.hours < 0; });
+  var under12 = active.filter(function(o){ return o._urgency.hours >= 0 && o._urgency.hours <= 12; });
+  var resolvedN = rows.length - active.length;
+  var resPct = rows.length ? Math.round(resolvedN / rows.length * 100) : 0;
+
+  var byStation = {}, byDriver = {}, byDate = {};
+  rows.forEach(function(o){
+    if (o.station_name) {
+      if (!byStation[o.station_name]) byStation[o.station_name] = { total:0, risk:0 };
+      byStation[o.station_name].total++;
+      if (!o._resolved && o._urgency.hours <= 12) byStation[o.station_name].risk++;
+    }
+    if (!o._resolved && o.driver_name) byDriver[o.driver_name] = (byDriver[o.driver_name] || 0) + 1;
+    if (o.export_date) byDate[o.export_date] = (byDate[o.export_date] || 0) + 1;
+  });
+  var stationCount = Object.keys(byStation).length;
+
+  // ── 1. KẾT LUẬN 1 DÒNG ──
+  var riskTotal = overdue.length + under12.length;
+  var vCrit = overdue.length > 0;
+  var vc = vCrit ? 'var(--spx-sev-critical,#ef4444)' : (riskTotal > 0 ? 'var(--spx-sev-warning,#f59e0b)' : 'var(--spx-sev-ok,#22c55e)');
+  var vbg = vCrit ? 'rgba(239,68,68,.08)' : (riskTotal > 0 ? 'rgba(245,158,11,.08)' : 'rgba(34,197,94,.08)');
+  var vIcon = vCrit ? 'fa-circle-exclamation' : (riskTotal > 0 ? 'fa-triangle-exclamation' : 'fa-circle-check');
+  var vText = riskTotal > 0
+    ? (overdue.length > 0 ? '<b>' + overdue.length + '</b> ' + rqT('đơn ĐÃ QUÁ HẠN') + (under12.length ? ' · <b>' + under12.length + '</b> ' + rqT('đơn còn dưới 12h') : '') : '<b>' + under12.length + '</b> ' + rqT('đơn còn dưới 12h'))
+    : rqT('Không có đơn nào sắp vỡ hạn trong phạm vi này');
+  var riskStations = Object.keys(byStation).filter(function(s){ return byStation[s].risk > 0; });
+  var vSub = riskTotal > 0
+    ? '<b>' + riskStations.length + '/' + stationCount + ' ' + rqT('trạm') + '</b> ' + rqT('đang có đơn rủi ro') + ' · ' + rqT('đã xử lý') + ' ' + resPct + '% (' + resolvedN + '/' + rows.length + ')'
+    : rqT('Đã xử lý') + ' ' + resPct + '% (' + resolvedN + '/' + rows.length + ') · ' + stationCount + ' ' + rqT('trạm trong phạm vi');
+  var verdictHtml = '<div style="padding:12px 14px;background:' + vbg + ';border:1px solid ' + vc + '40;border-left:4px solid ' + vc + ';border-radius:10px;margin-bottom:12px">' +
+    '<div style="font-size:13px;font-weight:800;color:' + vc + '"><i class="fas ' + vIcon + ' mr-1.5"></i>' + vText + '</div>' +
+    '<div style="font-size:11px;color:var(--qh-cmp-text-muted,#64748b);margin-top:3px">' + vSub + '</div></div>';
+
+  // ── 2. PHÂN BỐ THEO NGÀY HẠN (thấy được đợt nào dồn cục) ──
+  var dates = Object.keys(byDate).sort().slice(-14);
+  var trendHtml = '';
+  if (dates.length >= 3) {
+    var dMax = Math.max.apply(null, dates.map(function(d){ return byDate[d]; }));
+    var todayStr = new Date().toISOString().slice(0,10);
+    var bars = dates.map(function(d){
+      var n = byDate[d], h = Math.max(4, Math.round(n/dMax*46));
+      var past = d < todayStr;
+      return '<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px" title="' + d + ': ' + n + ' ' + rqT('đơn') + '">' +
+        '<div style="width:100%;max-width:22px;height:' + h + 'px;border-radius:3px 3px 0 0;background:' + (past ? 'var(--spx-sev-critical,#ef4444)' : 'rgba(148,163,184,.55)') + '"></div>' +
+        '<span style="font-size:8px;color:var(--qh-cmp-text-muted,#94a3b8)">' + d.slice(8,10) + '/' + d.slice(5,7) + '</span></div>';
+    }).join('');
+    trendHtml = '<div class="rounded-xl border border-slate-100 dark:border-slate-800 overflow-hidden mb-3">' +
+      '<div class="px-3 py-2 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800">' +
+        '<span class="text-[11px] font-black text-slate-700 dark:text-slate-200"><i class="fas fa-chart-column text-[#ee4d2d] mr-1.5"></i>' + rqT('Phân bố theo ngày hạn') + '</span>' +
+        '<span class="text-[9px] text-slate-400 font-medium ml-2">' + rqT('Đỏ = đã qua hạn') + '</span></div>' +
+      '<div style="display:flex;align-items:flex-end;gap:2px;height:66px;padding:8px 10px 4px">' + bars + '</div></div>';
+  }
+
+  // ── 3. TÀI XẾ TỒN ĐỌNG NHIỀU NHẤT (chỉ tính đơn chưa xử lý) ──
+  var drv = Object.keys(byDriver).sort(function(a,b){ return byDriver[b]-byDriver[a]; }).filter(function(d){ return byDriver[d] >= 2; }).slice(0,5);
+  var drvHtml = drv.length ? drv.map(function(d){
+    return '<div class="flex justify-between items-center text-[11px] py-1"><span class="text-slate-600 dark:text-slate-300 truncate pr-2">' + _rqEsc(d) + '</span>' +
+      '<span class="font-black text-rose-600 dark:text-rose-400 shrink-0">' + byDriver[d] + ' ' + rqT('đơn') + '</span></div>';
+  }).join('') : '<div class="text-[11px] text-slate-400 py-1">' + rqT('Không có tài xế nào tồn ≥2 đơn — phân tán đều.') + '</div>';
+
+  // ── 4. VIỆC CẦN LÀM ──
+  var act = [];
+  var worstSt = Object.keys(byStation).sort(function(a,b){ return byStation[b].risk - byStation[a].risk; })[0];
+  if (worstSt && byStation[worstSt].risk > 0) {
+    act.push(rqT('Ưu tiên trạm') + ' <b>' + _rqEsc(worstSt) + '</b> — ' + byStation[worstSt].risk + ' ' + rqT('đơn rủi ro cao nhất phạm vi.'));
+  }
+  if (overdue.length > 0) act.push('<b>' + overdue.length + ' ' + rqT('đơn đã quá hạn') + '</b> — ' + rqT('cần xử lý và cập nhật trạng thái ngay, không chờ thêm.'));
+  if (drv.length >= 3) act.push('<b>' + drv.length + ' ' + rqT('tài xế') + '</b> ' + rqT('tồn ≥2 đơn — nhắc trực tiếp hiệu quả hơn phổ biến diện rộng.'));
+  if (resPct < 50 && rows.length >= 10) act.push(rqT('Tỉ lệ xử lý mới') + ' <b>' + resPct + '%</b> — ' + rqT('thấp, cần đốc thúc tiến độ toàn phạm vi.'));
+  var actHtml = act.length ? '<div class="module-note raw-note" style="margin-bottom:12px"><div class="text-[10px] font-black uppercase mb-1.5"><i class="fas fa-bolt mr-1"></i>' + rqT('Việc nên làm ngay') + '</div>' +
+    act.map(function(a){ return '<div class="text-[11px] py-0.5">• ' + a + '</div>'; }).join('') + '</div>' : '';
+
+  el.innerHTML = verdictHtml + trendHtml +
+    '<div class="rounded-xl border border-slate-100 dark:border-slate-800 p-3 mb-3"><div class="text-[10px] font-black uppercase text-slate-400 mb-2"><i class="fas fa-user-clock mr-1"></i>' + rqT('Tài xế tồn đọng nhiều nhất') + '</div>' + drvHtml + '</div>' +
+    actHtml;
+}
+
+// ── Điều phối render chính ───────────────────────────────────────────────
+function rqRenderMain(){
+  var titleEl = document.getElementById('rq-scope-title');
+  if (titleEl) {
+    if (RQ_selectedStation) titleEl.textContent = RQ_selectedStation;
+    else if (RQ_previewEntityLabel) titleEl.textContent = (RQ_previewAllowedStations ? RQ_previewAllowedStations.length : 0) + ' ' + rqT('trạm') + ' — ' + RQ_previewEntityLabel;
+    else titleEl.textContent = rqT('Tất cả trạm');
+  }
+  var bannerEl = document.getElementById('rq-scope-banner');
+  if (bannerEl) {
+    bannerEl.innerHTML = (RQ_previewEntityLabel && !RQ_selectedStation)
+      ? '<div style="padding:8px 12px;background:rgba(14,165,233,.10);border:1px solid rgba(14,165,233,.35);border-radius:8px;font-size:11.5px;color:var(--spx-sev-info,#0ea5e9)"><i class="fas fa-eye"></i> Đang xem đúng góc nhìn của <b>' + _rqEsc(RQ_previewEntityLabel) + '</b> — ' + rqT('bảng dưới chỉ so sánh các trạm thuộc phạm vi này.') + '</div>'
+      : '';
+  }
+  rqRenderBigPicture();
+  var highLevel = !RQ_selectedStation;
+  var tg = document.getElementById('rq-detail-toggle');
+  if (tg) tg.innerHTML = highLevel
+    ? '<button onclick="rqToggleDetail()" class="text-[11px] font-bold text-slate-500 hover:text-[#ee4d2d] transition-colors"><i class="fas fa-chevron-' + (RQ_showDetail?'up':'down') + ' mr-1 text-[9px]"></i>' + (RQ_showDetail ? rqT('Ẩn số liệu chi tiết') : rqT('Xem số liệu chi tiết từng đơn')) + '</button>'
+    : '';
+  ['rq-level-cards','rq-risk-alert','rq-table-wrap'].forEach(function(id){
+    var e = document.getElementById(id);
+    if (e) e.style.display = (highLevel && !RQ_showDetail) ? 'none' : '';
+  });
+  rqRenderHealthPanel(); // bảng so sánh trạm — LUÔN hiện, đây là nội dung chính của cấp cao
+  if (!highLevel || RQ_showDetail) {
+    rqRenderLevelTabs();
+    rqRenderRiskAlert();
+    rqRenderTable();
+  }
+}
+function rqToggleDetail(){ RQ_showDetail = !RQ_showDetail; rqRenderMain(); }
+
+// ── Bảng chi tiết ─────────────────────────────────────────────────────────
+function rqRenderTable(){
+  var rows = RQ_allOrders.filter(function(o){
+    if (!_rqMatchesScope(o.station_name)) return false;
+    if (RQ_hideResolved && o._resolved) return false;
+    if (RQ_activeLevel !== 'ALL' && (o._resolved || o._urgency.level !== RQ_activeLevel)) return false;
+    return true;
+  }).sort(function(a, b){ return a._urgency.hours - b._urgency.hours; });
+
+  var wrap = document.getElementById('rq-table-wrap');
+  if (!rows.length) { wrap.innerHTML = '<div class="p-8 text-center text-slate-400 text-sm">' + rqT('Không có đơn nào trong bộ lọc hiện tại.') + '</div>'; return; }
+  // [GIỮ NGUYÊN — đã xác nhận thật] Giới hạn 300 dòng render, cùng ngưỡng Quá
+  // Hạn đang dùng (Math.min(sorted.length, 300)) — tránh giật/lag khi dữ liệu
+  // thật có hàng nghìn đơn.
+  var totalRows = rows.length;
+  var capped = rows.slice(0, 300);
+  var noteHtml = totalRows > 300
+    ? '<div class="px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-800/40 text-[11px] font-bold text-amber-700 dark:text-amber-400 rounded-t-xl">⚠️ Đang hiện 300/' + totalRows + ' ' + rqT('đơn (giới hạn để tránh giật/lag) — dùng bộ lọc mức độ bên trái hoặc chọn 1 Hub cụ thể trên header để thu hẹp danh sách.') + '</div>'
+    : '';
+  var levelBadge = { red:'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400', orange:'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', green:'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' };
+  var levelLabel = { red:'Đỏ', orange:'Cam', green:'Xanh' };
+  wrap.innerHTML = noteHtml + '<div class="rounded-xl border border-slate-100 dark:border-slate-800 overflow-hidden"><table class="w-full text-sm"><thead class="sticky top-0 bg-slate-50 dark:bg-[#151e2f] border-b border-slate-200 dark:border-slate-800">' +
+    '<tr class="text-left text-[10px] uppercase font-black text-slate-500"><th class="p-3 w-8"></th><th class="p-3">Tracking No</th><th class="p-3">Region</th><th class="p-3">Station</th><th class="p-3">Driver</th><th class="p-3">Export Date</th><th class="p-3">' + rqT('Mức độ') + '</th><th class="p-3">' + rqT('Hành động') + '</th></tr></thead><tbody>' +
+    capped.map(function(o){
+      var u = o._urgency;
+      return '<tr class="border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/30 ' + (o._resolved ? 'opacity-50' : '') + '">' +
+        '<td class="p-3"><input type="checkbox" class="rq-check" data-tn="' + _rqEscAttr(o.tracking_no) + '" ' + (o._resolved ? 'disabled' : '') + '></td>' +
+        '<td class="p-3 font-mono font-bold text-slate-700 dark:text-slate-200 cursor-pointer hover:text-rose-500 transition-colors group" onclick="event.stopPropagation(); rqCopyTrackingNo(\'' + _rqEscAttr(o.tracking_no) + '\')" title="' + rqT('Click để copy Tracking No') + '">' + _rqEsc(o.tracking_no) + '<i class="fas fa-copy ml-1.5 opacity-0 group-hover:opacity-60 text-[10px] transition-opacity"></i></td>' +
+        '<td class="p-3 text-slate-500">' + _rqEsc(o.region) + '</td>' +
+        '<td class="p-3 text-slate-500">' + _rqEsc(o.station_name) + '</td>' +
+        '<td class="p-3 text-slate-500">' + _rqEsc(o.driver_name) + ' <span class="text-[10px] text-slate-400">(' + _rqEsc(o.driver_id) + ')</span></td>' +
+        '<td class="p-3 text-slate-500">' + _rqEsc(o.export_date) + '<div class="text-[10px] ' + (u.hours<0?'text-rose-500':'text-slate-400') + '">' + _rqFormatHours(u.hours) + '</div></td>' +
+        '<td class="p-3">' + (o._resolved ? '<span class="px-2 py-1 rounded-md text-[10px] font-black uppercase bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">' + rqT('Đã xử lý') + '</span>' : '<span class="px-2 py-1 rounded-md text-[10px] font-black uppercase ' + levelBadge[u.level] + '">' + levelLabel[u.level] + '</span>') + '</td>' +
+        '<td class="p-3">' + (o._resolved ? '<span class="text-slate-300 text-xs">—</span>' : '<button onclick="rqResolveOne(\'' + _rqEscAttr(o.tracking_no) + '\')" class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 text-xs font-bold"><i class="fas fa-check mr-1"></i>' + rqT('Đã xử lý') + '</button>') + '</td>' +
+        '</tr>';
+    }).join('') + '</tbody></table></div>';
+}
+
+function rqResolveOne(trackingNo){
+  google.script.run.withSuccessHandler(function(){ rqLoadOrders(true); }).withFailureHandler(function(e){ if (typeof showToast==='function') showToast(rqT('Lỗi') + ': '+e.message,'error'); }).setResolvedStatus(trackingNo, true);
+}
+
+// [MỚI — theo yêu cầu trực tiếp "1 số module thiếu copy mã nhanh"] Đúng pattern
+// đã dùng ở Pick/KPI Fail/FMS — copy qua clipboard API, fallback textarea nếu
+// trình duyệt không hỗ trợ, báo toast xác nhận.
+function rqCopyTrackingNo(trackingNo) {
+  var done = function() { if (typeof showToast === 'function') showToast('✓ ' + rqT('Đã copy') + ': ' + trackingNo, 'success'); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(trackingNo).then(done).catch(function() { _rqCopyFallback(trackingNo, done); });
+  } else {
+    _rqCopyFallback(trackingNo, done);
+  }
+}
+function _rqCopyFallback(text, cb) {
+  // [DỌN TRÙNG LẶP] Uỷ quyền spxCopyFallback() dùng chung (index.html).
+  if (typeof spxCopyFallback === 'function') spxCopyFallback(text, cb);
+}
+function rqBulkResolve(){
+  var items = Array.from(document.querySelectorAll('.rq-check:checked')).map(function(c){ return c.dataset.tn; });
+  if (!items.length) { if (typeof showToast==='function') showToast(rqT('Chưa chọn đơn nào'),'error'); return; }
+  google.script.run.withSuccessHandler(function(){ rqLoadOrders(true); }).withFailureHandler(function(e){ if (typeof showToast==='function') showToast(rqT('Lỗi') + ': '+e.message,'error'); }).setResolvedStatusBulk(items, true);
+}
+rqInit();
+</script>

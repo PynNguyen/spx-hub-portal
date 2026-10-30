@@ -1,0 +1,2269 @@
+<aside id="aside-pick" class="spx-aside w-[280px] shrink-0 bg-slate-50 dark:bg-[#151e2f] border-r border-slate-200 dark:border-slate-800 flex flex-col h-full z-40 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+
+<!-- Collapsed icons -->
+<div class="spx-aside-collapsed-icons pt-3 pb-2">
+  <button onclick="toggleSidebar('pick')" class="spx-sidebar-toggle" title="Mở sidebar" data-i18n-title="Mở sidebar"><i class="fas fa-chevron-right text-xs"></i></button>
+</div>
+
+<!-- Full content -->
+<div class="spx-aside-content flex flex-col flex-1 overflow-hidden">
+
+<div class="p-5 border-b border-slate-200/60 dark:border-slate-800 bg-white dark:bg-[#0b1121] shrink-0">
+
+<div class="flex justify-between items-center mb-5">
+
+<div class="flex items-center gap-2">
+
+<span class="text-[10px] font-black text-slate-400 uppercase tracking-widest" data-i18n-ui="Quản lý Pick">Quản lý Pick</span>
+
+</div>
+
+<div class="flex items-center gap-1">
+<button onclick="clearPickCache()" class="text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 p-2 rounded-md transition-colors border border-transparent dark:border-rose-900/50 shadow-sm" title="Xóa dữ liệu" data-i18n-title="Xóa dữ liệu"><i class="fas fa-trash-alt text-sm"></i></button>
+<button onclick="toggleSidebar('pick')" class="spx-sidebar-toggle" title="Thu gọn sidebar" data-i18n-title="Thu gọn sidebar"><i class="fas fa-chevron-left text-xs"></i></button>
+</div>
+
+</div>
+
+<div id="pickSourceSelector" class="flex items-center gap-1.5 mb-3 bg-slate-100 dark:bg-slate-800/60 p-1 rounded-xl" role="tablist" aria-label="Chọn nguồn dữ liệu Pick" data-i18n-aria="Chọn nguồn dữ liệu Pick">
+<button type="button" role="tab" aria-selected="true" id="pickSrcTabManual" onclick="switchSourcePICK('manual')" class="pick-src-tab active flex-1 text-[10px] font-black uppercase tracking-wider py-2 rounded-lg transition-all">Manual</button>
+<button type="button" role="tab" aria-selected="false" id="pickSrcTabLive" onclick="switchSourcePICK('live')" class="pick-src-tab flex-1 text-[10px] font-black uppercase tracking-wider py-2 rounded-lg transition-all">Live</button>
+</div>
+
+<!-- [2026-07] Tách 2 luồng dữ liệu Pick — Manual (upload thủ công như cũ, dataFMS-style
+     globalCacheDataPICK) và Live (đọc trực tiếp sheet "3. FM action realtime" qua
+     pick_live_getStations()/pick_live_getStationData(), user chọn trạm rồi mới tải —
+     xem JS_Pick.html switchSourcePICK()).
+     Cùng pattern bọc riêng theo nguồn (pickAsideManualBlock / pickAsideLiveBlock) đã áp dụng
+     cho FMS (fmsAsideManualBlock / fmsAsideLiveBlock), giữ 2 luồng dữ liệu tách biệt hoàn toàn. -->
+<div id="pickAsideManualBlock" class="flex flex-col gap-3">
+
+<div class="bg-slate-50 dark:bg-[#1e293b] p-3 rounded-xl border border-slate-100 dark:border-slate-700 flex items-center justify-between shadow-inner">
+
+<span class="text-[11px] font-black text-slate-400 uppercase" data-i18n-ui="Ngày lấy hàng">Ngày lấy hàng</span>
+
+<input type="date" id="targetDatePICK" class="bg-transparent font-black text-xs text-slate-700 dark:text-slate-200 outline-none cursor-pointer" onchange="checkAndAutoSyncPICK()">
+
+</div>
+
+<!-- [UI/UX-FIX] Quay lại xếp DỌC — bản 2 cột trước đó làm chữ "1. File Task" /
+     "2. File Assign" bị cắt còn "1. Task"/"2. Assi..." không đọc được nghĩa. Giữ full
+     nhãn, chỉ giảm padding (p-3→p-2.5, gap-2→gap-1.5) so với bản gốc để gọn hơn mà
+     không hy sinh khả năng đọc. -->
+<label for="fileTaskPICK" id="labelTaskPICK" class="relative bg-white dark:bg-[#1e293b] hover:bg-sky-50 dark:hover:bg-sky-900/20 p-2.5 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-sky-300 dark:hover:border-sky-500 flex flex-col gap-1.5 cursor-pointer transition-all group shadow-sm">
+
+<div class="flex items-center justify-between"><span class="text-[10px] font-black text-sky-500 dark:text-sky-400 uppercase tracking-widest"><i class="fas fa-file-csv mr-1"></i> 1. File Task</span><i id="taskIconPICK" class="fas fa-upload text-slate-300 dark:text-slate-500 group-hover:text-sky-500 transition-colors"></i></div>
+
+<span id="taskFileNamePICK" class="text-[10px] font-bold text-slate-400 dark:text-slate-500 truncate w-full" data-i18n-ui="Nhấn chọn file Task...">Nhấn chọn file Task...</span>
+
+<input type="file" id="fileTaskPICK" accept=".csv, .xlsx, .xls, .zip" class="hidden" onchange="handleFileUploadPICK('task')">
+
+</label>
+
+<label for="fileAssignPICK" id="labelAssignPICK" class="relative bg-white dark:bg-[#1e293b] hover:bg-orange-50 dark:hover:bg-orange-900/20 p-2.5 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-orange-300 dark:hover:border-orange-500 flex flex-col gap-1.5 cursor-pointer transition-all group shadow-sm">
+
+<div class="flex items-center justify-between"><span class="text-[10px] font-black text-orange-500 dark:text-orange-400 uppercase tracking-widest"><i class="fas fa-file-excel mr-1"></i> 2. File Assign</span><i id="assignIconPICK" class="fas fa-upload text-slate-300 dark:text-slate-500 group-hover:text-orange-500 transition-colors"></i></div>
+
+<span id="assignFileNamePICK" class="text-[10px] font-bold text-slate-400 dark:text-slate-500 truncate w-full" data-i18n-ui="Nhấn chọn file Assign...">Nhấn chọn file Assign...</span>
+
+<input type="file" id="fileAssignPICK" accept=".csv, .xlsx, .xls, .zip" class="hidden" onchange="handleFileUploadPICK('assign')">
+
+</label>
+
+</div>
+
+<!-- [Live] Không cần upload — đọc trực tiếp sheet nguồn, lọc theo trạm phân quyền
+     (giống mọi module khác của hệ thống). Chỉ cần nút Làm mới + trạng thái cập nhật. -->
+<div id="pickAsideLiveBlock" class="hidden flex flex-col gap-2">
+
+<!-- [UI/UX] GỌN THÊM: card "Trạng thái kết nối" + dòng lịch cập nhật (trước đây
+     2 khối tách rời, mỗi khối tự có nền/border/padding riêng) gộp vào CHUNG 1 khối
+     nền duy nhất — giảm số "hộp" thị giác xếp chồng trong sidebar, đỡ rối mắt hơn
+     khi cuộn. Nút Làm mới + icon info giữ nguyên hàng đầu vì đây là hành động chính. -->
+<!-- [ĐÃ GỠ — theo yêu cầu "hợp nhất 1 nút đồng bộ ở header"] Nút "Làm mới"
+     riêng đã xoá — hành động refreshLivePICK() giờ được gọi tự động qua nút
+     đồng bộ DUY NHẤT ở header (runBackgroundSync(), dispatch theo
+     currentActiveModule==='pick'). Giữ nguyên icon thông tin — vẫn hữu ích
+     giải thích cơ chế Live tự động, không liên quan tới việc bấm làm mới. -->
+<div class="flex items-center gap-2">
+<span class="flex-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1" data-i18n-ui="Dữ liệu Live">Dữ liệu Live</span>
+<span tabindex="0" title="Dữ liệu Live được lấy tự động từ hệ thống theo trạm bạn được phân quyền — không cần nạp file." data-i18n-title="Dữ liệu Live được lấy tự động từ hệ thống theo trạm bạn được phân quyền — không cần nạp file." class="shrink-0 w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-900/20 text-sky-500 dark:text-sky-400 flex items-center justify-center border border-sky-100 dark:border-sky-800/50 cursor-help"><i class="fas fa-circle-info"></i></span>
+</div>
+
+<div class="bg-slate-50 dark:bg-[#1e293b] px-3 py-1.5 rounded-xl border border-slate-100 dark:border-slate-700 shadow-inner flex flex-col gap-0.5">
+<div class="flex items-center justify-between gap-2">
+<span id="pickLiveConnStatus" class="text-[10px] font-black px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 shrink-0">--</span>
+<span class="text-[9px] font-bold text-slate-400 dark:text-slate-500 truncate"><span data-i18n-ui="Cập nhật">Cập nhật</span> <span id="pickLiveUpdatedAt">--</span></span>
+</div>
+<div id="pickLiveScheduleNote" class="text-[9px] text-slate-400 dark:text-slate-500 font-semibold truncate"></div>
+</div>
+
+<!-- [2026-07-23] Toggle chế độ xem trạm — MẶC ĐỊNH 'single': Live tự đi theo
+     đúng 1 trạm đang chọn ở hub-selector đầu trang (đồng bộ trải nghiệm toàn app,
+     tránh dồn nhiều trạm gây rối mắt). 'multi': quay lại bộ chọn tay nhiều trạm
+     cho lúc thật sự cần đối chiếu. Xem setPickLiveViewMode() trong JS_Pick.html. -->
+<div id="pickLiveModeToggleBar" class="bg-white dark:bg-[#151e2f] p-1 rounded-xl border border-slate-200 dark:border-slate-700 flex gap-1 shadow-sm">
+<div id="pickLiveModeSingleBtn" onclick="setPickLiveViewMode('single')" class="flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider cursor-pointer transition-all bg-sky-500 text-white shadow-md"><i class="fas fa-link mr-1"></i><span data-i18n-ui="1 trạm">1 trạm</span></div>
+<div id="pickLiveModeMultiBtn" onclick="setPickLiveViewMode('multi')" class="flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider cursor-pointer transition-all bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"><i class="fas fa-layer-group mr-1"></i><span data-i18n-ui="Nhiều trạm">Nhiều trạm</span></div>
+</div>
+
+<!-- Chế độ 'single': chỉ hiện dòng thông báo trạm đang đồng bộ, KHÔNG hiện bộ chọn tay -->
+<div id="pickLiveSingleSyncInfo" class="bg-sky-50 dark:bg-sky-900/20 border border-sky-100 dark:border-sky-800/50 px-2.5 py-1.5 rounded-xl text-[10px] font-bold text-sky-700 dark:text-sky-300">
+<i class="fas fa-circle-info mr-1"></i> <span data-i18n-ui="Đang chờ đồng bộ trạm từ đầu trang...">Đang chờ đồng bộ trạm từ đầu trang...</span>
+</div>
+
+<!-- [2026-07] Bộ chọn trạm tay — CHỈ hiện khi ở chế độ 'multi' (id: pickLiveStationPickerBox).
+     Bắt buộc với admin (nhiều trạm), tự chọn+tự tải cho user có ít trạm (xem
+     PICK_LIVE_AUTOLOAD_MAX_HUBS trong JS_Pick.html). Chỉ dữ liệu của các trạm được
+     chọn ở đây mới được server trả về. -->
+<div id="pickLiveStationPickerBox" class="hidden bg-white dark:bg-[#151e2f] p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col gap-2 shadow-sm">
+
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-black text-slate-400 uppercase tracking-widest"><i class="fas fa-map-pin mr-1"></i><span data-i18n-ui="Chọn trạm">Chọn trạm</span></span>
+<span id="pickLiveSelectedCount" class="text-[10px] font-bold text-sky-600 dark:text-sky-400" data-i18n-ui="0/0 trạm đã chọn">0/0 trạm đã chọn</span>
+</div>
+
+<div class="relative">
+<i class="fas fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]"></i>
+<input type="text" id="pickLiveStationSearch" placeholder="Tìm trạm..." data-i18n-placeholder="Tìm trạm..." class="w-full bg-slate-50 dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-lg pl-7 pr-3 py-1.5 text-[11px] font-bold outline-none focus:border-sky-500" onkeyup="filterStationListPICKLive()">
+</div>
+
+<div id="pickLiveStationList" class="max-h-48 overflow-y-auto flex flex-col gap-0.5 border border-slate-100 dark:border-slate-800 rounded-lg p-1">
+<div class="text-[10px] text-slate-400 text-center py-3" data-i18n-ui="Đang tải danh sách trạm...">Đang tải danh sách trạm...</div>
+</div>
+
+<div class="flex items-center gap-2">
+<button onclick="selectAllStationsPICKLive()" class="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all" data-i18n-ui="Chọn tất cả">Chọn tất cả</button>
+<button onclick="clearStationSelectionPICKLive()" class="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all" data-i18n-ui="Bỏ chọn">Bỏ chọn</button>
+</div>
+
+<button onclick="loadSelectedStationsPICKLive()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-2.5 rounded-xl text-[11px] font-black cursor-pointer shadow-md flex justify-center items-center gap-2 transition-all active:scale-95 uppercase tracking-wider">
+<i class="fas fa-download"></i> <span data-i18n-ui="Tải dữ liệu đã chọn">Tải dữ liệu đã chọn</span>
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<div id="pickRiderSection" class="p-3 border-b border-slate-200/60 dark:border-slate-800 bg-white dark:bg-[#151e2f] shrink-0">
+
+<label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1" data-i18n-ui="👤 Tài xế (Rider)">👤 Tài xế (Rider)</label>
+
+<div class="relative">
+
+<i class="fas fa-user-circle absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+
+<select id="driverSelectPICK" onchange="handleDriverChangePICK()" class="w-full bg-slate-50 dark:bg-[#1e293b] hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold rounded-xl pl-9 pr-4 py-2.5 text-xs outline-none focus:border-sky-500 text-slate-700 dark:text-slate-300 transition-all cursor-pointer truncate shadow-inner appearance-none"><option value="" data-i18n-ui="-- Chọn tài xế --">-- Chọn tài xế --</option></select>
+
+</div>
+
+</div>
+
+<div class="p-3 flex-1 overflow-y-auto flex flex-col gap-2 custom-scrollbar" id="categoryListPICK">
+
+<label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5 ml-1" data-i18n-ui="📦 Trạng thái đơn">📦 Trạng thái đơn</label>
+
+<!-- [UI/UX-FIX] Quay lại 1 cột dọc — bản lưới 2 cột trước đó làm nhãn trạng thái Live
+     (vd "FMHub_Pickup_Assigned") bị cắt gần hết, không đọc được nghĩa. Giữ đủ chữ,
+     chỉ giảm py-3.5→py-2.5 (so với bản gốc) để gọn hơn mà không hy sinh khả năng đọc. -->
+<div id="card-pick-expected" onclick="toggleStatusFilterPICK('expected')" class="flex justify-between items-center px-4 py-2.5 rounded-2xl cursor-pointer border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e293b] font-black text-[11px] uppercase text-slate-700 dark:text-slate-300 transition-all"><div class="flex items-center gap-3"><i class="fas fa-hourglass-start text-slate-400 text-lg w-6 text-center"></i> Expected</div><span class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shadow-inner" id="stat-pick-expected">0</span></div>
+
+<div id="card-pick-accepted" onclick="toggleStatusFilterPICK('accepted')" class="flex justify-between items-center px-4 py-2.5 rounded-2xl cursor-pointer border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e293b] font-black text-[11px] uppercase text-slate-700 dark:text-slate-300 transition-all"><div class="flex items-center gap-3"><i class="fas fa-check-double text-amber-500 dark:text-amber-400 text-lg w-6 text-center"></i> Accepted</div><span class="px-3 py-1 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 shadow-inner" id="stat-pick-accepted">0</span></div>
+
+<div id="card-pick-arrived" onclick="toggleStatusFilterPICK('arrived')" class="flex justify-between items-center px-4 py-2.5 rounded-2xl cursor-pointer border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e293b] font-black text-[11px] uppercase text-slate-700 dark:text-slate-300 transition-all"><div class="flex items-center gap-3"><i class="fas fa-location-dot text-sky-500 dark:text-sky-400 text-lg w-6 text-center"></i> Arrived</div><span class="px-3 py-1 rounded-lg bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 shadow-inner" id="stat-pick-arrived">0</span></div>
+
+<div id="card-pick-done" onclick="toggleStatusFilterPICK('done')" class="flex justify-between items-center px-4 py-2.5 rounded-2xl cursor-pointer border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e293b] font-black text-[11px] uppercase text-slate-700 dark:text-slate-300 transition-all"><div class="flex items-center gap-3"><i class="fas fa-box text-emerald-500 dark:text-emerald-400 text-lg w-6 text-center"></i> Done</div><span class="px-3 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 shadow-inner" id="stat-pick-done">0</span></div>
+
+<div id="card-pick-inbounded" onclick="toggleStatusFilterPICK('inbounded')" class="flex justify-between items-center px-4 py-2.5 rounded-2xl cursor-pointer border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e293b] font-black text-[11px] uppercase text-slate-700 dark:text-slate-300 transition-all"><div class="flex items-center gap-3"><i class="fas fa-warehouse text-indigo-500 dark:text-indigo-400 text-lg w-6 text-center"></i> Inbounded</div><span class="px-3 py-1 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 shadow-inner" id="stat-pick-inbounded">0</span></div>
+
+</div>
+
+<!-- [2026-07-23] Danh sách trạng thái Live — tái dùng đúng vùng flex-1 scroll này
+     (trước đây bị ẩn trắng hoàn toàn khi ở tab Live vì categoryListPICK chỉ dành cho
+     Manual). Card ĐỘNG theo fleet_final_status thực tế (không cố định 5 loại như Manual)
+     — JS sinh vào #pickLiveStatusChips, xem updateLiveStatusChipsPICK() trong JS_Pick.html.
+     Đưa trạng thái xuống đây thay vì dải chip ngang ở đầu bảng: (1) đồng bộ ngôn ngữ UI
+     với Manual — card dọc, icon + nhãn + số đếm, bấm để lọc, (2) GIẢI PHÓNG hẳn 1 hàng
+     ngang phía trên bảng Live -> bảng dữ liệu có thêm chiều cao hiển thị. -->
+<div class="p-3 flex-1 overflow-y-auto flex flex-col gap-2 custom-scrollbar hidden" id="pickLiveStatusList">
+<div class="flex items-center justify-between mb-0.5 ml-1">
+<label class="text-[10px] font-black text-slate-400 uppercase tracking-widest" data-i18n-ui="📦 Trạng thái đơn">📦 Trạng thái đơn</label>
+<span class="text-[9px] font-bold text-slate-300 dark:text-slate-600" data-i18n-ui="Bấm để lọc">Bấm để lọc</span>
+</div>
+<!-- [UI/UX-FIX] Quay về 1 cột dọc — nhãn trạng thái Live là state code nguyên văn
+     (vd "FMHub_Pickup_Assigned", "FMHub_pickup_pending_failed") DÀI hơn nhiều so với
+     Manual, 2 cột làm cắt gần hết không đọc được. Giữ đủ chữ, chỉ giảm py cho gọn. -->
+<div id="pickLiveStatusChips" class="flex flex-col gap-2"></div>
+</div>
+
+</div><!-- end aside-content pick -->
+
+</aside>
+
+<main class="flex-1 bg-white dark:bg-[#0b1121] flex flex-col h-full min-w-0 relative z-10">
+
+<div id="pickManualMainBlock" class="flex-1 flex flex-col min-h-0">
+
+<!-- [MỚI — khai thác sheet '2. FM high aging' trước đây chỉ dùng để ĐẾM badge]
+     Cảnh báo đơn FirstMile tồn đọng kéo dài, kèm THAO TÁC CẦN XỬ LÝ (cột
+     'action' — đã xác nhận với nghiệp vụ đây là việc trạm phải làm).
+     Chi phí đo thật: sheet chỉ 113 dòng, payload ~28.6 KB = 0.26% so với
+     nguồn LM (37.336 dòng) — không ảnh hưởng trần GAS.
+     Mặc định ẩn, chỉ hiện khi trạm đang xem THỰC SỰ có đơn tồn đọng. -->
+<!-- [MỚI — khai thác sheet 'summary FM realtime'] Số liệu FirstMile tổng hợp
+     sẵn theo 4 giai đoạn + 5 loại đơn. Dùng sheet tổng hợp (327 dòng) thay vì
+     tự cộng từ sheet chi tiết (136.594 dòng, phải đọc theo lô và CÓ THỂ ĐỌC
+     THIẾU khi hết ngân sách thời gian) — đã đối chiếu khớp tuyệt đối 100%
+     ở cả cấp tổng lẫn từng trạm (319/319). -->
+<div id="pickFmSummaryWrap" class="hidden mx-2.5 mt-2.5">
+  <div class="rounded-xl border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-900/15 overflow-hidden">
+    <div class="px-3 py-2 flex items-center gap-2 flex-wrap border-b border-sky-100 dark:border-sky-800/60">
+      <i class="fas fa-layer-group text-sky-500 text-[12px]"></i>
+      <span class="text-[11px] font-black uppercase tracking-wide text-sky-800 dark:text-sky-300" data-i18n-ui="Hàng lấy theo giai đoạn">Hàng lấy theo giai đoạn</span>
+      <span id="pickFmSummaryTotal" class="text-[10px] font-black px-2 py-0.5 rounded-full bg-sky-500 text-white"></span>
+      <span id="pickFmSummaryRank" class="text-[10px] font-bold text-sky-700 dark:text-sky-400"></span>
+    </div>
+    <div id="pickFmSummaryBody" class="p-3"></div>
+  </div>
+</div>
+
+<div id="pickFmAgingWrap" class="hidden mx-2.5 mt-2.5">
+  <div class="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/15 overflow-hidden">
+    <div class="px-3 py-2 flex items-center gap-2 flex-wrap border-b border-amber-100 dark:border-amber-800/60">
+      <i class="fas fa-triangle-exclamation text-amber-500 text-[12px]"></i>
+      <span class="text-[11px] font-black uppercase tracking-wide text-amber-800 dark:text-amber-300" data-i18n-ui="Hàng lấy tồn đọng kéo dài">Hàng lấy tồn đọng kéo dài</span>
+      <span id="pickFmAgingCount" class="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-500 text-white"></span>
+      <span id="pickFmAgingRisk" class="text-[10px] font-bold text-amber-700 dark:text-amber-400"></span>
+      <button type="button" onclick="pickToggleFmAging()" class="ml-auto text-[10px] font-bold text-amber-600 dark:text-amber-400 hover:text-amber-800">
+        <i id="pickFmAgingChevron" class="fas fa-chevron-down"></i>
+      </button>
+    </div>
+    <div id="pickFmAgingBody" class="hidden p-3"></div>
+  </div>
+</div>
+
+
+<div id="pickManualToolbar" class="p-2.5 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-[#0b1121] z-20 shrink-0 shadow-sm relative flex flex-col gap-2">
+
+<div class="flex flex-wrap items-center justify-between gap-3">
+
+<button onclick="resetInlineFiltersPICK()" class="shrink-0 text-slate-400 hover:text-rose-500 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/30 border border-transparent hover:border-rose-100 transition-colors"><i class="fas fa-filter-circle-xmark text-sm"></i> <span class="hidden sm:inline" data-i18n-ui="Xóa Lọc">Xóa Lọc</span></button>
+
+<div class="flex flex-wrap items-center gap-3">
+
+<div class="hidden md:flex items-center bg-slate-50 dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-full px-5 py-1.5 shadow-sm">
+
+<div class="flex items-center gap-2 pr-4 border-r border-slate-200 dark:border-slate-600"><span class="text-[11px] font-black text-slate-400 uppercase" data-i18n-ui="Tổng:">Tổng:</span><span class="text-base font-black text-slate-800 dark:text-white" id="stat-total-pick">0</span></div>
+
+<div class="flex items-center gap-2 pl-4"><span class="text-[11px] font-black text-slate-400 uppercase" data-i18n-ui="Đang hiện:">Đang hiện:</span><span class="text-base font-black text-sky-500 dark:text-sky-400" id="stat-display-pick">0</span></div>
+
+</div>
+
+<div class="flex flex-wrap items-center gap-1.5 bg-slate-50 dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-full px-3 py-1.5 shadow-sm">
+<span class="text-[11px] font-black text-slate-400 uppercase pl-1">ETA:</span>
+<div id="eta-chip-1200" onclick="toggleEtaFilterPICK('12:00')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all active:scale-95 bg-white dark:bg-[#1e293b] border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400"><i class="fas fa-sun text-[10px]"></i> 12H <span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800" id="stat-eta-1200">0</span></div>
+<div id="eta-chip-1900" onclick="toggleEtaFilterPICK('19:00')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all active:scale-95 bg-white dark:bg-[#1e293b] border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400"><i class="fas fa-moon text-[10px]"></i> 19H <span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800" id="stat-eta-1900">0</span></div>
+<div id="eta-chip-2100" onclick="toggleEtaFilterPICK('21:00')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all active:scale-95 bg-white dark:bg-[#1e293b] border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400"><i class="fas fa-cloud-moon text-[10px]"></i> 21H <span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800" id="stat-eta-2100">0</span></div>
+</div>
+
+</div>
+
+</div>
+
+<div class="flex flex-wrap items-center justify-end gap-2">
+
+<button onclick="copyOrderNumbersPICK()" class="shrink-0 bg-sky-500 hover:bg-sky-600 text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-md flex items-center gap-2 active:scale-95"><i class="fas fa-copy"></i> <span data-i18n-ui="COPY MÃ HIỂN THỊ">COPY MÃ HIỂN THỊ</span></button>
+
+<span id="lastseen-pick" class="spx-module-lastseen hidden"><i class="fas fa-clock-rotate-left"></i> <span>--</span></span>
+
+<!-- [2026-07] Bỏ nút "In báo cáo" (không dùng tới). Thay bằng "Cột hiển thị" — cho phép ẩn bớt
+     cột khi bảng quá nhiều cột (11 cột) làm chật màn hình. Dùng lại ĐÚNG kiểu dropdown đã có sẵn
+     ở header các cột (multi-select-container) để đồng bộ ngôn ngữ UI, không tạo thêm 1 kiểu mới. -->
+<div id="colvis-container-pick" class="multi-select-container relative shrink-0">
+<div onclick="toggleColVisDropdownPICK()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-orange-600 dark:text-orange-400 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-black uppercase tracking-widest transition-colors cursor-pointer" title="Ẩn/hiện cột trên bảng" data-i18n-title="Ẩn/hiện cột trên bảng">
+<span id="btn-text-colvis-pick" class="truncate"><i class="fas fa-table-columns"></i> <span data-i18n-ui="Cột hiển thị">Cột hiển thị</span></span>
+</div>
+<div id="dropdown-colvis-pick" class="hidden absolute top-[calc(100%+4px)] right-0 w-52 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 shadow-xl rounded-xl z-[100] flex flex-col font-normal text-slate-700 dark:text-slate-300">
+<div class="max-h-64 overflow-y-auto p-1 custom-scroll" id="list-colvis-pick"></div>
+<div class="p-2 border-t dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-b-xl">
+<button onclick="resetColVisPICK()" class="w-full text-[11px] text-sky-500 dark:text-sky-400 font-black py-1 hover:underline" data-i18n-ui="Hiện tất cả">Hiện tất cả</button>
+</div>
+</div>
+</div>
+
+<button id="btnPickDensity" onclick="togglePickDensity()" class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-black uppercase transition-colors shrink-0" aria-label="Đổi cỡ chữ bảng" data-i18n-aria="Đổi cỡ chữ bảng" title="Đổi chế độ xem: Gọn / Thoải mái" data-i18n-title="Đổi chế độ xem: Gọn / Thoải mái"><i class="fas fa-text-height text-xs"></i></button>
+
+</div>
+
+</div>
+
+<!-- [2026-07] CSS ẩn/hiện cột cho bảng Pick — class hide-col-N được toggle trên #pickDataTable
+     bằng JS (xem toggleColVisPICK trong JS_Pick.html). N = vị trí cột tính từ 1 (nth-child).
+     Vị trí 1 (STT) và 4 (Mã đơn) luôn cố định hiển thị, không cho ẩn. -->
+<style>
+/* [FIX — rà soát toàn bộ class Tailwind "mồ côi" theo yêu cầu phòng ngừa bug
+   trước khi deploy] Xem giải thích đầy đủ ở index.html/JS_Quahan.html. */
+.cursor-help { cursor: help; }
+.disabled\:opacity-40:disabled { opacity: .4; }
+.hover\:bg-emerald-600:hover { background-color: rgb(5 150 105); }
+.max-w-\[420px\] { max-width: 420px; }
+.max-w-full { max-width: 100%; }
+.text-ellipsis { text-overflow: ellipsis; }
+.pl-7 { padding-left: 1.75rem; }
+.shadow-\[4px_0_24px_rgba\(0\,0\,0\,0\.02\)\] { box-shadow: 4px 0 24px rgba(0,0,0,.02); }
+#pickDataTable.hide-col-2 th:nth-child(2), #pickDataTable.hide-col-2 td:nth-child(2){display:none}
+#pickDataTable.hide-col-3 th:nth-child(3), #pickDataTable.hide-col-3 td:nth-child(3){display:none}
+#pickDataTable.hide-col-5 th:nth-child(5), #pickDataTable.hide-col-5 td:nth-child(5){display:none}
+#pickDataTable.hide-col-6 th:nth-child(6), #pickDataTable.hide-col-6 td:nth-child(6){display:none}
+#pickDataTable.hide-col-7 th:nth-child(7), #pickDataTable.hide-col-7 td:nth-child(7){display:none}
+#pickDataTable.hide-col-8 th:nth-child(8), #pickDataTable.hide-col-8 td:nth-child(8){display:none}
+#pickDataTable.hide-col-9 th:nth-child(9), #pickDataTable.hide-col-9 td:nth-child(9){display:none}
+#pickDataTable.hide-col-10 th:nth-child(10), #pickDataTable.hide-col-10 td:nth-child(10){display:none}
+#pickDataTable.hide-col-11 th:nth-child(11), #pickDataTable.hide-col-11 td:nth-child(11){display:none}
+</style>
+
+<!-- [2026-07-24 v3, RE-CONFIRMED sau thử nghiệm thất bại — xem giải thích ở
+     scrollContainerQH và bằng chứng ảnh chụp thật cho thấy sticky thead trôi
+     xuống giữa bảng khi thử gộp chung 1 vùng cuộn] Giữ vùng cuộn RIÊNG cho
+     bảng — đánh dấu data-scroll-root ở ĐÂY (không phải pickManualMainBlock)
+     vì đây mới là phần tử thực sự có scrollbar/scrollTop thật. -->
+<div class="overflow-auto bg-slate-50/50 dark:bg-[#0b1121] relative flex-1" id="pickScrollArea" data-scroll-root="true">
+
+<table id="pickDataTable" class="w-full text-left text-sm whitespace-nowrap data-table table-fixed">
+
+<colgroup>
+<col style="width:4%"><!-- STT -->
+<col style="width:10%"><!-- Seller -->
+<col style="width:12%"><!-- Pickup -->
+<col style="width:14%"><!-- Mã đơn (search) -->
+<col style="width:9%"><!-- Order Status -->
+<col style="width:9%"><!-- Task Status -->
+<col style="width:5%"><!-- ATT -->
+<col style="width:7%"><!-- ETA -->
+<col style="width:10%"><!-- TG Tạo -->
+<col style="width:10%"><!-- TG Pick -->
+<col style="width:10%"><!-- Xã/Phường -->
+</colgroup>
+
+<thead class="sticky top-0 z-10">
+
+<tr class="text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 dark:bg-[#151e2f] border-b border-slate-200 dark:border-slate-700">
+
+<th class="px-3 py-2 border-r dark:border-slate-700 border-slate-200 text-center">STT</th>
+
+<th class="px-2 py-2 border-r dark:border-slate-700 border-slate-200">
+
+<div class="multi-select-container relative w-full"><div onclick="toggleDropdownPICK(1)" class="w-full bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded px-2 py-1.5 text-[11px] cursor-pointer flex justify-between items-center text-orange-600 dark:text-orange-400"><span id="btn-text-1-pick" class="truncate"><i class="fas fa-filter"></i> <span data-i18n-ui="Tất cả Seller">Tất cả Seller</span></span></div>
+
+<div id="dropdown-1-pick" class="hidden absolute top-[calc(100%+4px)] left-0 w-56 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 shadow-xl rounded-xl z-[100] flex flex-col font-normal text-slate-700 dark:text-slate-300"><div class="p-2 border-b dark:border-slate-700"><input type="text" placeholder="Tìm..." data-i18n-placeholder="Tìm..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded text-[10px] px-2 py-1.5 outline-none text-slate-700 dark:text-white" onkeyup="filterDropdownListPICK(1, this.value)"></div><div class="max-h-48 overflow-y-auto p-1 custom-scroll" id="list-1-pick"></div><div class="p-2 border-t dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex justify-between rounded-b-xl"><label class="text-[11px] text-sky-500 dark:text-sky-400 font-black cursor-pointer flex items-center gap-1"><input type="checkbox" checked onchange="toggleAllDropdownPICK(1, this.checked)" class="w-3 h-3 rounded"> <span data-i18n-ui="Chọn hết">Chọn hết</span></label><button onclick="applyMultiSelectPICK(1)" class="bg-sky-500 text-white px-3 py-1 rounded text-[11px] font-black" data-i18n-ui="ÁP DỤNG">ÁP DỤNG</button></div></div></div>
+
+</th>
+
+<th class="px-2 py-2 border-r dark:border-slate-700 border-slate-200">
+
+<div class="multi-select-container relative w-full"><div onclick="toggleDropdownPICK(2)" class="w-full bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded px-2 py-1.5 text-[11px] cursor-pointer flex justify-between items-center text-orange-600 dark:text-orange-400"><span id="btn-text-2-pick" class="truncate"><i class="fas fa-filter"></i> <span data-i18n-ui="Tất cả Pickup">Tất cả Pickup</span></span></div>
+
+<div id="dropdown-2-pick" class="hidden absolute top-[calc(100%+4px)] left-0 w-56 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 shadow-xl rounded-xl z-[100] flex flex-col font-normal text-slate-700 dark:text-slate-300"><div class="p-2 border-b dark:border-slate-700"><input type="text" placeholder="Tìm..." data-i18n-placeholder="Tìm..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded text-[10px] px-2 py-1.5 outline-none text-slate-700 dark:text-white" onkeyup="filterDropdownListPICK(2, this.value)"></div><div class="max-h-48 overflow-y-auto p-1 custom-scroll" id="list-2-pick"></div><div class="p-2 border-t dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex justify-between rounded-b-xl"><label class="text-[11px] text-sky-500 dark:text-sky-400 font-black cursor-pointer flex items-center gap-1"><input type="checkbox" checked onchange="toggleAllDropdownPICK(2, this.checked)" class="w-3 h-3 rounded"> <span data-i18n-ui="Chọn hết">Chọn hết</span></label><button onclick="applyMultiSelectPICK(2)" class="bg-sky-500 text-white px-3 py-1 rounded text-[11px] font-black" data-i18n-ui="ÁP DỤNG">ÁP DỤNG</button></div></div></div>
+
+</th>
+
+<th class="px-2 py-2 border-r dark:border-slate-700 border-slate-200"><input type="text" id="search-id-pick" placeholder="Gõ mã tìm nhanh..." data-i18n-placeholder="Gõ mã tìm nhanh..." class="w-full bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded px-2 py-1.5 text-[11px] font-bold text-sky-600 dark:text-sky-400 outline-none focus:border-sky-500" onkeyup="applyInlineFilterPICKDebounced()"></th>
+
+<th class="px-2 py-2 border-r dark:border-slate-700 border-slate-200 text-center">
+
+<div class="multi-select-container relative w-full"><div onclick="toggleDropdownPICK(4)" class="w-full bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded px-2 py-1.5 text-[11px] cursor-pointer flex justify-between items-center text-orange-600 dark:text-orange-400"><span id="btn-text-4-pick" class="truncate"><i class="fas fa-filter"></i> Order Status</span></div>
+
+<div id="dropdown-4-pick" class="hidden absolute top-[calc(100%+4px)] right-0 w-48 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 shadow-xl rounded-xl z-[100] flex flex-col font-normal text-slate-700 dark:text-slate-300"><div class="max-h-48 overflow-y-auto p-1 custom-scroll" id="list-4-pick"></div><div class="p-2 border-t dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex justify-between rounded-b-xl"><label class="text-[11px] text-sky-500 dark:text-sky-400 font-black cursor-pointer flex items-center gap-1"><input type="checkbox" checked onchange="toggleAllDropdownPICK(4, this.checked)" class="w-3 h-3 rounded"> <span data-i18n-ui="Chọn hết">Chọn hết</span></label><button onclick="applyMultiSelectPICK(4)" class="bg-sky-500 text-white px-3 py-1 rounded text-[11px] font-black" data-i18n-ui="ÁP DỤNG">ÁP DỤNG</button></div></div></div>
+
+</th>
+
+<th class="px-2 py-2 border-r dark:border-slate-700 border-slate-200 text-center">
+
+<div class="multi-select-container relative w-full"><div onclick="toggleDropdownPICK(5)" class="w-full bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded px-2 py-1.5 text-[11px] cursor-pointer flex justify-between items-center text-orange-600 dark:text-orange-400"><span id="btn-text-5-pick" class="truncate"><i class="fas fa-filter"></i> Task Status</span></div>
+
+<div id="dropdown-5-pick" class="hidden absolute top-[calc(100%+4px)] right-0 w-48 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 shadow-xl rounded-xl z-[100] flex flex-col font-normal text-slate-700 dark:text-slate-300"><div class="max-h-48 overflow-y-auto p-1 custom-scroll" id="list-5-pick"></div><div class="p-2 border-t dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex justify-between rounded-b-xl"><label class="text-[11px] text-sky-500 dark:text-sky-400 font-black cursor-pointer flex items-center gap-1"><input type="checkbox" checked onchange="toggleAllDropdownPICK(5, this.checked)" class="w-3 h-3 rounded"> <span data-i18n-ui="Chọn hết">Chọn hết</span></label><button onclick="applyMultiSelectPICK(5)" class="bg-sky-500 text-white px-3 py-1 rounded text-[11px] font-black" data-i18n-ui="ÁP DỤNG">ÁP DỤNG</button></div></div></div>
+
+</th>
+
+<th class="px-2 py-2 text-center">
+
+<div class="multi-select-container relative w-full"><div onclick="toggleDropdownPICK(6)" class="w-full bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded px-2 py-1.5 text-[11px] cursor-pointer flex justify-between items-center text-orange-600 dark:text-orange-400"><span id="btn-text-6-pick" class="truncate"><i class="fas fa-filter"></i> ATT</span></div>
+
+<div id="dropdown-6-pick" class="hidden absolute top-[calc(100%+4px)] right-0 w-32 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 shadow-xl rounded-xl z-[100] flex flex-col font-normal text-slate-700 dark:text-slate-300"><div class="max-h-48 overflow-y-auto p-1 custom-scroll" id="list-6-pick"></div><div class="p-2 border-t dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex justify-center rounded-b-xl"><button onclick="applyMultiSelectPICK(6)" class="w-full bg-sky-500 text-white px-3 py-1.5 rounded text-[11px] font-black" data-i18n-ui="ÁP DỤNG">ÁP DỤNG</button></div></div></div>
+
+</th>
+
+<th class="px-2 py-2 border-r dark:border-slate-700 border-slate-200 text-center w-[100px] cursor-pointer select-none hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" onclick="toggleEtaSortPICK()" title="Bấm để sắp xếp theo ETA" data-i18n-title="Bấm để sắp xếp theo ETA"><i class="fas fa-clock text-slate-400"></i> ETA <i id="eta-sort-icon" class="fas fa-sort text-slate-300 dark:text-slate-600 text-[10px] ml-1"></i></th>
+
+<th class="px-2 py-2 border-r dark:border-slate-700 border-slate-200 text-center" title="Thời gian đơn pick được tạo (Create Time) — gồm cả ngày và giờ, lọc theo mốc 3 tiếng" data-i18n-title="Thời gian đơn pick được tạo (Create Time) — gồm cả ngày và giờ, lọc theo mốc 3 tiếng">
+
+<div class="multi-select-container relative w-full"><div onclick="toggleDropdownPICK(9)" class="w-full bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded px-2 py-1.5 text-[11px] cursor-pointer flex justify-between items-center text-orange-600 dark:text-orange-400"><span id="btn-text-9-pick" class="truncate"><i class="fas fa-filter"></i> <span data-i18n-ui="Tất cả TG Tạo">Tất cả TG Tạo</span></span></div>
+
+<div id="dropdown-9-pick" class="hidden absolute top-[calc(100%+4px)] left-0 w-48 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 shadow-xl rounded-xl z-[100] flex flex-col font-normal text-slate-700 dark:text-slate-300"><div class="max-h-48 overflow-y-auto p-1 custom-scroll" id="list-9-pick"></div><div class="p-2 border-t dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex justify-between rounded-b-xl"><label class="text-[11px] text-sky-500 dark:text-sky-400 font-black cursor-pointer flex items-center gap-1"><input type="checkbox" checked onchange="toggleAllDropdownPICK(9, this.checked)" class="w-3 h-3 rounded"> <span data-i18n-ui="Chọn hết">Chọn hết</span></label><button onclick="applyMultiSelectPICK(9)" class="bg-sky-500 text-white px-3 py-1 rounded text-[11px] font-black" data-i18n-ui="ÁP DỤNG">ÁP DỤNG</button></div></div></div>
+
+</th>
+
+<th class="px-2 py-2 border-r dark:border-slate-700 border-slate-200 text-center" title="Thời gian tài xế thao tác thành công (Pickup Time) — gồm cả ngày và giờ, lọc theo mốc 3 tiếng" data-i18n-title="Thời gian tài xế thao tác thành công (Pickup Time) — gồm cả ngày và giờ, lọc theo mốc 3 tiếng">
+
+<div class="multi-select-container relative w-full"><div onclick="toggleDropdownPICK(10)" class="w-full bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded px-2 py-1.5 text-[11px] cursor-pointer flex justify-between items-center text-orange-600 dark:text-orange-400"><span id="btn-text-10-pick" class="truncate"><i class="fas fa-filter"></i> <span data-i18n-ui="Tất cả TG Pick">Tất cả TG Pick</span></span></div>
+
+<div id="dropdown-10-pick" class="hidden absolute top-[calc(100%+4px)] left-0 w-48 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 shadow-xl rounded-xl z-[100] flex flex-col font-normal text-slate-700 dark:text-slate-300"><div class="max-h-48 overflow-y-auto p-1 custom-scroll" id="list-10-pick"></div><div class="p-2 border-t dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex justify-between rounded-b-xl"><label class="text-[11px] text-sky-500 dark:text-sky-400 font-black cursor-pointer flex items-center gap-1"><input type="checkbox" checked onchange="toggleAllDropdownPICK(10, this.checked)" class="w-3 h-3 rounded"> <span data-i18n-ui="Chọn hết">Chọn hết</span></label><button onclick="applyMultiSelectPICK(10)" class="bg-sky-500 text-white px-3 py-1 rounded text-[11px] font-black" data-i18n-ui="ÁP DỤNG">ÁP DỤNG</button></div></div></div>
+
+</th>
+
+<th class="px-2 py-2">
+
+<div class="multi-select-container relative w-full"><div onclick="toggleDropdownPICK(8)" class="w-full bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded px-2 py-1.5 text-[11px] cursor-pointer flex justify-between items-center text-orange-600 dark:text-orange-400"><span id="btn-text-8-pick" class="truncate"><i class="fas fa-filter"></i> <span data-i18n-ui="Tất cả Xã/Phường">Tất cả Xã/Phường</span></span></div>
+
+<div id="dropdown-8-pick" class="hidden absolute top-[calc(100%+4px)] right-0 w-56 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 shadow-xl rounded-xl z-[100] flex flex-col font-normal text-slate-700 dark:text-slate-300"><div class="p-2 border-b dark:border-slate-700"><input type="text" placeholder="Tìm..." data-i18n-placeholder="Tìm..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded text-[10px] px-2 py-1.5 outline-none text-slate-700 dark:text-white" onkeyup="filterDropdownListPICK(8, this.value)"></div><div class="max-h-48 overflow-y-auto p-1 custom-scroll" id="list-8-pick"></div><div class="p-2 border-t dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex justify-between rounded-b-xl"><label class="text-[11px] text-sky-500 dark:text-sky-400 font-black cursor-pointer flex items-center gap-1"><input type="checkbox" checked onchange="toggleAllDropdownPICK(8, this.checked)" class="w-3 h-3 rounded"> <span data-i18n-ui="Chọn hết">Chọn hết</span></label><button onclick="applyMultiSelectPICK(8)" class="bg-sky-500 text-white px-3 py-1 rounded text-[11px] font-black" data-i18n-ui="ÁP DỤNG">ÁP DỤNG</button></div></div></div>
+
+</th>
+
+</tr>
+
+</thead>
+
+<tbody class="text-slate-600 dark:text-slate-300 font-medium text-[11px] divide-y divide-slate-100 dark:divide-slate-800/50 bg-white dark:bg-[#0b1121]" id="tableBodyPICK"></tbody>
+
+</table>
+
+</div>
+
+</div><!-- end pickManualMainBlock -->
+
+<!-- [Live] Bảng riêng cho nguồn Live — schema khác Manual (đọc thẳng sheet "3. FM action
+     realtime": shipment_id, station_name, created_time, pickup_done, inbound_time,
+     last_touch_at, fleet_final_status, order_type, action_needed, AOM, Sup) nên KHÔNG dùng
+     chung #pickDataTable với Manual để tránh lệch cột/nhầm dữ liệu — xem loadSelectedStationsPICKLive() /
+     renderLiveTablePICK() trong JS_Pick.html. -->
+<div id="pickLiveMainBlock" class="hidden flex-1 flex-col min-h-0">
+
+<!-- [2026-07-24] FIX layout shift lúc mới load — cùng nguyên nhân/cách sửa như toolbar
+     Manual ở trên: TRƯỚC ĐÂY 1 container "flex flex-wrap justify-between" duy nhất, nên
+     lúc mới mở tab (chưa có #pickLiveStatusSummaryBar / chip trạng thái, search rỗng) đủ
+     chỗ gọn 1 hàng -> bảng cao gần hết trình duyệt; NGAY SAU KHI DATA VỀ, dải chip trạng
+     thái phình ra đẩy khối copy/density/lastseen xuống dòng 2 -> bảng "co lại". Giờ tách
+     CỐ ĐỊNH 2 hàng (flex-col), chiều cao toolbar ổn định ngay từ đầu, không giật sau khi load. -->
+<div class="p-2.5 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-[#0b1121] z-20 shrink-0 shadow-sm relative flex flex-col gap-2">
+
+<div class="flex flex-wrap items-center justify-between gap-3">
+
+<div class="flex flex-wrap items-center gap-3">
+
+<div class="hidden md:flex items-center bg-slate-50 dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-full px-5 py-1.5 shadow-sm">
+<div class="flex items-center gap-2 pr-4 border-r border-slate-200 dark:border-slate-600"><span class="text-[11px] font-black text-slate-400 uppercase" data-i18n-ui="Tổng:">Tổng:</span><span class="text-base font-black text-slate-800 dark:text-white" id="stat-total-pick-live">0</span></div>
+<div class="flex items-center gap-2 pl-4"><span class="text-[11px] font-black text-slate-400 uppercase" data-i18n-ui="Đang hiện:">Đang hiện:</span><span class="text-base font-black text-sky-500 dark:text-sky-400" id="stat-display-pick-live">0</span></div>
+</div>
+
+<!-- [2026-07-23] Tóm tắt ĐẦY ĐỦ số liệu theo trạng thái ngay trong toolbar chính —
+     không cần mở sidebar mới thấy. Chữ đơn giản (không phải card bấm-lọc), bấm vẫn
+     lọc được (dùng chung toggleLiveStatusFilterPICK), tự sinh vào #pickLiveStatusSummaryBar
+     — xem updateLiveStatusChipsPICK() trong JS_Pick.html. Trong thực tế số trạng thái
+     không nhiều nên dải này luôn gọn, không lo tràn dòng (tự wrap nếu cần). -->
+<div id="pickLiveStatusSummaryBar" class="hidden lg:flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-bold text-slate-500 dark:text-slate-400 max-w-[420px]"></div>
+
+<div class="relative">
+<i class="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+<input type="text" id="search-id-pick-live" placeholder="Tìm mã đơn / trạm..." data-i18n-placeholder="Tìm mã đơn / trạm..." class="bg-slate-50 dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-full pl-8 pr-4 py-2 text-[11px] font-bold text-sky-600 dark:text-sky-400 outline-none focus:border-sky-500 w-52" onkeyup="applyLiveFilterPICKDebounced()">
+</div>
+
+<button onclick="resetInlineFiltersPICKLive()" title="Xóa toàn bộ bộ lọc (trạng thái, tìm kiếm, các cột)" data-i18n-title="Xóa toàn bộ bộ lọc (trạng thái, tìm kiếm, các cột)" class="shrink-0 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 px-3 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5"><i class="fas fa-filter-circle-xmark"></i> <span data-i18n-ui="Xóa lọc">Xóa lọc</span></button>
+
+</div>
+
+</div>
+
+<div class="flex flex-wrap items-center justify-end gap-2">
+<button onclick="copyOrderNumbersLivePICK()" class="shrink-0 bg-sky-500 hover:bg-sky-600 text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-md flex items-center gap-2 active:scale-95"><i class="fas fa-copy"></i> <span data-i18n-ui="COPY MÃ HIỂN THỊ">COPY MÃ HIỂN THỊ</span></button>
+<button id="btnPickDensityLive" onclick="togglePickDensity()" class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-black uppercase transition-colors shrink-0" aria-label="Đổi cỡ chữ bảng" data-i18n-aria="Đổi cỡ chữ bảng" title="Đổi chế độ xem: Gọn / Thoải mái" data-i18n-title="Đổi chế độ xem: Gọn / Thoải mái"><i class="fas fa-text-height text-xs"></i></button>
+<span id="lastseen-pick-live" class="spx-module-lastseen hidden"><i class="fas fa-clock-rotate-left"></i> <span>--</span></span>
+</div>
+
+</div>
+
+<!-- [2026-07-24 v3] REVERT về flex-1 — xem giải thích ở scrollContainerQH. -->
+<div class="overflow-auto bg-slate-50/50 dark:bg-[#0b1121] relative flex-1" id="pickLiveScrollArea">
+
+<table id="pickLiveDataTable" class="w-full text-left text-sm whitespace-nowrap data-table table-fixed">
+
+<colgroup>
+<col style="width:3%"><!-- STT -->
+<col style="width:13%"><!-- Mã đơn -->
+<col style="width:14%"><!-- Station -->
+<col style="width:13%"><!-- Trạng thái -->
+<col style="width:8%"><!-- Order Type -->
+<col style="width:15%"><!-- Sản phẩm -->
+<col style="width:11%"><!-- TG Tạo -->
+<col style="width:11%"><!-- TG Last Touch -->
+<col style="width:12%"><!-- Action -->
+</colgroup>
+
+<thead class="sticky top-0 z-10">
+<tr class="text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 dark:bg-[#151e2f] border-b border-slate-200 dark:border-slate-700">
+<th class="px-3 py-2 border-r dark:border-slate-700 border-slate-200 text-center">STT</th>
+<th class="px-2 py-2 border-r dark:border-slate-700 border-slate-200" data-i18n-ui="Mã đơn">Mã đơn</th>
+<th class="px-2 py-2 border-r dark:border-slate-700 border-slate-200" id="pickliveth-station"></th>
+<th class="px-2 py-2 border-r dark:border-slate-700 border-slate-200" data-i18n-ui="Trạng thái">Trạng thái</th>
+<th class="px-2 py-2 border-r dark:border-slate-700 border-slate-200 text-center" id="pickliveth-orderType"></th>
+<th class="px-2 py-2 border-r dark:border-slate-700 border-slate-200" data-i18n-ui="Sản phẩm">Sản phẩm</th>
+<th class="px-2 py-2 border-r dark:border-slate-700 border-slate-200 text-center" id="pickliveth-created"></th>
+<th class="px-2 py-2 border-r dark:border-slate-700 border-slate-200 text-center" id="pickliveth-lastTouch"></th>
+<th class="px-2 py-2" id="pickliveth-action"></th>
+</tr>
+</thead>
+
+<!-- [2026-07-24] Placeholder tĩnh ngay trong HTML — TRƯỚC ĐÂY tbody để trắng hoàn toàn
+     cho tới khi loadSelectedStationsPICKLive() chạy xong, nên trong lúc CHỜ đồng bộ trạm
+     từ hub-selector đầu trang (xem #pickLiveSingleSyncInfo) hoặc chờ user chọn trạm, khu
+     vực bảng là 1 mảng trắng trống trơn — nhìn như bảng bị lỗi/co nhỏ chứ không phải đang
+     chờ dữ liệu. renderLiveTablePICK() sẽ ghi đè placeholder này ngay khi có dữ liệu thật. -->
+<tbody class="text-slate-600 dark:text-slate-300 font-medium text-[11px] leading-tight divide-y divide-slate-100 dark:divide-slate-800/50 bg-white dark:bg-[#0b1121]" id="tableBodyPICKLive"><tr><td colspan="9" class="text-center py-20 text-slate-400"><div class="w-12 h-12 bg-slate-50 dark:bg-[#1e293b] rounded-full flex items-center justify-center mx-auto mb-2 border border-slate-100 dark:border-slate-700 shadow-sm"><i class="fas fa-tower-broadcast text-xl text-slate-300 animate-pulse"></i></div><p class="font-black text-xs uppercase tracking-widest" data-i18n-ui="Đang đồng bộ trạm từ đầu trang...">Đang đồng bộ trạm từ đầu trang...</p><p class="text-[10px] mt-1 font-semibold normal-case text-slate-400" data-i18n-ui="Bảng sẽ tự hiển thị dữ liệu ngay khi đồng bộ xong">Bảng sẽ tự hiển thị dữ liệu ngay khi đồng bộ xong</p></td></tr></tbody>
+
+</table>
+
+<!-- [FIX 2026-07-24] Phân trang — TRƯỚC ĐÂY đặt NGOÀI #pickLiveScrollArea (là 1
+     sibling flex "shrink-0" riêng) nên luôn bị đẩy xuống SÁT ĐÁY của toàn khối
+     panel (vốn cao full-height nhờ flex-1) — khi 1 trạm chỉ có vài chục dòng,
+     phần bảng không lấp đầy hết chiều cao khả dụng, để lại 1 khoảng trắng "dư
+     thừa" rất lớn NẰM GIỮA dòng dữ liệu cuối cùng và thanh phân trang, trông như
+     bảng bị lỗi/co nhỏ. Nay đưa thanh phân trang vào LÀM CON của chính
+     #pickLiveScrollArea + "sticky bottom-0": khi dữ liệu ít (không cần cuộn),
+     thanh này nằm ngay sau dòng cuối cùng (hết khoảng trắng dư thừa); khi dữ
+     liệu nhiều (bảng cuộn được), thanh này tự dính ở mép dưới màn hình trong
+     lúc cuộn — luôn thấy nút chuyển trang mà không cần cuộn tới cuối. -->
+<div class="sticky bottom-0 z-10 relative flex items-center justify-center gap-3 px-4 py-1.5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-[#0b1121] shrink-0">
+<span id="pickLivePagerInfo" class="absolute left-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">--</span>
+<div class="flex items-center gap-2">
+<button id="pickLivePagerPrev" onclick="pickLivePagerGo(-1)" class="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"><i class="fas fa-chevron-left"></i> <span data-i18n-ui="Trước">Trước</span></button>
+<button id="pickLivePagerNext" onclick="pickLivePagerGo(1)" class="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all">Sau <i class="fas fa-chevron-right"></i></button>
+</div>
+</div>
+
+</div>
+
+</div><!-- end pickLiveMainBlock -->
+
+</main>
+
+<script>
+// ==========================================
+// MODULE QUẢN LÝ PICK (BẢN CHUẨN ĐÃ FIX LỖI)
+// ==========================================
+
+let globalCacheDataPICK = []; let sortedDriversPICK = []; let driverOrderCountPICK = {}; 
+
+// [SECURITY FIX 2026-08-14] Bảng dữ liệu chính (renderDashboardPICK) chèn thẳng dữ liệu
+// từ file .xlsx/.zip user tải lên (mã đơn, địa chỉ, ghi chú...) vào innerHTML KHÔNG
+// escape — nếu 1 trong các trường này từng chứa ký tự "<"/">"/"'" sẽ chạy như HTML/JS
+// thật trong trình duyệt người xem. Cùng lớp lỗi đã vá ở JS_FMS.html/JS_Quahan.html.
+function _pickEsc(s) {
+  // [DỌN TRÙNG LẶP] Uỷ quyền lại spxEscHtml() dùng chung trong index.html — giữ
+  // NGUYÊN tên hàm này, KHÔNG đổi bất kỳ điểm gọi nào (9 điểm gọi trong file này
+  // vẫn hoạt động y hệt, chỉ đổi cách hàm này TỰ THỰC HIỆN bên trong).
+  return spxEscHtml(s);
+}
+// Dùng riêng cho giá trị chèn vào bên trong onclick="fn('...')" — xem giải thích chi
+// tiết trong JS_FMS.html (_fmsEscJsAttr) — escape HTML thường KHÔNG đủ an toàn cho
+// ngữ cảnh này vì trình duyệt giải mã HTML entity TRƯỚC KHI biên dịch thành mã JS.
+// [MỚI] Wrapper i18n module-scoped — cùng pattern qhT()/kfT()/vpT()/rqT()/fmsT().
+// KHÔNG bọc chuỗi dùng làm khoá gom nhóm; nhãn chung dịch ở lúc HIỂN THỊ.
+function pickT(viText){ return (typeof spxUiLabel === 'function') ? spxUiLabel(viText) : viText; }
+function _pickEscJsAttr(s) {
+  // [DỌN TRÙNG LẶP] Uỷ quyền spxEscJsAttr() dùng chung (index.html).
+  return (typeof spxEscJsAttr === 'function') ? spxEscJsAttr(s) : String(s == null ? '' : s);
+}
+let currentDisplayedOrderNumbersPICK = []; let activeStatusesPICK = new Set();
+let renderedRowsPICK = []; // [FIX-PERF] cache {el, r} của các dòng đang render — applyInlineFilterPICK
+                            // lọc trên mảng này (JS thuần) thay vì đọc lại DOM (.innerText/.cells).
+let multiFiltersPICK = { 1: new Set(), 2: new Set(), 4: new Set(), 5: new Set(), 6: new Set(), 8: new Set(), 9: new Set(), 10: new Set() };
+let isFilterActivePICK = { 1: false, 2: false, 4: false, 5: false, 6: false, 8: false, 9: false, 10: false };
+let activeEtaPICK = new Set(); // '12:00' | '19:00' | '21:00' — bộ lọc nhanh theo khung ETA
+let etaSortPICK = null; // null | 'asc' | 'desc' — sắp xếp theo cột ETA
+
+// ==========================================
+// [2026-07] NGUỒN DỮ LIỆU LIVE (sheet "3. FM action realtime")
+// ==========================================
+// Tách hoàn toàn khỏi luồng Manual phía trên (globalCacheDataPICK) — cùng pattern
+// "2 nguồn dữ liệu tách biệt, chỉ gộp UI" đã áp dụng cho FMS (dataFMS vs dataFMSLive).
+// [KIẾN TRÚC LẠI 2026-07-23 — HIỆU NĂNG] Sheet nguồn đã vượt >100k dòng — không còn
+// "tải hết rồi lọc" nữa. Luồng mới: mở tab Live -> lấy DANH SÁCH TRẠM (+ số đơn) qua
+// pick_live_getStations() -> user (KỂ CẢ ADMIN) tự chọn (những) trạm muốn xem -> lấy
+// dữ liệu chi tiết CHỈ của các trạm đã chọn qua pick_live_getStationData(). Server luôn
+// ép giao với quyền thực tế nên FE không cần tự lọc lại theo quyền.
+let pickSourceMode = 'manual'; // 'manual' | 'live' — nguồn đang hiển thị, xem switchSourcePICK()
+let globalCacheDataPICKLive = []; // dữ liệu ĐANG hiển thị — gộp từ các trạm đã chọn
+let currentDisplayedOrderNumbersPICKLive = [];
+let activeLiveStatusesPICK = new Set(); // lọc theo fleet_final_status (chip động, xem updateLiveStatusChipsPICK)
+let pickLiveLoading = false;
+let pickLiveIndexLoadedOnce = false; // đã lấy danh sách trạm lần đầu chưa
+let liveFilterDebounceTimerPICK = null;
+let pickLiveAllStations = []; // [{name, count}] toàn bộ trạm user được thấy (đã lọc quyền ở server)
+let pickLiveSelectedStations = new Set(); // (những) trạm user đã chọn để xem dữ liệu
+let pickLiveRole = null; // 'admin' | khác — quyết định có tự tải luôn hay bắt chọn tay
+const PICK_LIVE_AUTOLOAD_MAX_HUBS = 3; // user thường có <= số trạm này -> tự chọn hết + tự tải luôn
+const PICK_LIVE_MAX_HUBS_PER_SELECT = 30; // khớp PICK_LIVE_MAX_HUBS_PER_CALL bên backend.gs
+const PICK_LIVE_PAGE_SIZE = 500; // số dòng/trang khi render bảng — tránh treo trình duyệt
+let pickLiveCurrentPage = 1;
+
+// ==========================================
+// [2026-07-23] ĐỒNG BỘ TRẢI NGHIỆM CHỌN TRẠM VỚI HUB-SELECTOR NGOÀI INDEX
+// ==========================================
+// Trước đây Live có bộ chọn trạm HOÀN TOÀN tách rời hub-selector ở header —
+// user quản lý đa trạm (AOM/SUP/Admin) đổi trạm ở header xong mở qua Pick Live
+// vẫn phải tick lại từ đầu, và nếu tick nhiều trạm thì dữ liệu dồn lại rất rối
+// mắt (đúng như phản hồi thực tế của user). Từ bản này, Live có 2 CHẾ ĐỘ:
+//   - 'single' (MẶC ĐỊNH): Live LUÔN đi theo ĐÚNG 1 trạm đang chọn ở header
+//     (#hubSelectorIndex) — đổi trạm ở header thì Live tự tải lại ngay, không
+//     cần thao tác gì thêm. Đây là trải nghiệm phù hợp nhất với đa số use-case
+//     (SUP/AOM xử lý từng trạm một, không muốn nhìn dữ liệu gộp nhiều trạm).
+//   - 'multi': quay lại hành vi cũ — tự chọn tay (những) trạm muốn xem, dành
+//     cho lúc THỰC SỰ cần đối chiếu nhiều trạm cùng lúc. User tự bật khi cần.
+// Lựa chọn chế độ được nhớ qua localStorage nên lần sau mở lại vẫn giữ nguyên.
+let pickLiveViewMode = 'single';
+try { pickLiveViewMode = localStorage.getItem('SPX_PickLive_ViewMode') || 'single'; } catch (e) {}
+
+/**
+ * setPickLiveViewMode('single'|'multi')
+ * Đổi chế độ xem trạm của Live — gọi từ 2 nút toggle trong pickAsideLiveBlock.
+ */
+function setPickLiveViewMode(mode) {
+    if (mode !== 'single' && mode !== 'multi') return;
+    pickLiveViewMode = mode;
+    try { localStorage.setItem('SPX_PickLive_ViewMode', mode); } catch (e) {}
+    updatePickLiveViewModeUI();
+    if (mode === 'single') pickLiveSyncWithHeaderHub();
+}
+
+function updatePickLiveViewModeUI() {
+    const isSingle = pickLiveViewMode === 'single';
+    const btnSingle = document.getElementById('pickLiveModeSingleBtn');
+    const btnMulti = document.getElementById('pickLiveModeMultiBtn');
+    const pickerBox = document.getElementById('pickLiveStationPickerBox');
+    const singleInfo = document.getElementById('pickLiveSingleSyncInfo');
+    if (btnSingle) btnSingle.className = `flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider cursor-pointer transition-all ${isSingle ? 'bg-sky-500 text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`;
+    if (btnMulti) btnMulti.className = `flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider cursor-pointer transition-all ${!isSingle ? 'bg-sky-500 text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`;
+    if (pickerBox) pickerBox.classList.toggle('hidden', isSingle);
+    if (singleInfo) singleInfo.classList.toggle('hidden', !isSingle);
+}
+
+function pickLiveGetHeaderHub() {
+    // [FIX LỖI THẬT — rà soát toàn diện phát hiện #hubSelectorIndex đã bị xoá
+    // từ lâu] Trước đây đọc từ phần tử DOM không còn tồn tại, LUÔN trả về '' —
+    // khiến pickLiveSyncWithHeaderHub() (1 trong 7 hành động đồng bộ của
+    // changeHubIndex()) LUÔN nghĩ header đang để "Tất cả trạm", ngay cả khi
+    // user đã chọn cụ thể 1 hub — tính năng "Pick Live tự đồng bộ theo hub
+    // header" chưa từng hoạt động đúng. Dùng đúng nguồn thật (localStorage,
+    // nơi changeHubIndex() luôn ghi vào).
+    const saved = (localStorage.getItem('spx_default_hub') || '').trim();
+    return saved === 'ALL' ? '' : saved;
+}
+
+/**
+ * pickLiveSyncWithHeaderHub()
+ * Gọi khi: (a) mở tab Live lần đầu ở chế độ 'single', (b) user đổi trạm ở
+ * hub-selector ngoài Index trong lúc đang ở tab Live chế độ 'single' (xem
+ * hook trong changeHubIndex() @ index.html). KHÔNG làm gì nếu đang ở chế độ
+ * 'multi' — chế độ đó do user tự kiểm soát hoàn toàn qua bộ chọn tay.
+ */
+function pickLiveSyncWithHeaderHub() {
+    if (pickLiveViewMode !== 'single') return;
+    if (!pickLiveIndexLoadedOnce || pickLiveAllStations.length === 0) return; // chưa có danh sách trạm để đối chiếu
+    const infoEl = document.getElementById('pickLiveSingleSyncInfo');
+    const headerHub = pickLiveGetHeaderHub();
+
+    if (!headerHub) {
+        // Header đang để "Tất cả trạm" — Live không có 1 trạm cụ thể để đồng bộ.
+        // User chỉ quản lý đúng 1 trạm thì vẫn tự chọn trạm đó cho tiện; quản lý
+        // nhiều trạm thì yêu cầu chọn 1 trạm cụ thể ở header hoặc bật "Nhiều trạm".
+        if (pickLiveAllStations.length === 1) {
+            pickLiveSelectedStations = new Set([pickLiveAllStations[0].name]);
+            if (infoEl) infoEl.innerHTML = `<i class="fas fa-link text-sky-500 dark:text-sky-400"></i> Đang xem: <b>${pickLiveAllStations[0].name}</b>`;
+            loadSelectedStationsPICKLive();
+        } else {
+            pickLiveSelectedStations.clear(); globalCacheDataPICKLive = []; renderLiveTablePICK();
+            if (infoEl) infoEl.innerHTML = `<i class="fas fa-circle-info text-amber-500 dark:text-amber-400"></i> Chọn 1 trạm cụ thể ở ô trạm đầu trang để xem — hoặc bật "Nhiều trạm" bên dưới.`;
+        }
+        return;
+    }
+
+    const match = pickLiveAllStations.find(s => s.name.trim().toUpperCase() === headerHub.toUpperCase());
+    if (!match) {
+        pickLiveSelectedStations.clear(); globalCacheDataPICKLive = []; renderLiveTablePICK();
+        if (infoEl) infoEl.innerHTML = `<i class="fas fa-triangle-exclamation text-amber-500 dark:text-amber-400"></i> Trạm "${headerHub}" chưa có dữ liệu Live hoặc bạn không có quyền xem trạm này.`;
+        return;
+    }
+    pickLiveSelectedStations = new Set([match.name]);
+    if (infoEl) infoEl.innerHTML = `<i class="fas fa-link text-sky-500 dark:text-sky-400"></i> Đang xem: <b>${match.name}</b> <span class="text-slate-400 font-semibold">(theo trạm ở đầu trang)</span>`;
+    loadSelectedStationsPICKLive();
+}
+
+/**
+ * pickApplyPreviewLevel(level)
+ * [MỚI — Bước 5 cho Pick, cùng lớp phòng vệ như Quá Hạn/KPI Fail/Rider Plan]
+ * Gọi từ openModule() mỗi khi vào module — bắt đúng trạng thái nếu Admin đổi
+ * Level/Hub trong lúc module đang ở nền.
+ *
+ * KHÁC với Quá Hạn/Rider Plan: Pick không có dropdown AOM/SUP riêng để thu
+ * hẹp — Manual mode không có khái niệm "Hub" trong dữ liệu (1 file đã upload
+ * = đúng 1 hub cố định, không lọc theo header); Live mode đã tự nghe đúng Hub
+ * header qua pickLiveSyncWithHeaderHub() TỪ TRƯỚC (không phải mới thêm). Vậy
+ * ROM/AOM/SUP không cần thêm gì — hành vi mặc định (Admin tự do chọn Hub ở
+ * header) đã đúng, "xem thử" các cấp này chỉ có ý nghĩa thu hẹp lựa chọn ở
+ * module CÓ dropdown riêng, Pick không có nên không áp dụng được kiểu thu hẹp
+ * đó. Chỉ Lead/Staff có ý nghĩa thật (đúng 1 Hub cố định) — TÁI DÙNG hàm đã
+ * chứng minh an toàn, không viết logic khoá Hub riêng.
+ */
+function pickApplyPreviewLevel(level) {
+  var isRealAdmin = !!(window.SPX_ACCESS && window.SPX_ACCESS.role === 'admin');
+  if (!isRealAdmin || !level || level === 'admin') {
+    // [SỬA] Kể cả quay về Admin cũng phải tải lại — nếu không, số liệu của
+    // AOM/SUP vừa xem thử vẫn còn nguyên trên màn hình.
+    if (typeof pickLoadFmSummary === 'function') {
+      try { pickLoadFmSummary(); } catch(e){}
+    }
+    return;
+  }
+  // [SỬA LỖI THẬT — báo cáo kèm ảnh: đổi AOM/SUP ở dropdown mà số liệu Pick
+  // KHÔNG đổi] TRƯỚC ĐÂY hàm này THOÁT SỚM ngay với 3 cấp rom/aom/sup, nên
+  // khối "Hàng lấy theo giai đoạn" không bao giờ được tải lại theo người mới
+  // chọn. Nay luôn tải lại — bản thân pickLoadFmSummary() tự đọc
+  // SPX_PREVIEW_ENTITY để xác định đúng phạm vi.
+  if (typeof pickLoadFmSummary === 'function') {
+    try { pickLoadFmSummary(); } catch(e){ console.warn('[Pick FM summary]', e); }
+  }
+  if (level === 'rom' || level === 'aom' || level === 'sup') return;
+  if ((level === 'lead' || level === 'staff') && typeof pickLiveSyncWithHeaderHub === 'function') {
+    pickLiveSyncWithHeaderHub();
+  }
+}
+// [2026-07] Cột 9 = Create Time (giờ tạo đơn pick), cột 10 = Pickup Time (giờ tài xế thao tác
+// thành công). Lọc theo mốc 3 tiếng (00-03, 03-06, ... 21-24) qua getTimeBucketPICK() —
+// dropdown lọc dùng NHÃN MỐC làm giá trị lọc, còn ô hiển thị vẫn show giờ:phút thật (xem
+// formatTimeShortPICK / rowsHtml bên dưới).
+
+// [FIX] LUÔN mặc định "Ngày lấy hàng" = hôm nay ngay khi module mở, KHÔNG để trống
+// và KHÔNG tự lấy ngày cũ từ cache lên ô này (xem restorePickCachePICK bên dưới) —
+// tránh trường hợp user quên chọn/đổi ngày, targetDatePICK rỗng hoặc lệch ngày,
+// khiến processDataPICK() lọc theo targetDate sai → mọi card (Expected/Accepted/...)
+// hiện 0 dù đã nạp file. User muốn xem/xử lý ngày khác thì tự bấm đổi ô ngày.
+(function _pickSetDefaultDate() {
+  const dateInput = document.getElementById('targetDatePICK');
+  if (dateInput && !dateInput.value) dateInput.valueAsDate = new Date();
+})();
+
+function clearPickCache() {
+    localStorage.removeItem('SPX_Pick_Cache');
+    document.getElementById('fileTaskPICK').value=""; document.getElementById('fileAssignPICK').value="";
+    document.getElementById('taskFileNamePICK').innerText = "Nhấn chọn file Task..."; document.getElementById('taskFileNamePICK').className = "text-[11px] font-bold text-slate-400 dark:text-slate-500 truncate w-full"; document.getElementById('taskIconPICK').className = "fas fa-upload text-slate-300 dark:text-slate-500 group-hover:text-sky-500 transition-colors text-sm"; document.getElementById('labelTaskPICK').className = "relative bg-white dark:bg-[#1e293b] hover:bg-sky-50 dark:hover:bg-sky-900/20 p-3 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-sky-300 dark:hover:border-sky-500 flex flex-col gap-2 cursor-pointer transition-all group shadow-sm";
+    document.getElementById('assignFileNamePICK').innerText = "Nhấn chọn file Assign..."; document.getElementById('assignFileNamePICK').className = "text-[11px] font-bold text-slate-400 dark:text-slate-500 truncate w-full"; document.getElementById('assignIconPICK').className = "fas fa-upload text-slate-300 dark:text-slate-500 group-hover:text-orange-500 transition-colors text-sm"; document.getElementById('labelAssignPICK').className = "relative bg-white dark:bg-[#1e293b] hover:bg-orange-50 dark:hover:bg-orange-900/20 p-3 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-orange-300 dark:hover:border-orange-500 flex flex-col gap-2 cursor-pointer transition-all group shadow-sm";
+    globalCacheDataPICK=[]; sortedDriversPICK=[]; driverOrderCountPICK={}; currentDisplayedOrderNumbersPICK=[]; renderedRowsPICK=[];
+    document.getElementById('driverSelectPICK').innerHTML='<option value="" data-i18n-ui="-- Chọn tài xế --">-- Chọn tài xế --</option>';
+    ['expected','accepted','arrived','done','inbounded'].forEach(b=>document.getElementById(`stat-pick-${b}`).innerText='0');
+    document.getElementById('stat-total-pick').innerText='0'; document.getElementById('stat-display-pick').innerText='0';
+    ['1200','1900','2100'].forEach(k=>{ const el = document.getElementById(`stat-eta-${k}`); if(el) el.innerText='0'; });
+    document.getElementById('tableBodyPICK').innerHTML=`<tr><td colspan="11" class="px-6 py-32 text-center text-slate-400"><div class="w-16 h-16 bg-slate-50 dark:bg-[#1e293b] rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-slate-700 shadow-sm"><i class="fas fa-trash-can text-2xl text-slate-300 dark:text-slate-500"></i></div><p class="font-bold text-sm text-slate-500 dark:text-slate-400">Đã xóa bộ nhớ đệm Pick!</p><p class="text-[11px] mt-1">Vui lòng nạp file mới để tiếp tục.</p></td></tr>`;
+    activeStatusesPICK.clear(); activeEtaPICK.clear(); etaSortPICK = null; updateCardUIPICK(); updateEtaChipUIPICK(); updateEtaSortIconPICK(); resetInlineFiltersPICK(); showToast(pickT("Đã dọn dẹp dữ liệu tạm!"), "success","pick");
+}
+
+function handleFileUploadPICK(type) {
+    const isTask = type === 'task'; const fileInput = document.getElementById(isTask ? 'fileTaskPICK' : 'fileAssignPICK');
+    const fileNameDisplay = document.getElementById(isTask ? 'taskFileNamePICK' : 'assignFileNamePICK');
+    const icon = document.getElementById(isTask ? 'taskIconPICK' : 'assignIconPICK');
+    const labelContainer = document.getElementById(isTask ? 'labelTaskPICK' : 'labelAssignPICK');
+    if (fileInput.files.length > 0) {
+        fileNameDisplay.innerText = fileInput.files[0].name;
+        fileNameDisplay.className = `text-[10px] font-black truncate w-full ${isTask ? 'text-sky-600 dark:text-sky-400' : 'text-orange-600 dark:text-orange-400'}`;
+        icon.className = "fas fa-check-circle text-emerald-500 text-lg";
+        labelContainer.className = `relative bg-${isTask?'sky':'orange'}-50 dark:bg-[#151e2f] p-2.5 rounded-xl border-2 border-${isTask?'sky':'orange'}-300 dark:border-${isTask?'sky':'orange'}-500/50 flex flex-col gap-1.5 cursor-pointer transition-all shadow-sm ring-2 ring-${isTask?'sky':'orange'}-500/10`;
+    }
+    checkAndAutoSyncPICK();
+}
+
+function checkAndAutoSyncPICK() { const fT = document.getElementById('fileTaskPICK').files[0]; const fA = document.getElementById('fileAssignPICK').files[0]; if (fT && fA) processDataPICK(fT, fA); }
+function toggleStatusFilterPICK(status) { if (activeStatusesPICK.has(status)) activeStatusesPICK.delete(status); else activeStatusesPICK.add(status); updateCardUIPICK(); renderDashboardPICK(); }
+
+function updateCardUIPICK() {
+    const styles = {
+        'expected': {text:'text-slate-700 dark:text-slate-300', bg:'bg-white dark:bg-[#1e293b]', ring:'ring-slate-400 dark:ring-slate-500', bbg:'bg-slate-100 dark:bg-slate-800'},
+        'accepted': {text:'text-amber-700 dark:text-amber-400', bg:'bg-amber-50 dark:bg-[#1e293b]', ring:'ring-amber-400 dark:ring-amber-500/50', bbg:'bg-amber-100 dark:bg-amber-900/30'},
+        'arrived':  {text:'text-sky-700 dark:text-sky-400', bg:'bg-sky-50 dark:bg-[#1e293b]', ring:'ring-sky-400 dark:ring-sky-500/50', bbg:'bg-sky-100 dark:bg-sky-900/30'},
+        'done':     {text:'text-emerald-700 dark:text-emerald-400', bg:'bg-emerald-50 dark:bg-[#1e293b]', ring:'ring-emerald-400 dark:ring-emerald-500/50', bbg:'bg-emerald-100 dark:bg-emerald-900/30'},
+        'inbounded':{text:'text-indigo-700 dark:text-indigo-400', bg:'bg-indigo-50 dark:bg-[#1e293b]', ring:'ring-indigo-400 dark:ring-indigo-500/50', bbg:'bg-indigo-100 dark:bg-indigo-900/30'}
+    };
+    // [UI/UX-FIX] Quay về card 1 cột dọc, full nhãn — chỉ giảm py-3.5→py-2.5 so với
+    // bản gốc để gọn hơn mà KHÔNG cắt chữ như bản lưới 2 cột trước đó.
+    Object.keys(styles).forEach(s => {
+        const el = document.getElementById('card-pick-' + s); const badge = document.getElementById('stat-pick-' + s); const st = styles[s];
+        if (activeStatusesPICK.size === 0) {
+            el.className = `flex justify-between items-center px-4 py-2.5 rounded-2xl cursor-pointer border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e293b] font-black text-[11px] uppercase text-slate-700 dark:text-slate-300 transition-all`;
+            badge.className = `px-3 py-1 rounded-lg ${st.bbg} text-slate-600 dark:text-slate-400 shadow-inner font-black`;
+        } else {
+            if (activeStatusesPICK.has(s)) {
+                el.className = `flex justify-between items-center px-4 py-2.5 rounded-2xl cursor-pointer border-2 border-transparent ring-2 ${st.ring} ${st.bg} shadow-md font-black text-[11px] uppercase ${st.text} transform scale-[1.02] transition-all`;
+                badge.className = `px-3 py-1 rounded-lg bg-white dark:bg-[#0b1121] ${st.text} shadow-sm font-black`;
+            } else {
+                el.className = `flex justify-between items-center px-4 py-2.5 rounded-2xl cursor-pointer border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-[#151e2f] opacity-40 grayscale font-black text-[11px] uppercase text-slate-400 dark:text-slate-500 transition-all`;
+                badge.className = `px-3 py-1 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-400 shadow-inner font-black`;
+            }
+        }
+    });
+}
+
+function toggleEtaFilterPICK(etaKey) { if (activeEtaPICK.has(etaKey)) activeEtaPICK.delete(etaKey); else activeEtaPICK.add(etaKey); updateEtaChipUIPICK(); renderDashboardPICK(); }
+
+function updateEtaChipUIPICK() {
+    const chips = { '12:00': { id: 'eta-chip-1200', active: 'bg-amber-50 dark:bg-amber-900/20 border-amber-400 dark:border-amber-500/60 text-amber-700 dark:text-amber-400 ring-2 ring-amber-400/30', idle: 'bg-white dark:bg-[#1e293b] border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 opacity-60' },
+                   '19:00': { id: 'eta-chip-1900', active: 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-400 dark:border-indigo-500/60 text-indigo-700 dark:text-indigo-400 ring-2 ring-indigo-400/30', idle: 'bg-white dark:bg-[#1e293b] border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 opacity-60' },
+                   '21:00': { id: 'eta-chip-2100', active: 'bg-violet-50 dark:bg-violet-900/20 border-violet-400 dark:border-violet-500/60 text-violet-700 dark:text-violet-400 ring-2 ring-violet-400/30', idle: 'bg-white dark:bg-[#1e293b] border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 opacity-60' } };
+    Object.keys(chips).forEach(key => {
+        const el = document.getElementById(chips[key].id); if (!el) return;
+        const base = 'flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all active:scale-95';
+        el.className = activeEtaPICK.size === 0 ? `${base} bg-white dark:bg-[#1e293b] border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400`
+            : (activeEtaPICK.has(key) ? `${base} ${chips[key].active} shadow-sm` : `${base} ${chips[key].idle}`);
+    });
+}
+
+function handleDriverChangePICK() { renderDashboardPICK(); }
+
+function toggleEtaSortPICK() {
+    etaSortPICK = etaSortPICK === 'asc' ? 'desc' : (etaSortPICK === 'desc' ? null : 'asc');
+    updateEtaSortIconPICK(); renderDashboardPICK();
+}
+function updateEtaSortIconPICK() {
+    const icon = document.getElementById('eta-sort-icon'); if (!icon) return;
+    icon.className = etaSortPICK === 'asc' ? 'fas fa-sort-up text-sky-500 text-[10px] ml-1'
+        : etaSortPICK === 'desc' ? 'fas fa-sort-down text-sky-500 text-[10px] ml-1'
+        : 'fas fa-sort text-slate-300 dark:text-slate-600 text-[10px] ml-1';
+}
+// [2026-07-UX] Trước đây: click đầu tiên vào 1 checkbox trong dropdown sẽ tự động bỏ tick
+// TẤT CẢ các dòng khác (chỉ giữ lại đúng dòng vừa click) — gây khó chịu vì mất lựa chọn cũ
+// ngoài ý muốn. NAY: mỗi checkbox hoạt động độc lập như checkbox thường — click vào đâu chỉ
+// toggle đúng dòng đó, không đụng tới các dòng còn lại. Muốn bỏ chọn/tick tất cả thì dùng
+// riêng nút/checkbox "CHỌN HẾT" (toggleAllDropdownPICK).
+function toggleDropdownPICK(col) {
+    [1, 2, 4, 5, 6, 8, 9, 10].forEach(c => { if(c !== col) document.getElementById(`dropdown-${c}-pick`)?.classList.add('hidden'); });
+    document.getElementById('dropdown-colvis-pick')?.classList.add('hidden');
+    const dd = document.getElementById(`dropdown-${col}-pick`); dd.classList.toggle('hidden');
+}
+function filterDropdownListPICK(col, term) { term = term.toLowerCase(); document.querySelectorAll(`.dropdown-item-${col}-pick`).forEach(item => { item.style.display = item.querySelector('.item-text').innerText.toLowerCase().includes(term) ? 'flex' : 'none'; }); }
+function toggleAllDropdownPICK(col, isChecked) { document.querySelectorAll(`.chk-${col}-pick`).forEach(chk => { if(chk.closest('label').style.display !== 'none') chk.checked = isChecked; }); }
+function applyMultiSelectPICK(col) { const chks = document.querySelectorAll(`.chk-${col}-pick`); multiFiltersPICK[col].clear(); let allChecked = true; chks.forEach(chk => { if (chk.checked) multiFiltersPICK[col].add(chk.value); else allChecked = false; }); isFilterActivePICK[col] = !allChecked; updateFilterButtonTextPICK(col); document.getElementById(`dropdown-${col}-pick`).classList.add('hidden'); applyInlineFilterPICK(); }
+
+// ============================================================================
+// [2026-07] CỘT HIỂN THỊ — thay thế nút "In báo cáo" (đã bỏ, không dùng tới).
+// Bảng Pick có 11 cột nên trên màn hình hẹp phải cuộn ngang nhiều; tính năng này cho phép tự ẩn
+// bớt cột không cần xem để bảng gọn hơn. Lựa chọn được LƯU vào localStorage nên mở lại vẫn giữ
+// nguyên. Cột STT và Mã đơn luôn hiển thị (không cho ẩn vì là định danh chính của dòng).
+// ============================================================================
+const PICK_COL_DEFS = [
+    { pos: 2, key: 'seller', label: 'Seller' },
+    { pos: 3, key: 'pickup', label: pickT('Điểm Pickup') },
+    { pos: 5, key: 'status', label: 'Order Status' },
+    { pos: 6, key: 'task', label: 'Task Status' },
+    { pos: 7, key: 'att', label: 'ATT' },
+    { pos: 8, key: 'eta', label: 'ETA' },
+    { pos: 9, key: 'created', label: pickT('Giờ Tạo') },
+    { pos: 10, key: 'picked', label: pickT('Giờ Pick') },
+    { pos: 11, key: 'ward', label: pickT('Xã/Phường') },
+];
+let hiddenColsPICK = new Set(); // các key đang bị ẨN
+
+function applyColVisPICK() {
+    const table = document.getElementById('pickDataTable'); if (!table) return;
+    PICK_COL_DEFS.forEach(c => table.classList.toggle(`hide-col-${c.pos}`, hiddenColsPICK.has(c.key)));
+}
+function saveColVisPICK() { try { localStorage.setItem('SPX_Pick_ColVis', JSON.stringify(Array.from(hiddenColsPICK))); } catch (e) {} }
+function updateColVisBtnTextPICK() {
+    const btn = document.getElementById('btn-text-colvis-pick'); if (!btn) return;
+    const n = hiddenColsPICK.size;
+    btn.innerHTML = n > 0 ? `<i class="fas fa-table-columns"></i> Đang ẩn ${n} cột` : `<i class="fas fa-table-columns"></i> Cột hiển thị`;
+    const wrap = btn.closest('div[onclick]');
+    if (wrap) { wrap.classList.toggle('text-sky-600', n > 0); wrap.classList.toggle('dark:text-sky-400', n > 0); wrap.classList.toggle('text-orange-600', n === 0); wrap.classList.toggle('dark:text-orange-400', n === 0); }
+}
+function renderColVisListPICK() {
+    const list = document.getElementById('list-colvis-pick'); if (!list) return;
+    list.innerHTML = PICK_COL_DEFS.map(c => `<label class="flex items-center gap-2 p-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded cursor-pointer text-[11px] font-bold text-slate-700 dark:text-slate-300 transition-colors"><input type="checkbox" ${hiddenColsPICK.has(c.key) ? '' : 'checked'} onchange="toggleColVisPICK('${c.key}', this.checked)" class="w-3 h-3 text-sky-500 dark:text-sky-400 rounded border-slate-300 dark:border-slate-600 dark:bg-slate-900 cursor-pointer"><span class="truncate">${c.label}</span></label>`).join('');
+    updateColVisBtnTextPICK();
+}
+function toggleColVisPICK(key, checked) { if (checked) hiddenColsPICK.delete(key); else hiddenColsPICK.add(key); applyColVisPICK(); saveColVisPICK(); updateColVisBtnTextPICK(); }
+function resetColVisPICK() { hiddenColsPICK.clear(); applyColVisPICK(); saveColVisPICK(); renderColVisListPICK(); }
+function toggleColVisDropdownPICK() {
+    [1, 2, 4, 5, 6, 8, 9, 10].forEach(c => document.getElementById(`dropdown-${c}-pick`)?.classList.add('hidden')); // đồng bộ: mở cái này thì đóng các dropdown lọc cột khác
+    document.getElementById('dropdown-colvis-pick')?.classList.toggle('hidden');
+}
+function initColVisPICK() {
+    try { const raw = localStorage.getItem('SPX_Pick_ColVis'); if (raw) { const arr = JSON.parse(raw); if (Array.isArray(arr)) hiddenColsPICK = new Set(arr); } } catch (e) {}
+    applyColVisPICK(); renderColVisListPICK();
+}
+document.addEventListener('click', function(e) { if (!e.target.closest('#colvis-container-pick')) document.getElementById('dropdown-colvis-pick')?.classList.add('hidden'); });
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initColVisPICK); else initColVisPICK();
+
+// [MỚI] Tải cảnh báo "Hàng lấy tồn đọng kéo dài" 1 lần khi module sẵn sàng.
+// Dùng ĐÚNG cơ chế khởi tạo đã có sẵn ngay trên (initColVisPICK) để nhất quán.
+// KHÔNG gọi trong renderDashboardPICK() vì hàm đó chạy lại mỗi lần user lọc —
+// sẽ gọi backend thừa hàng chục lần cho cùng 1 kết quả.
+// Bọc try/catch: đây là tính năng phụ, lỗi ở đây không được làm gãy module.
+(function _pickBootFmAging(){
+  function go(){
+    try { pickLoadFmSummary(); } catch(e){ console.warn('[Pick FM summary]', e); }
+    try { pickLoadFmAging(); } catch(e){ console.warn('[Pick FM aging]', e); }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go);
+  else go();
+})();
+
+function updateFilterButtonTextPICK(col) {
+    const titles = {1: "Tất cả Seller", 2: "Tất cả Pickup", 4: "Status", 5: "Tất cả Task", 6: "ATT", 8: "Tất cả Xã/Phường", 9: "Tất cả TG Tạo", 10: "Tất cả TG Pick"}; const btnText = document.getElementById(`btn-text-${col}-pick`);
+    if (!isFilterActivePICK[col] || multiFiltersPICK[col].size === 0) { btnText.innerHTML = `<i class="fas fa-filter"></i> ${titles[col]}`; btnText.parentElement.classList.remove('bg-sky-50', 'text-sky-600', 'dark:bg-sky-900/30', 'dark:text-sky-400'); btnText.parentElement.classList.add('text-orange-600', 'dark:text-orange-400'); } 
+    else { btnText.innerHTML = `<i class="fas fa-filter"></i> Đã lọc (${multiFiltersPICK[col].size})`; btnText.parentElement.classList.remove('text-orange-600', 'dark:text-orange-400'); btnText.parentElement.classList.add('bg-sky-50', 'text-sky-600', 'dark:bg-sky-900/30', 'dark:text-sky-400'); }
+}
+
+function updateInlineFiltersPICK(rows) {
+    const uniqueVals = { 1: new Map(), 2: new Map(), 4: new Map(), 5: new Map(), 6: new Map(), 8: new Map(), 9: new Map(), 10: new Map() };
+    const bump = (map, key) => map.set(key, (map.get(key) || 0) + 1);
+    // [2026-07] Cột 9/10 (Create Time / Pickup Time): giá trị dùng để LỌC là mốc 3h (getTimeBucketPICK),
+    // không phải giờ:phút thật — nhiều đơn khác giây/phút nhưng cùng mốc phải gộp lại thành 1 lựa chọn.
+    rows.forEach(r => {
+        bump(uniqueVals[1], r[0]); bump(uniqueVals[2], r[1]); bump(uniqueVals[4], r[3]); bump(uniqueVals[5], r[4]);
+        bump(uniqueVals[6], r[5] ?? '/'); bump(uniqueVals[8], r[8] || ''); bump(uniqueVals[9], getTimeBucketPICK(r[9]));
+        bump(uniqueVals[10], getTimeBucketPICK(r[10], "Chưa Pick"));
+    });
+    [1, 2, 4, 5, 6, 8, 9, 10].forEach(col => {
+        let html = ''; Array.from(uniqueVals[col].keys()).sort((a, b) => String(a).localeCompare(String(b))).forEach(v => {
+            if(v !== undefined && v !== null && v !== "") {
+                let strVal = String(v); let count = uniqueVals[col].get(v);
+                let isChecked = !isFilterActivePICK[col] || multiFiltersPICK[col].has(strVal) ? 'checked' : '';
+                let safeAttr = strVal.replace(/"/g, '&quot;');
+                // [2026-07-UX] Mỗi dòng: checkbox độc lập (label riêng) + số đếm đơn của giá trị đó +
+                // nút "CHỈ" chỉ hiện khi hover, bấm vào là cô lập ngay lập tức (áp dụng luôn, không
+                // cần bấm ÁP DỤNG) — bù lại tốc độ cho việc checkbox không còn tự cô lập ở click đầu.
+                html += `<div class="group flex items-center gap-1.5 p-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded transition-colors dropdown-item-${col}-pick">`
+                     + `<label class="flex items-center gap-2 flex-1 min-w-0 cursor-pointer">`
+                     + `<input type="checkbox" value="${safeAttr}" class="chk-${col}-pick w-3 h-3 text-sky-500 dark:text-sky-400 rounded border-slate-300 dark:border-slate-600 dark:bg-slate-900 cursor-pointer shrink-0" ${isChecked}>`
+                     + `<span class="item-text truncate text-slate-700 dark:text-slate-300 text-[10px] font-bold">${strVal}</span>`
+                     + `</label>`
+                     + `<span class="text-slate-400 dark:text-slate-500 text-[9px] font-black shrink-0 tabular-nums">${count}</span>`
+                     + `<button type="button" class="pick-only-btn opacity-0 group-hover:opacity-100 text-sky-500 dark:text-sky-400 hover:text-sky-600 text-[9px] font-black uppercase shrink-0 transition-opacity px-1" data-col="${col}" data-val="${safeAttr}" title="Chỉ lọc riêng mục này">CHỈ</button>`
+                     + `</div>`;
+            }
+        }); document.getElementById(`list-${col}-pick`).innerHTML = html; updateFilterButtonTextPICK(col);
+    }); applyInlineFilterPICK();
+}
+// [2026-07-UX] Nút "CHỈ" (chỉ hiện khi hover 1 dòng trong dropdown lọc): cô lập lọc về đúng
+// giá trị đó và áp dụng ngay, không cần mở checkbox từng dòng + bấm ÁP DỤNG — bù tốc độ cho
+// việc checkbox giờ hoạt động độc lập (xem toggleDropdownPICK ở trên).
+function selectOnlyPICK(col, value) {
+    multiFiltersPICK[col] = new Set([value]);
+    isFilterActivePICK[col] = true;
+    updateFilterButtonTextPICK(col);
+    document.getElementById(`dropdown-${col}-pick`)?.classList.add('hidden');
+    applyInlineFilterPICK();
+}
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.pick-only-btn');
+    if (btn) { e.preventDefault(); e.stopPropagation(); selectOnlyPICK(parseInt(btn.dataset.col, 10), btn.dataset.val); }
+});
+
+// [FIX-PERF] Gộp các lần gõ liên tiếp lại (debounce ~120ms) trước khi chạy applyInlineFilterPICK,
+// tránh chạy lọc dư thừa khi người dùng gõ nhanh trên bảng nhiều dòng.
+let _applyInlineFilterTimerPICK = null;
+function applyInlineFilterPICKDebounced() {
+    clearTimeout(_applyInlineFilterTimerPICK);
+    _applyInlineFilterTimerPICK = setTimeout(applyInlineFilterPICK, 120);
+}
+function applyInlineFilterPICK() {
+    // [FIX-PERF] TRƯỚC: querySelectorAll("#tableBodyPICK tr") rồi đọc row.cells[i].innerText
+    // cho từng dòng — mỗi lần đọc .innerText buộc trình duyệt phải flush layout (forced
+    // synchronous reflow). Hàm này chạy trên MỖI phím gõ (onkeyup) ở ô tìm kiếm, nên với
+    // bảng ~2000 dòng, gõ nhanh sẽ giật rõ rệt vì reflow lặp lại liên tục.
+    // NAY: lọc trực tiếp trên renderedRowsPICK (mảng JS đã cache sẵn lúc render, gồm dữ liệu
+    // gốc r[] — cùng nguồn dữ liệu đã dùng để build danh sách checkbox filter) → chỉ so sánh
+    // chuỗi thuần, không đụng DOM/layout, rồi mới toggle 'hidden' 1 lần cho từng phần tử.
+    const textFilter = (document.getElementById('search-id-pick')?.value || "").toLowerCase().trim();
+    let visibleCount = 0; currentDisplayedOrderNumbersPICK = [];
+    renderedRowsPICK.forEach(({ el, r }) => {
+        let match = true;
+        if (textFilter && !r[2].toString().toLowerCase().includes(textFilter)) match = false;
+        if (match) {
+            const colVal = { 1: r[0], 2: r[1], 4: r[3], 5: r[4], 6: r[5] ?? '/', 8: r[8] || '', 9: getTimeBucketPICK(r[9]), 10: getTimeBucketPICK(r[10], "Chưa Pick") };
+            for (const col of [1, 2, 4, 5, 6, 8, 9, 10]) {
+                if (isFilterActivePICK[col] && !multiFiltersPICK[col].has(String(colVal[col]).trim())) { match = false; break; }
+            }
+        }
+        el.classList.toggle('hidden', !match);
+        if (match) { visibleCount++; currentDisplayedOrderNumbersPICK.push(r[2]); }
+    });
+    document.getElementById('stat-display-pick').innerText = visibleCount;
+}
+function resetInlineFiltersPICK() { [1, 2, 4, 5, 6, 8, 9, 10].forEach(col => { isFilterActivePICK[col] = false; multiFiltersPICK[col].clear(); updateFilterButtonTextPICK(col); }); document.getElementById('search-id-pick').value = ""; activeStatusesPICK.clear(); activeEtaPICK.clear(); updateCardUIPICK(); updateEtaChipUIPICK(); renderDashboardPICK(); }
+document.addEventListener('click', function(e) { if(!e.target.closest('.multi-select-container')) { [1, 2, 4, 5, 6, 8, 9, 10].forEach(c => { document.getElementById(`dropdown-${c}-pick`)?.classList.add('hidden'); }); } });
+
+// Đọc 1 sheet xlsx từ arraybuffer (logic gốc, tách riêng để tái dùng cho cả nhánh .zip)
+function readXlsxArrayBufferPICK(buffer) { const wb = XLSX.read(new Uint8Array(buffer), {type: 'array'}); return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1}); }
+
+// [FIX] Hỗ trợ upload thẳng file .zip khi file pickup order (Assign) quá lớn bị nén tự động
+// thành nhiều .xlsx (vd: pickup_order_...xlsx, _1.xlsx, _2.xlsx). Tự giải nén trong trình
+// duyệt bằng JSZip, đọc lần lượt từng .xlsx bên trong rồi gộp thành 1 bảng duy nhất —
+// CHỈ giữ header của file đầu tiên, các file sau chỉ lấy dữ liệu (bỏ dòng header) để tránh
+// header lẫn vào giữa dữ liệu gây sai lệch khi processDataPICK() duyệt từ dòng thứ 2 trở đi.
+function readFileAsArrayPICK(file) {
+    return new Promise((resolve, reject) => {
+        if (!file) return resolve([]);
+        const isZip = /\.zip$/i.test(file.name);
+        const reader = new FileReader();
+        reader.onerror = reject;
+        reader.onload = async (e) => {
+            try {
+                if (!isZip) { resolve(readXlsxArrayBufferPICK(e.target.result)); return; }
+                if (typeof JSZip === 'undefined') { reject(new Error(pickT('Thiếu thư viện JSZip để đọc file .zip'))); return; }
+                const zip = await JSZip.loadAsync(e.target.result);
+                const entries = Object.values(zip.files)
+                    .filter(f => !f.dir && /\.xlsx?$/i.test(f.name))
+                    .sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true}));
+                if (entries.length === 0) { resolve([]); return; }
+                let merged = [];
+                for (let i = 0; i < entries.length; i++) {
+                    const buf = await entries[i].async('arraybuffer');
+                    const rows = readXlsxArrayBufferPICK(buf);
+                    if (!rows.length) continue;
+                    merged = merged.concat(i === 0 ? rows : rows.slice(1)); // bỏ header của các file sau file đầu
+                }
+                resolve(merged);
+            } catch (err) { reject(err); }
+        };
+        reader.readAsArrayBuffer(file);
+    });
+}
+function normalizeDateStrPICK(raw) { if (!raw) return ""; if (typeof raw === 'number') { const d = new Date(Math.round((raw - 25569) * 86400 * 1000)); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`; } let s = raw.toString().trim(); let m1 = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/); if (m1) return `${m1[1]}-${m1[2].padStart(2,'0')}-${m1[3].padStart(2,'0')}`; let m2 = s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/); if (m2) return `${m2[3]}-${m2[2].padStart(2,'0')}-${m2[1].padStart(2,'0')}`; return s.substring(0, 10); }
+function normalizeEtaTimePICK(raw) {
+    if (raw === null || raw === undefined || raw === "") return "";
+    if (typeof raw === 'number') { const d = new Date(Math.round((raw - 25569) * 86400 * 1000)); return `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`; }
+    const s = raw.toString().trim(); const m = s.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*$/);
+    return m ? `${m[1].padStart(2,'0')}:${m[2]}` : "";
+}
+function getEtaBadgePICK(etaTime) {
+    if (!etaTime) return `<span class="inline-block px-2 py-0.5 rounded uppercase font-black text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700">--</span>`;
+    if (etaTime === '12:00') return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded uppercase font-black text-[9px] bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50"><i class="fas fa-sun text-[8px]"></i> 12:00</span>`;
+    if (etaTime === '19:00') return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded uppercase font-black text-[9px] bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/50"><i class="fas fa-moon text-[8px]"></i> 19:00</span>`;
+    if (etaTime === '21:00') return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded uppercase font-black text-[9px] bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 border border-violet-200 dark:border-violet-800/50"><i class="fas fa-cloud-moon text-[8px]"></i> 21:00</span>`;
+    // [FIX LỖI THẬT LẦN 2 — đồng nhất cơ chế đáng tin cậy với getUIBadgePICK()]
+    // max-w-full (percentage) trên inline-flex không đáng tin cậy trong
+    // table-fixed (xem giải thích đầy đủ ở getUIBadgePICK()) — nhánh này hiếm
+    // khi chạy (chỉ khi ETA không khớp 3 mốc chuẩn) nhưng vẫn sửa cho nhất
+    // quán, phòng giá trị lạ dài hơn dự kiến từ nguồn dữ liệu.
+    return `<span class="flex items-center justify-center gap-1 overflow-hidden px-2 py-0.5 rounded uppercase font-black text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700" title="${etaTime}"><i class="fas fa-clock text-[8px] shrink-0"></i> <span class="overflow-hidden text-ellipsis whitespace-nowrap">${etaTime}</span></span>`;
+}
+// [2026-07] Trích giờ:phút (dùng để tính mốc lọc) từ raw string kiểu "2026/07/11 06:07:44"
+// (Create Time / Pickup Time trong file pickup order gốc). Chấp nhận luôn cả trường hợp Excel
+// trả về number serial (trường hợp cột date-time bị đọc thành number thay vì string).
+function formatTimeShortPICK(raw) {
+    if (raw === null || raw === undefined || raw === "") return "";
+    if (typeof raw === 'number') { const d = new Date(Math.round((raw - 25569) * 86400 * 1000)); return `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`; }
+    const s = raw.toString().trim(); const m = s.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*$/);
+    return m ? `${m[1].padStart(2,'0')}:${m[2]}` : "";
+}
+// [2026-07] Trích ĐẦY ĐỦ ngày + giờ để HIỂN THỊ trong ô bảng, dạng "06:07 11/07" — bắt buộc phải
+// có ngày vì Create Time/Pickup Time có thể lệch ngày so với "Ngày lấy hàng" đang chọn (ví dụ tạo
+// đơn cuối ngày hôm trước, hoặc tài xế pick trễ sang hôm sau).
+function formatDateTimeShortPICK(raw) {
+    if (raw === null || raw === undefined || raw === "") return "";
+    if (typeof raw === 'number') { const d = new Date(Math.round((raw - 25569) * 86400 * 1000)); return `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')} ${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')}`; }
+    const s = raw.toString().trim();
+    const m = s.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})[ T](\d{1,2}):(\d{2})(?::\d{2})?/);
+    if (m) return `${m[4].padStart(2,'0')}:${m[5]} ${m[3].padStart(2,'0')}/${m[2].padStart(2,'0')}`;
+    return formatTimeShortPICK(raw); // fallback: không nhận ra định dạng ngày thì chỉ hiện giờ
+}
+// [2026-07] Quy giờ về mốc 3 tiếng (00-03, 03-06, ..., 21-24) dùng làm GIÁ TRỊ LỌC cho cột
+// Create Time / Pickup Time. Trả về nhãn dạng "06:00-09:00". Nếu rỗng thì dùng emptyLabel do nơi
+// gọi truyền vào — VÌ ý nghĩa "rỗng" khác nhau giữa 2 cột: Create Time rỗng gần như không xảy ra
+// (coi là bất thường), còn Pickup Time rỗng là chuyện BÌNH THƯỜNG (đơn chưa được pick), nên không
+// nên gộp chung 1 nhãn "Chưa xác định" gây hiểu lầm là lỗi dữ liệu.
+function getTimeBucketPICK(raw, emptyLabel) {
+    emptyLabel = emptyLabel || "Chưa xác định";
+    const hm = formatTimeShortPICK(raw); if (!hm) return emptyLabel;
+    const h = parseInt(hm.split(':')[0], 10); if (isNaN(h)) return emptyLabel;
+    const start = Math.floor(h / 3) * 3; const end = start + 3;
+    return `${String(start).padStart(2,'0')}:00-${String(end).padStart(2,'0')}:00`;
+}
+function getPhasePICK(statusStr) { const s = statusStr.toString().toLowerCase(); if (s.includes("inbound") || s.includes("done") || s.includes("complet") || s.includes("pick") || s.includes("hand")) return "DONE"; if (s.includes("cancel") || s.includes("fail")) return "CANCEL"; return "PENDING"; }
+function getRankPICK(str) { const s = str.toString().toLowerCase(); if (s.includes("inbound")) return 5; if (s.includes("done") || s.includes("complet") || s.includes("pick") || s.includes("hand")) return 4; if (s.includes("arriv") || s.includes("start")) return 3; if (s.includes("accept")) return 2; if (s.includes("expect") || s.includes("creat") || s.includes("assign") || s.includes("pending")) return 1; return 0; }
+
+
+async function processDataPICK(fT, fA) {
+    showToast(pickT("Đang nạp dữ liệu Pick..."), "loading","pick"); document.getElementById('tableBodyPICK').innerHTML = `<tr><td colspan="11" class="text-center py-20 text-sky-500 dark:text-sky-400"><i class="fas fa-circle-notch animate-spin text-2xl mb-2"></i><p>Đang tính toán dữ liệu...</p></td></tr>`;
+    try {
+        const [taskRows, assignRows] = await Promise.all([readFileAsArrayPICK(fT), readFileAsArrayPICK(fA)]);
+        const targetDate = document.getElementById('targetDatePICK').value; const taskById = new Map(), taskByPup = new Map(), allDriversSet = new Set();
+        for (let i = 1; i < taskRows.length; i++) {
+            if (!taskRows[i] || taskRows[i].length === 0) continue; const tSt = (taskRows[i][10] || "").toString().trim(); if (/^disabled$/i.test(tSt)) continue;
+            const dStr = normalizeDateStrPICK(taskRows[i][15]); if (!(/^(expected|accepted|arrived|pickup start)$/i.test(tSt) ? (dStr <= targetDate) : (dStr === targetDate))) continue;
+            const tId = (taskRows[i][0] || "").toString().trim(), pId = (taskRows[i][2] || "").toString().trim(); const tkObj = { id: tId, pupName: (taskRows[i][3] || "").toString().trim(), drv: (taskRows[i][7] || "").toString().trim() || "Chưa gán", st: tSt };
+            if (tId) taskById.set(tId, tkObj); if (pId) { if (!taskByPup.has(pId)) taskByPup.set(pId, []); taskByPup.get(pId).push(tkObj); } allDriversSet.add(tkObj.drv);
+        }
+        const preData = [];
+        for (let i = 1; i < assignRows.length; i++) {
+            if (!assignRows[i] || assignRows[i].length === 0) continue; const orderNo = (assignRows[i][0] || "").toString().trim(); if (!orderNo) continue;
+            const oSt = (assignRows[i][4] || "").toString().trim(); if (/^(canceled|failed|pending pickup failed)$/i.test(oSt)) continue;
+            const isPending = /^(created|assigned|expected|accepted|arrived)$/i.test(oSt); if (!isPending && normalizeDateStrPICK(assignRows[i][7]) !== targetDate && normalizeDateStrPICK(assignRows[i][9]) !== targetDate) continue;
+            const pId = (assignRows[i][1] || "").toString().trim(), sName = (assignRows[i][2] || "").toString().trim(); const drvA = (assignRows[i][8] || "").toString().trim(), tIdA = (assignRows[i][12] || "").toString().trim(), att = assignRows[i][15];
+            const etaTime = normalizeEtaTimePICK(assignRows[i][14]);
+            // [2026-07] Create Time (idx3, giờ đơn pick được TẠO) và Pickup Time (idx7, giờ tài
+            // xế THAO TÁC THÀNH CÔNG — trống nếu đơn chưa được pick). Giữ nguyên raw string, chỉ
+            // format/quy về mốc 3h khi hiển thị/lọc (xem formatTimeShortPICK / getTimeBucketPICK).
+            const createTimeRaw = assignRows[i][3], pickupTimeRaw = assignRows[i][7];
+            // [2026-07] Cột "Xã/Phường": ưu tiên Seller Ward (idx19), nếu trống thì lấy District (idx18).
+            const wardOrDistrict = (assignRows[i][19] || "").toString().trim() || (assignRows[i][18] || "").toString().trim();
+            if (!isPending) { let exact = (tIdA && tIdA !== "/" && taskById.has(tIdA)) ? taskById.get(tIdA) : null; if (exact) { preData.push([sName, exact.pupName, orderNo, oSt, exact.st, att, exact.drv, etaTime, wardOrDistrict, createTimeRaw, pickupTimeRaw]); allDriversSet.add(exact.drv); } else { preData.push([sName, "Khớp theo tên", orderNo, oSt, "Done", att, drvA || "Chưa gán", etaTime, wardOrDistrict, createTimeRaw, pickupTimeRaw]); allDriversSet.add(drvA || "Chưa gán"); } } 
+            else { let vTasks = (!/^created$/i.test(oSt) && pId && taskByPup.has(pId)) ? taskByPup.get(pId).filter(tk => getPhasePICK(oSt) === getPhasePICK(tk.st)) : []; if (vTasks.length > 0) { const seenD = new Set(); vTasks.forEach(tk => { if (!seenD.has(tk.drv)) { preData.push([sName, tk.pupName, orderNo, oSt, tk.st, att, tk.drv, etaTime, wardOrDistrict, createTimeRaw, pickupTimeRaw]); allDriversSet.add(tk.drv); seenD.add(tk.drv); }}); } else { preData.push([sName, "Chưa có Task", orderNo, oSt, /assigned/i.test(oSt) || /created/i.test(oSt) ? "Expected" : oSt, att, drvA || "Chưa gán", etaTime, wardOrDistrict, createTimeRaw, pickupTimeRaw]); allDriversSet.add(drvA || "Chưa gán"); } }
+        }
+        globalCacheDataPICK = preData; sortedDriversPICK = Array.from(allDriversSet).sort();
+        const syncTs = Date.now();
+        localStorage.setItem('SPX_Pick_Cache', JSON.stringify({ data: globalCacheDataPICK, drivers: sortedDriversPICK, targetDate: targetDate, timestamp: syncTs }));
+        RUNTIME_CACHE.pickData = []; globalCacheDataPICK.forEach(r => { RUNTIME_CACHE.pickData.push({ trackingNumber: r[2], processStatus: r[4], finalStatus: r[3], station: r[1], eta: r[7] }); });
+
+        const select = document.getElementById('driverSelectPICK'); select.innerHTML = '<option value="">-- Tất cả tài xế --</option>'; sortedDriversPICK.forEach(d => { select.appendChild(new Option(d, d)); });
+        if (sortedDriversPICK.length > 0) select.value = sortedDriversPICK[0];
+        // [FIX-UX] Cập nhật badge "Cập nhật X phút trước" theo ĐÚNG thời điểm dữ liệu vừa nạp
+        // xong (syncTs) — đây là mốc thời gian thật của dữ liệu, dùng để tô màu cảnh báo khi cũ.
+        if (typeof spxSetLastSeenTs === 'function') spxSetLastSeenTs('pick', syncTs);
+        showToast(pickT("Đồng bộ dữ liệu Pick thành công!"), "success","pick"); renderDashboardPICK();
+    } catch (error) { showToast(pickT("Lỗi xử lý: ") + error.message, "error","pick"); }
+}
+
+function getActiveFilterDescPICK() {
+    const parts = [];
+    if (activeStatusesPICK.size > 0) {
+        const labels = { expected:'Expected', accepted:'Accepted', arrived:'Arrived', done:'Done', inbounded:'Inbounded' };
+        parts.push(pickT('Trạng thái: ') + Array.from(activeStatusesPICK).map(s => labels[s] || s).join(', '));
+    }
+    if (activeEtaPICK.size > 0) {
+        parts.push('ETA: ' + Array.from(activeEtaPICK).map(e => e === '12:00' ? '12H' : e === '19:00' ? '19H' : e === '21:00' ? '21H' : e).join(', '));
+    }
+    if (isFilterActivePICK[9] && multiFiltersPICK[9].size > 0) parts.push(pickT('TG tạo: ') + Array.from(multiFiltersPICK[9]).join(', '));
+    if (isFilterActivePICK[10] && multiFiltersPICK[10].size > 0) parts.push('TG pick: ' + Array.from(multiFiltersPICK[10]).join(', '));
+    return parts;
+}
+
+function getUIBadgePICK(status) {
+    let s = (status || "").toString().toLowerCase(); let bg = 'bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700';
+    if(s.includes('done') || s.includes('inbound') || s.includes('pick') || s.includes('hand')) bg = 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border border-emerald-200 dark:border-emerald-800/50';
+    else if(s.includes('assign') || s.includes('accept')) bg = 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 border border-amber-200 dark:border-amber-800/50';
+    else if(s.includes('arriv') || s.includes('start')) bg = 'bg-sky-50 dark:bg-sky-900/20 text-sky-600 border border-sky-200 dark:border-sky-800/50';
+    else if(s.includes('cancel') || s.includes('fail')) bg = 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 border border-rose-200 dark:border-rose-800/50';
+    // [FIX LỖI THẬT LẦN 2 — xác nhận qua ảnh chụp thật: chữ bị mất phần ĐẦU
+    // ("SIGNED" thay vì "ASSIGNED"), KHÔNG có dấu "..." — đây KHÔNG PHẢI
+    // ellipsis truncation, mà là badge TRÀN RA NGOÀI TD (TD dùng text-center
+    // nên tràn đều 2 bên), overflow-hidden của TD cắt mất cả 2 đầu. Nguyên
+    // nhân: max-w-full (percentage) trên inline-block không đáng tin cậy
+    // trong table-fixed. Đổi sang "block" — LUÔN CHÍNH XÁC bằng 100% độ rộng
+    // TD một cách tự nhiên (không cần tính percentage), loại bỏ hoàn toàn khả
+    // năng tràn; text-center của TD vẫn căn giữa chữ bên trong qua kế thừa.
+    return `<span class="block overflow-hidden text-ellipsis whitespace-nowrap px-2 py-0.5 rounded uppercase font-black text-[9px] ${bg}" title="${status}">${status}</span>`;
+}
+
+// ==========================================
+// [2026-07-24] FIT KHUNG CUỘN THEO NỘI DUNG THẬT — SAU khi đã render xong
+// ==========================================
+// Bối cảnh: trước đây từng thử co khung theo nội dung ("flex: 0 1 auto") NGAY TỪ
+// LÚC TẢI TRANG — bị lỗi giật hình vì Apps Script host chưa khoá xong kích thước
+// iframe ở thời điểm đó (đã revert về flex-1 mặc định, xem lịch sử fix trước).
+// Lần này khác về BẢN CHẤT: hàm dưới đây chỉ chạy SAU KHI dữ liệu THẬT đã render
+// xong (gọi từ cuối renderDashboardPICK()/renderLiveTablePICK(), tức là sau ít
+// nhất 1 lượt round-trip lên server — luôn muộn hơn nhiều so với thời điểm iframe
+// host khoá kích thước xong ~0.3-0.8s sau khi trang mở) — nên KHÔNG còn rơi vào
+// đúng khung giờ nhạy cảm đó nữa, an toàn để đo & co thật.
+// Cách hoạt động: đo chiều cao NỘI DUNG THẬT (scrollHeight) so với chiều cao
+// ĐANG ĐƯỢC CẤP (clientHeight, do flex-1 quyết định) — nếu nội dung ngắn hơn hẳn
+// (còn dư >=4px), chuyển sang "flex: 0 1 auto" để hết khoảng trắng thừa; nếu dữ
+// liệu đủ nhiều/nhiều hơn khoảng trống khả dụng, giữ nguyên flex-1 (cuộn nội bộ
+// bình thường, không cắt bớt — luôn hiện đủ dữ liệu, không giới hạn số dòng).
+function spxFitScrollContainer(containerId) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    requestAnimationFrame(() => {
+        const contentH = el.scrollHeight;
+        const allocatedH = el.clientHeight;
+        if (allocatedH > 0 && contentH < allocatedH - 4) {
+            el.style.flex = '0 1 auto';
+        } else {
+            el.style.flex = ''; // đủ/nhiều dữ liệu hơn khoảng trống -> quay lại flex-1 mặc định
+        }
+    });
+}
+// Đo lại khi đổi kích thước cửa sổ (vd thu/phóng trình duyệt, xoay màn hình) — debounce nhẹ.
+let _spxFitResizeTimer = null;
+window.addEventListener('resize', () => {
+    clearTimeout(_spxFitResizeTimer);
+    _spxFitResizeTimer = setTimeout(() => {
+        spxFitScrollContainer('pickScrollArea');
+        spxFitScrollContainer('pickLiveScrollArea');
+    }, 200);
+});
+
+function renderDashboardPICK() {
+    if (globalCacheDataPICK.length === 0) return;
+    const selectEl = document.getElementById('driverSelectPICK'); let t_driver = selectEl.value.split(" (")[0]; const selectedStatuses = Array.from(activeStatusesPICK);
+    driverOrderCountPICK = {}; sortedDriversPICK.forEach(d => driverOrderCountPICK[d] = new Set());
+    globalCacheDataPICK.forEach(row => { const drv = row[6].toString().trim(); if (driverOrderCountPICK[drv]) driverOrderCountPICK[drv].add(row[2]); });
+    Array.from(selectEl.options).forEach(opt => { if(opt.value !== "") opt.text = `${opt.value.split(" (")[0]} (${driverOrderCountPICK[opt.value.split(" (")[0]]?.size || 0})`; });
+    let dataContext = t_driver ? globalCacheDataPICK.filter(r => r[6].toString().trim() === t_driver) : globalCacheDataPICK;
+    let bestRowForOrder = new Map();
+    dataContext.forEach(row => {
+        const orderNo = row[2]; let currentRank = Math.max(getRankPICK(row[3]), getRankPICK(row[4])) || 1;
+        let bucket = currentRank===5?"inbounded":currentRank===4?"done":currentRank===3?"arrived":currentRank===2?"accepted":"expected";
+        if (!bestRowForOrder.has(orderNo) || currentRank > bestRowForOrder.get(orderNo).rank) { bestRowForOrder.set(orderNo, { row: row, rank: currentRank, bucket: bucket }); }
+    });
+    let stCount = { "expected":0, "accepted":0, "arrived":0, "done":0, "inbounded":0 }; let etaCount = { "12:00":0, "19:00":0, "21:00":0 }; let finalMatchesToRender = [];
+    bestRowForOrder.forEach((val, orderNo) => {
+        stCount[val.bucket]++; const rowEta = val.row[7]; if (etaCount.hasOwnProperty(rowEta)) etaCount[rowEta]++;
+        const statusOk = selectedStatuses.length === 0 || selectedStatuses.includes(val.bucket);
+        const etaOk = activeEtaPICK.size === 0 || activeEtaPICK.has(rowEta);
+        if (statusOk && etaOk) finalMatchesToRender.push(val.row);
+    });
+    ['expected','accepted','arrived','done','inbounded'].forEach(b => document.getElementById(`stat-pick-${b}`).innerText = stCount[b]);
+    ['12:00','19:00','21:00'].forEach(k => { const el = document.getElementById(`stat-eta-${k === '12:00' ? '1200' : k === '19:00' ? '1900' : '2100'}`); if (el) el.innerText = etaCount[k]; });
+    document.getElementById('stat-total-pick').innerText = bestRowForOrder.size;
+    const tbody = document.getElementById('tableBodyPICK'); currentDisplayedOrderNumbersPICK = [];
+    if (finalMatchesToRender.length > 0) {
+        finalMatchesToRender.sort((a,b) => a[0].toString().localeCompare(b[0].toString(),'vi') || a[1].toString().localeCompare(b[1].toString(),'vi'));
+        if (etaSortPICK) { finalMatchesToRender.sort((a,b) => { const ea = (a[7]||'').toString(), eb = (b[7]||'').toString(); return etaSortPICK === 'asc' ? ea.localeCompare(eb) : eb.localeCompare(ea); }); }
+        // [FIX-PERF] TRƯỚC: tbody.innerHTML += trong forEach → mỗi lần += trình duyệt phải
+        // parse lại TOÀN BỘ chuỗi HTML đã tích luỹ từ đầu (độ phức tạp O(n²)). Với vài nghìn
+        // dòng (sau khi gộp nhiều .xlsx từ file .zip) → đơ cứng nhiều giây, thậm chí phút.
+        // NAY: gom HTML từng dòng vào 1 mảng, join 1 lần rồi gán innerHTML DUY NHẤT 1 LẦN
+        // (O(n)) → chỉ 1 lần reflow/repaint thay vì hàng nghìn lần.
+        // Thêm content-visibility:auto cho các dòng ngoài khung nhìn để trình duyệt bỏ qua
+        // tính layout/paint cho tới khi cuộn tới gần, giúp cuộn mượt hơn với bảng dài.
+        const rowsHtml = new Array(finalMatchesToRender.length);
+        finalMatchesToRender.forEach((r, idx) => {
+            currentDisplayedOrderNumbersPICK.push(r[2]);
+            rowsHtml[idx] = `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors" style="content-visibility:auto;contain-intrinsic-size:auto 42px;"><td class="text-center font-black text-slate-400 w-10">${idx + 1}</td><td class="font-bold text-slate-700 dark:text-slate-300 text-[11px] max-w-[150px] truncate" title="${_pickEsc(r[0])}">${_pickEsc(r[0])}</td><td class="text-slate-500 dark:text-slate-400 text-[11px] font-semibold max-w-[150px] truncate" title="${_pickEsc(r[1])}">${_pickEsc(r[1])}</td><td class="font-black text-[11px] overflow-hidden"><div class="copy-id-cell bg-slate-50 dark:bg-[#1e293b] hover:bg-slate-800 hover:text-white dark:hover:bg-slate-700 px-3 py-1.5 rounded-lg text-slate-700 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-slate-700 transition-all cursor-pointer inline-flex items-center gap-2 max-w-full" onclick="copySingleIDPICK('${_pickEscJsAttr(r[2])}', this)"><i class="fas fa-copy text-slate-400 opacity-50 shrink-0"></i><span class="truncate">${_pickEsc(r[2])}</span><span class="id-tooltip">✅ Copy thành công!</span></div></td><td class="text-center overflow-hidden">${getUIBadgePICK(r[3])}</td><td class="text-center overflow-hidden">${getUIBadgePICK(r[4])}</td><td class="text-center font-black text-slate-400 text-[11px] overflow-hidden">${_pickEsc(r[5])}</td><td class="text-center overflow-hidden">${getEtaBadgePICK(r[7])}</td><td class="text-center font-bold text-slate-500 dark:text-slate-400 text-[11px]" title="Thời gian tạo đơn pick (ngày + giờ)">${formatDateTimeShortPICK(r[9]) || '—'}</td><td class="text-center font-bold text-slate-500 dark:text-slate-400 text-[11px]" title="Thời gian tài xế thao tác thành công (ngày + giờ)">${formatDateTimeShortPICK(r[10]) || '—'}</td><td class="text-slate-500 dark:text-slate-400 text-[11px] font-semibold max-w-[140px] truncate" title="${_pickEsc(r[8] || '')}">${_pickEsc(r[8]) || '—'}</td></tr>`;
+        });
+        tbody.innerHTML = rowsHtml.join('');
+        // [FIX-PERF] Gắn cache {el, r} — dùng tbody.children (không kéo layout) để map đúng
+        // thứ tự với finalMatchesToRender vừa render ra.
+        renderedRowsPICK = finalMatchesToRender.map((r, idx) => ({ el: tbody.children[idx], r }));
+        document.getElementById('stat-display-pick').innerText = currentDisplayedOrderNumbersPICK.length; updateInlineFiltersPICK(finalMatchesToRender);
+    } else {
+        renderedRowsPICK = [];
+        const filterParts = getActiveFilterDescPICK();
+        const filterHint = filterParts.length > 0 ? `<p class="text-[10px] mt-2 text-amber-500 dark:text-amber-400 font-black"><i class="fas fa-filter mr-1"></i>Đang lọc theo: ${filterParts.join(' • ')}</p>` : '';
+        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-20 text-emerald-500 dark:text-emerald-400"><div class="w-12 h-12 bg-emerald-50 dark:bg-[#1e293b] rounded-full flex items-center justify-center mx-auto mb-2 border border-emerald-100 dark:border-emerald-800/50 shadow-sm"><i class="fas fa-check-double text-xl text-emerald-400 dark:text-emerald-300"></i></div><p class="font-black text-xs uppercase tracking-widest">SẠCH BÓNG ĐƠN!</p><p class="text-[10px] mt-1 text-slate-500 dark:text-slate-400 font-semibold">Tài xế này không có đơn nào khớp với bộ lọc.</p>${filterHint}</td></tr>`; document.getElementById('stat-display-pick').innerText = "0";
+    }
+    spxFitScrollContainer('pickScrollArea'); // co khung theo dữ liệu THẬT vừa render — xem giải thích ở định nghĩa hàm
+}
+
+// BỘ ĐÔI HÀM COPY ĐỘC LẬP CHO PICK
+// [FIX 2026-07] TRƯỚC ĐÂY dùng chung id toast "pick" với các thông báo loading/lỗi
+// đồng bộ dữ liệu (showToast(...,"pick")) -> nếu người dùng bấm COPY đúng lúc có
+// 1 toast "pick" khác đang hiển thị (VD: đang đồng bộ dữ liệu), 2 thông báo giẫm
+// lên nhau khiến thông báo copy bị đổi nội dung/nuốt mất ngay lập tức -> người
+// dùng "không biết là đã copy hay chưa". Nay dùng id toast RIÊNG "pick-copy" để
+// không bao giờ bị việc khác ghi đè, và thêm .catch để báo lỗi rõ ràng thay vì
+// im lặng khi trình duyệt chặn quyền clipboard.
+function copyOrderNumbersPICK() {
+    if (currentDisplayedOrderNumbersPICK.length === 0) return showToast(pickT("Không có mã nào để copy"), "error", "pick-copy");
+    navigator.clipboard.writeText(currentDisplayedOrderNumbersPICK.join('\n'))
+        .then(() => showToast(`✅ Đã copy ${currentDisplayedOrderNumbersPICK.length} mã đơn`, "success", "pick-copy"))
+        .catch(err => showToast(pickT("Copy thất bại: ") + (err && err.message ? err.message : "trình duyệt chặn quyền clipboard"), "error", "pick-copy"));
+}
+
+function copySingleIDPICK(id, el) {
+    if (!id) return;
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(id)
+            .then(() => { triggerCopyUIPICK(el); showToast(`✅ Đã copy: ${id}`, "success", "pick-copy-single"); })
+            .catch(err => showToast(pickT("Copy thất bại: ") + (err && err.message ? err.message : "trình duyệt chặn quyền clipboard"), "error", "pick-copy-single"));
+    } else {
+        try {
+            const temp = document.createElement("textarea"); temp.value = id; document.body.appendChild(temp);
+            temp.select(); document.execCommand("copy"); document.body.removeChild(temp);
+            triggerCopyUIPICK(el); showToast(`✅ Đã copy: ${id}`, "success", "pick-copy-single");
+        } catch (err) {
+            showToast(pickT("Copy thất bại: ") + (err && err.message ? err.message : "không rõ nguyên nhân"), "error", "pick-copy-single");
+        }
+    }
+}
+
+function triggerCopyUIPICK(el) { if (el) { el.classList.add('copied'); setTimeout(() => el.classList.remove('copied'), 1500); } }
+
+// ==========================================
+// TỰ ĐỘNG KHÔI PHỤC DỮ LIỆU PICK GẦN NHẤT (không cần bấm)
+// ==========================================
+function restorePickCachePICK() {
+    let raw;
+    try { raw = localStorage.getItem('SPX_Pick_Cache'); } catch(e) { return; }
+    if (!raw) return;
+    let payload;
+    try { payload = JSON.parse(raw); } catch(e) { return; }
+    const data = payload.data || [];
+    if (!Array.isArray(data) || data.length === 0) return;
+
+    globalCacheDataPICK = data;
+    sortedDriversPICK = Array.isArray(payload.drivers) ? payload.drivers : [];
+
+    // [FIX] KHÔNG set lại ô ngày theo payload.targetDate nữa — ô ngày luôn giữ mặc
+    // định hôm nay (đã set ở _pickSetDefaultDate phía trên). Bảng dữ liệu khôi phục
+    // vẫn hiển thị bình thường, nhưng nếu ngày trong dữ liệu khôi phục khác hôm nay,
+    // nhãn "🔄 Đã khôi phục (giờ:phút)" bên dưới sẽ cảnh báo rõ cho user biết đây là
+    // dữ liệu cũ, tránh trường hợp user tưởng nhầm ô ngày đang đúng ngày của data.
+
+    const select = document.getElementById('driverSelectPICK');
+    if (select) {
+        select.innerHTML = '<option value="">-- Tất cả tài xế --</option>';
+        sortedDriversPICK.forEach(d => { select.appendChild(new Option(d, d)); });
+        if (sortedDriversPICK.length > 0) select.value = sortedDriversPICK[0];
+    }
+
+    RUNTIME_CACHE.pickData = []; globalCacheDataPICK.forEach(r => { RUNTIME_CACHE.pickData.push({ trackingNumber: r[2], processStatus: r[4], finalStatus: r[3], station: r[1], eta: r[7] }); });
+
+    // Đánh dấu rõ 2 ô upload là dữ liệu khôi phục (không phải file vừa chọn thật) —
+    // tránh user hiểu lầm là file vẫn còn được chọn.
+    const taskName = document.getElementById('taskFileNamePICK'), taskIcon = document.getElementById('taskIconPICK');
+    const assignName = document.getElementById('assignFileNamePICK'), assignIcon = document.getElementById('assignIconPICK');
+    const timeStr = payload.timestamp ? new Date(payload.timestamp).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'}) : '';
+    if (taskName) { taskName.innerText = `🔄 Đã khôi phục (${timeStr})`; taskName.className = 'text-[11px] font-black truncate w-full text-amber-600 dark:text-amber-400'; }
+    if (taskIcon) taskIcon.className = 'fas fa-clock-rotate-left text-amber-500 text-lg';
+    if (assignName) { assignName.innerText = `🔄 Đã khôi phục (${timeStr})`; assignName.className = 'text-[11px] font-black truncate w-full text-amber-600 dark:text-amber-400'; }
+    if (assignIcon) assignIcon.className = 'fas fa-clock-rotate-left text-amber-500 text-lg';
+
+    updateCardUIPICK(); updateEtaChipUIPICK(); updateEtaSortIconPICK(); renderDashboardPICK();
+
+    // [FIX-UX] Badge "Cập nhật X phút trước" phải phản ánh ĐÚNG thời điểm dữ liệu gốc được
+    // nạp (payload.timestamp) — KHÔNG phải lúc khôi phục (Date.now()). Nếu dữ liệu khôi phục
+    // đã cũ (vd. mở lại app sau 2 tiếng), badge phải hiện đỏ cảnh báo ngay từ đầu, không đợi
+    // đến khi user tự nhận ra qua nhãn "🔄 Đã khôi phục" nhỏ ở ô upload.
+    if (typeof spxSetLastSeenTs === 'function' && payload.timestamp) spxSetLastSeenTs('pick', payload.timestamp);
+
+    if (typeof showToast === 'function') {
+        showToast(`${pickT('Đã mở lại dữ liệu Pick lần trước')}${timeStr ? ' (' + timeStr + ')' : ''} — ${pickT('tải file mới nếu muốn cập nhật')}`, "success", "pick");
+    }
+}
+restorePickCachePICK();
+
+// ==========================================
+// [2026-07] TAB LIVE — switch nguồn, load, render, lọc
+// ==========================================
+
+/**
+ * switchSourcePICK('manual'|'live')
+ * Toggle UI theo pattern đã dùng cho FMS (fmsAsideManualBlock/fmsAsideLiveBlock) —
+ * đổi cả sidebar (aside) lẫn khu vực bảng chính (main), KHÔNG đụng tới dữ liệu/logic
+ * của nguồn còn lại (2 mảng globalCacheDataPICK / globalCacheDataPICKLive độc lập).
+ */
+/**
+ * [2026-07-24] Chế độ xem "Thoải mái" — TÁI DÙNG đúng pattern nút #btnQhDensity của
+ * module Quá Hạn (xem CSS #view-pick.pick-comfortable trong index.html), áp dụng cho
+ * CẢ Manual lẫn Live vì 2 bảng dùng chung class ".data-table". 2 nút riêng
+ * (#btnPickDensity ở toolbar Manual, #btnPickDensityLive ở toolbar Live) cùng gọi 1 hàm,
+ * cùng phản ánh đúng trạng thái đang bật/tắt — user đổi chế độ ở tab nào, tab kia (khi
+ * chuyển qua) cũng thấy đồng bộ vì cả 2 đọc chung 1 key localStorage.
+ */
+const PICK_DENSITY_KEY = 'spx_pick_density';
+
+function applyPickDensityFromStorage() {
+    const comfortable = localStorage.getItem(PICK_DENSITY_KEY) === 'comfortable';
+    const root = document.getElementById('view-pick');
+    if (root) root.classList.toggle('pick-comfortable', comfortable);
+    ['btnPickDensity', 'btnPickDensityLive'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.classList.toggle('pick-density-active', comfortable);
+    });
+}
+
+function togglePickDensity() {
+    const comfortable = localStorage.getItem(PICK_DENSITY_KEY) === 'comfortable';
+    localStorage.setItem(PICK_DENSITY_KEY, comfortable ? 'compact' : 'comfortable');
+    applyPickDensityFromStorage();
+}
+
+applyPickDensityFromStorage();
+
+// ════════════════════════════════════════════════════════════════════════
+// [MỚI] HÀNG LẤY TỒN ĐỌNG KÉO DÀI — khai thác sheet '2. FM high aging'
+// Sheet này trước đây CHỈ được dùng để đếm số dòng (hiện badge), bỏ phí toàn
+// bộ 27 cột — trong đó có cột 'action' = THAO TÁC CẦN XỬ LÝ (đã xác nhận với
+// nghiệp vụ) và 'risk level' = mức tuổi đã chia sẵn.
+//
+// CHI PHÍ (đo thật, không ước lượng — xem ghi chú đầy đủ ở pick_getFmHighAging
+// trong backend.gs): sheet chỉ 113 dòng, payload ~28.6 KB = 0.26% so với
+// nguồn LM (37.336 dòng). Không ảnh hưởng trần thời gian/dung lượng GAS.
+// Lọc theo trạm NGAY TẠI BACKEND để không gửi thừa đơn của trạm khác.
+// ════════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
+// [MỚI] HÀNG LẤY THEO GIAI ĐOẠN — khai thác sheet 'summary FM realtime'
+// Đọc số liệu ĐÃ TỔNG HỢP SẴN thay vì tự cộng từ sheet chi tiết.
+// Lý do (đo thật): sheet chi tiết '3. FM action realtime' có 136.594 dòng,
+// phải đọc theo lô kèm ngân sách thời gian và CÓ THỂ ĐỌC THIẾU; sheet tổng
+// hợp chỉ 327 dòng, đọc 1 lần, nhẹ hơn 418 lần. Đã đối chiếu 2 nguồn khớp
+// TUYỆT ĐỐI ở cả cấp tổng (136.593) lẫn từng trạm (319/319 trạm, 0 lệch).
+// ════════════════════════════════════════════════════════════════════════
+function pickLoadFmSummary(){
+  // [SỬA LỖI THẬT — báo cáo kèm ảnh: chọn SUP "Hồ Viết Phú" và AOM "Lê Tấn
+  // Quang" đều ra "148 đơn — 45-DLK Krong Pak 02 Hub" Y HỆT NHAU]
+  // Nguyên nhân: hàm này chỉ đọc localStorage('spx_default_hub') — tức trạm
+  // đã chọn ở header — và HOÀN TOÀN bỏ qua việc Admin đang xem thử theo vai 1
+  // AOM/SUP cụ thể. Nên đổi người ở dropdown header không làm số liệu đổi.
+  // ĐÚNG: nếu đang xem thử 1 AOM/SUP -> phạm vi là ĐÚNG các trạm của người đó
+  // (dùng spxGetHubsInOrgScope, hàm dùng chung có sẵn trong index.html).
+  var station = (localStorage.getItem('spx_default_hub') || '').trim();
+  var scopeJson = '';
+  var entity = '';
+  try {
+    var lv = window.SPX_PREVIEW_LEVEL;
+    entity = (typeof window.SPX_PREVIEW_ENTITY === 'string') ? window.SPX_PREVIEW_ENTITY : '';
+    if (entity && (lv === 'aom' || lv === 'sup' || lv === 'rom') && typeof spxGetHubsInOrgScope === 'function') {
+      var hubs = spxGetHubsInOrgScope(lv, entity) || [];
+      if (hubs.length) {
+        scopeJson = JSON.stringify(hubs);
+        // Đang xem cả nhóm trạm của người đó -> KHÔNG khoá vào 1 trạm cụ thể,
+        // nếu không sẽ lại hiện đúng 1 trạm như lỗi cũ.
+        station = '';
+      }
+    } else if ((lv === 'aom' || lv === 'sup') && !entity &&
+               (!station || station.toUpperCase() === 'ALL')) {
+      // [SỬA — cùng lý do với JS_Quahan] Xem thử cấp AOM/SUP mà chưa chọn người
+      // cụ thể và cũng chưa chọn Hub -> không có gì neo phạm vi. KHÔNG đổ số
+      // liệu toàn hệ thống (AOM/SUP ngoài đời không thấy số cả nước), thay bằng
+      // lời nhắc chọn người.
+      pickRenderFmNeedPick(lv === 'aom' ? 'AOM' : 'SUP');
+      return;
+    }
+  } catch (eSc) { console.warn('[Pick FM summary] Không xác định được phạm vi:', eSc); }
+
+  google.script.run
+    .withFailureHandler(function(e){
+      console.warn('[Pick FM summary] Không tải được:', e);
+      var w = document.getElementById('pickFmSummaryWrap');
+      if (w) w.classList.add('hidden');
+    })
+    .withSuccessHandler(function(s){
+      var r; try { r = JSON.parse(s); } catch(e){ r = null; }
+      var w = document.getElementById('pickFmSummaryWrap');
+      if (!r || !r.success || !r.total) { if (w) w.classList.add('hidden'); return; }
+      r._entity = entity;
+      pickRenderFmSummary(r);
+    })
+    .pick_getFmSummary(station && station.toUpperCase() !== 'ALL' ? station : '', scopeJson);
+}
+
+function pickRenderFmNeedPick(who){
+  var wrap = document.getElementById('pickFmSummaryWrap');
+  var body = document.getElementById('pickFmSummaryBody');
+  var tot  = document.getElementById('pickFmSummaryTotal');
+  var rank = document.getElementById('pickFmSummaryRank');
+  if (!wrap || !body) return;
+  if (tot) tot.textContent = '—';
+  if (rank) rank.textContent = '';
+  body.innerHTML =
+    '<div style="text-align:center;padding:16px 12px;color:#64748b">' +
+      '<i class="fas fa-user-tag" style="font-size:18px;opacity:.3;margin-bottom:6px;display:block"></i>' +
+      '<div style="font-size:11px;font-weight:700;margin-bottom:4px">Chưa chọn ' + _pickEsc(who) + ' cụ thể</div>' +
+      '<div style="font-size:10px;line-height:1.6;max-width:400px;margin:0 auto">' +
+        'Chọn một ' + _pickEsc(who) + ' ở thanh trên cùng, hoặc chọn 1 Hub, để xem đúng phạm vi trạm được quản lý.' +
+      '</div>' +
+    '</div>';
+  wrap.classList.remove('hidden');
+}
+
+function pickRenderFmSummary(r){
+  var wrap = document.getElementById('pickFmSummaryWrap');
+  var body = document.getElementById('pickFmSummaryBody');
+  var tot  = document.getElementById('pickFmSummaryTotal');
+  var rank = document.getElementById('pickFmSummaryRank');
+  if (!wrap || !body) return;
+
+  // Ưu tiên hiện số của TRẠM ĐANG XEM; không có thì hiện toàn hệ thống.
+  var d = r.mine || r.total;
+  var isMine = !!r.mine;
+
+  if (tot) tot.textContent = (d.sum || 0).toLocaleString('vi-VN') + ' đơn';
+  if (rank) {
+    // [SỬA] Ghi rõ đang xem phạm vi của AI — trước đây chỉ ghi số trạm nên
+    // đổi người ở dropdown mà nhãn không đổi, không biết đã áp dụng hay chưa.
+    rank.textContent = isMine
+      ? '— ' + d.station
+      : '— ' + (r.nStations || 0) + ' ' +
+        (r._entity ? ('trạm của ' + r._entity)
+                   : (r.scoped ? 'trạm trong phạm vi quản lý' : 'trạm (toàn hệ thống)'));
+  }
+
+  function card(label, val, tone, hint){
+    var pct = d.sum ? Math.round(val / d.sum * 100) : 0;
+    return '<div class="flex-1 min-w-[110px] bg-white dark:bg-slate-800 rounded-lg border border-sky-100 dark:border-slate-700 p-2.5"'
+      + (hint ? ' title="' + _pickEsc(hint) + '"' : '') + '>'
+      + '<div class="text-[9px] font-bold uppercase text-slate-400 mb-1">' + _pickEsc(label) + '</div>'
+      + '<div class="text-lg font-black text-' + tone + '-600 dark:text-' + tone + '-400 leading-none">' + (val || 0).toLocaleString('vi-VN') + '</div>'
+      + '<div class="text-[9px] text-slate-400 mt-1">' + pct + '%</div>'
+      + '</div>';
+  }
+
+  var html = '<div class="flex flex-wrap gap-2 mb-3">'
+    + card('Chờ lấy',   d.pickup,  'rose',    'Pending Pickup — chưa đi lấy hàng')
+    + card('Chờ nhập',  d.inbound, 'amber',   'Pending Inbound — đã lấy, chưa nhập kho')
+    + card('Chờ đóng',  d.packed,  'sky',     'Pending Packed — chưa đóng gói')
+    + card('Chờ niêm',  d.seal,    'emerald', 'Pending Seal — chưa niêm phong')
+    + '</div>';
+
+  // Phân bố theo loại đơn — chỉ hiện loại thực sự có số, tránh cột 0 gây rối
+  var types = [['MP', d.mp], ['Social', d.social], ['Reverse', d.reverse], ['CB', d.cb], ['WH', d.wh]];
+  var shown = types.filter(function(t){ return t[1] > 0; });
+  if (shown.length) {
+    var tSum = shown.reduce(function(s,t){ return s + t[1]; }, 0);
+    html += '<div class="text-[9px] font-black uppercase text-sky-700 dark:text-sky-400 mb-1.5">Theo loại đơn</div>'
+         + '<div class="flex flex-wrap gap-1.5">';
+    shown.forEach(function(t){
+      var pct = tSum ? Math.round(t[1] / tSum * 100) : 0;
+      html += '<span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white dark:bg-slate-800 border border-sky-100 dark:border-slate-700 text-[10px]">'
+           + '<span class="font-bold text-slate-600 dark:text-slate-300">' + _pickEsc(t[0]) + '</span>'
+           + '<span class="font-black text-sky-600 dark:text-sky-400">' + t[1].toLocaleString('vi-VN') + '</span>'
+           + '<span class="text-slate-400">' + pct + '%</span>'
+           + '</span>';
+    });
+    html += '</div>';
+  }
+
+  body.innerHTML = html;
+  wrap.classList.remove('hidden');
+}
+
+var _pickFmAgingData = null;
+var _pickFmAgingOpen = false;
+
+window.pickToggleFmAging = function(){
+  _pickFmAgingOpen = !_pickFmAgingOpen;
+  var body = document.getElementById('pickFmAgingBody');
+  var chev = document.getElementById('pickFmAgingChevron');
+  if (body) body.classList.toggle('hidden', !_pickFmAgingOpen);
+  if (chev) chev.className = 'fas fa-chevron-' + (_pickFmAgingOpen ? 'up' : 'down');
+};
+
+function pickLoadFmAging(){
+  var station = (localStorage.getItem('spx_default_hub') || '').trim();
+  // Không chọn trạm cụ thể (ALL) -> bỏ qua, vì danh sách toàn hệ thống không
+  // giúp ích cho người dùng đang làm việc tại 1 trạm.
+  if (!station || station.toUpperCase() === 'ALL') {
+    var w0 = document.getElementById('pickFmAgingWrap');
+    if (w0) w0.classList.add('hidden');
+    return;
+  }
+  google.script.run
+    .withFailureHandler(function(e){
+      console.warn('[Pick FM aging] Không tải được:', e);
+      var w = document.getElementById('pickFmAgingWrap');
+      if (w) w.classList.add('hidden'); // lỗi thì ẩn hẳn, không để khối rỗng
+    })
+    .withSuccessHandler(function(s){
+      var r; try { r = JSON.parse(s); } catch(e){ r = null; }
+      var w = document.getElementById('pickFmAgingWrap');
+      if (!r || !r.success || !r.data || !r.data.length) {
+        if (w) w.classList.add('hidden'); // trạm không có đơn tồn đọng -> không hiện gì
+        return;
+      }
+      _pickFmAgingData = r;
+      pickRenderFmAging();
+    })
+    .pick_getFmHighAging(station);
+}
+
+function pickRenderFmAging(){
+  var r = _pickFmAgingData;
+  if (!r) return;
+  var wrap = document.getElementById('pickFmAgingWrap');
+  var body = document.getElementById('pickFmAgingBody');
+  var cnt  = document.getElementById('pickFmAgingCount');
+  var risk = document.getElementById('pickFmAgingRisk');
+  if (!wrap || !body) return;
+
+  if (cnt) cnt.textContent = r.data.length + ' đơn';
+
+  // Tóm tắt mức tuổi ngay trên tiêu đề — ưu tiên hiện mức NẶNG nhất trước.
+  if (risk) {
+    var order = ['> 7 Day', '5-7 Day', '2-5 Day', '37H - 2 Day'];
+    var parts = [];
+    order.forEach(function(k){
+      if (r.byRisk[k]) parts.push(r.byRisk[k] + ' ' + k);
+    });
+    risk.textContent = parts.length ? '— ' + parts.join(' · ') : '';
+  }
+
+  var html = '';
+
+  // ── Phần 1: Gom theo THAO TÁC CẦN LÀM — đây là thứ giúp xử lý được ngay ──
+  var actions = Object.keys(r.byAction).sort();
+  if (actions.length) {
+    html += '<div class="text-[10px] font-black uppercase text-amber-700 dark:text-amber-400 mb-2">Việc cần xử lý</div>'
+         + '<div class="flex flex-wrap gap-2 mb-3">';
+    actions.forEach(function(a){
+      html += '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-800 text-[10px]">'
+           + '<span class="font-bold text-slate-700 dark:text-slate-200">' + _pickEsc(a) + '</span>'
+           + '<span class="font-black text-amber-600 dark:text-amber-400">' + r.byAction[a] + '</span>'
+           + '</span>';
+    });
+    html += '</div>';
+  }
+
+  // ── Phần 2: Danh sách đơn, nặng nhất lên đầu ──
+  var rank = { '> 7 Day': 0, '5-7 Day': 1, '2-5 Day': 2, '37H - 2 Day': 3 };
+  var rows = r.data.slice().sort(function(a, b){
+    var ra = (rank[a.risk] !== undefined) ? rank[a.risk] : 9;
+    var rb = (rank[b.risk] !== undefined) ? rank[b.risk] : 9;
+    if (ra !== rb) return ra - rb;
+    return (b.days || 0) - (a.days || 0);
+  });
+
+  html += '<div class="overflow-x-auto max-h-64 overflow-y-auto"><table class="w-full text-[10px]">'
+       + '<thead class="sticky top-0 bg-amber-50 dark:bg-amber-900/30"><tr class="text-amber-700 dark:text-amber-400">'
+       + '<th class="text-left py-1.5 px-1">Mã đơn</th>'
+       + '<th class="text-left py-1.5 px-1">Việc cần làm</th>'
+       + '<th class="text-left py-1.5 px-1">Trạng thái</th>'
+       + '<th class="text-right py-1.5 px-1">Mức tuổi</th>'
+       + '<th class="text-right py-1.5 px-1">Giá trị</th>'
+       + '</tr></thead><tbody>';
+
+  rows.forEach(function(d){
+    var isHot = (d.risk === '> 7 Day' || d.risk === '5-7 Day');
+    html += '<tr class="border-b border-amber-100/60 dark:border-amber-900/30' + (isHot ? ' bg-rose-50/60 dark:bg-rose-900/15' : '') + '">'
+      + '<td class="py-1.5 px-1"><span class="font-mono font-bold text-slate-700 dark:text-slate-200 cursor-pointer hover:text-sky-600" '
+        + 'onclick="navigator.clipboard.writeText(\'' + _pickEscJsAttr(d.id) + '\');'
+        + 'if(typeof showToast===\'function\')showToast(\'✅ Đã copy: ' + _pickEscJsAttr(d.id) + '\',\'success\',\'pick\')" '
+        + 'title="Bấm để copy">' + _pickEsc(d.id) + '</span></td>'
+      + '<td class="py-1.5 px-1 font-bold text-amber-700 dark:text-amber-400">' + _pickEsc(d.action || '—') + '</td>'
+      + '<td class="py-1.5 px-1 text-slate-500 dark:text-slate-400">' + _pickEsc(d.status || '—') + '</td>'
+      + '<td class="py-1.5 px-1 text-right font-black ' + (isHot ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-300') + '">'
+        + _pickEsc(d.risk || '—') + '</td>'
+      + '<td class="py-1.5 px-1 text-right text-slate-600 dark:text-slate-300">' + (d.cogs || 0).toLocaleString('vi-VN') + ' đ</td>'
+      + '</tr>';
+  });
+  html += '</tbody></table></div>';
+
+  body.innerHTML = html;
+  wrap.classList.remove('hidden');
+}
+
+function switchSourcePICK(mode) {
+    if (mode !== 'manual' && mode !== 'live') return;
+    pickSourceMode = mode;
+    const isLive = mode === 'live';
+
+    const tabManual = document.getElementById('pickSrcTabManual');
+    const tabLive = document.getElementById('pickSrcTabLive');
+    if (tabManual) { tabManual.classList.toggle('active', !isLive); tabManual.setAttribute('aria-selected', String(!isLive)); }
+    if (tabLive) { tabLive.classList.toggle('active', isLive); tabLive.setAttribute('aria-selected', String(isLive)); }
+
+    const asideManual = document.getElementById('pickAsideManualBlock');
+    const asideLive = document.getElementById('pickAsideLiveBlock');
+    if (asideManual) asideManual.classList.toggle('hidden', isLive);
+    if (asideLive) asideLive.classList.toggle('hidden', !isLive);
+
+    const mainManual = document.getElementById('pickManualMainBlock');
+    const mainLive = document.getElementById('pickLiveMainBlock');
+    if (mainManual) mainManual.classList.toggle('hidden', isLive);
+    if (mainLive) { mainLive.classList.toggle('hidden', !isLive); mainLive.classList.toggle('flex', isLive); }
+
+    // [FIX] Tài xế (Rider) + Trạng thái đơn (Expected/Accepted/Arrived/Done/Inbounded) là khái
+    // niệm riêng của luồng Manual (gán tài xế theo file Task/Assign) — Live không có bước gán
+    // tài xế nên không áp dụng. 2 khối này nằm ngoài pickAsideManualBlock/pickAsideLiveBlock
+    // trong index.html (để giữ đúng layout flex-1/overflow-y-auto gốc) nên phải ẩn/hiện riêng
+    // ở đây thay vì trông cậy vào 2 khối aside phía trên.
+    const riderSection = document.getElementById('pickRiderSection');
+    const statusListSection = document.getElementById('categoryListPICK');
+    const liveStatusListSection = document.getElementById('pickLiveStatusList');
+    if (riderSection) riderSection.classList.toggle('hidden', isLive);
+    if (statusListSection) statusListSection.classList.toggle('hidden', isLive);
+    if (liveStatusListSection) liveStatusListSection.classList.toggle('hidden', !isLive);
+
+    if (isLive && !pickLiveIndexLoadedOnce) loadLiveIndexPICK();
+    applyPickDensityFromStorage();
+}
+
+/**
+ * loadLiveIndexPICK()
+ * Gọi khi mở tab Live lần đầu — lấy DANH SÁCH TRẠM (+ số đơn) qua
+ * pick_live_getStations() để render bộ chọn trạm, KHÔNG tải dữ liệu chi tiết.
+ * User có ít trạm (thường: sup/aom/station-role, xem PICK_LIVE_AUTOLOAD_MAX_HUBS)
+ * được tự động chọn hết + tự tải luôn, giữ trải nghiệm liền mạch như trước.
+ * Admin (hoặc user nhiều trạm) BẮT BUỘC tự chọn tay trong bộ chọn trạm.
+ */
+function loadLiveIndexPICK() {
+    if (pickLiveLoading) return;
+    if (typeof google === 'undefined' || !google.script || !google.script.run) return;
+    pickLiveLoading = true;
+
+    const statusEl = document.getElementById('pickLiveConnStatus');
+    if (statusEl) { statusEl.textContent = pickT('Đang tải...'); statusEl.className = 'text-[10px] font-black px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'; }
+
+    google.script.run
+        .withSuccessHandler(res => {
+            pickLiveLoading = false;
+            pickLiveIndexLoadedOnce = true;
+            let parsed;
+            try { parsed = JSON.parse(res); } catch(e) { parsed = { success: false, error: pickT('Không đọc được phản hồi từ server') }; }
+            if (!parsed.success) {
+                if (statusEl) { statusEl.textContent = parsed.notReady ? pickT('Chưa sẵn sàng') : pickT('Lỗi'); statusEl.className = 'text-[10px] font-black px-2 py-0.5 rounded-md err'; }
+                renderStationPickerPICK([]);
+                showToast(parsed.error || pickT('Không tải được danh sách trạm Live'), 'error', 'pick');
+                return;
+            }
+            pickLiveAllStations = parsed.hubs || [];
+            pickLiveRole = parsed.role;
+
+            const noteEl = document.getElementById('pickLiveScheduleNote');
+            if (noteEl) { const noteText = parsed.updatedNote ? ('🕐 ' + parsed.updatedNote) : ''; noteEl.textContent = noteText; noteEl.title = noteText; }
+            const updatedAtEl = document.getElementById('pickLiveUpdatedAt');
+            if (updatedAtEl && parsed.generatedAt) updatedAtEl.textContent = new Date(parsed.generatedAt).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'});
+            if (statusEl) { statusEl.textContent = pickT('Đã kết nối'); statusEl.className = 'text-[10px] font-black px-2 py-0.5 rounded-md ok'; }
+
+            renderStationPickerPICK(pickLiveAllStations);
+            updatePickLiveViewModeUI();
+
+            // [2026-07-23] User chỉ quản lý ĐÚNG 1 trạm thì việc chọn "1 trạm/Nhiều trạm"
+            // là vô nghĩa (không có gì để chọn nhiều) — ẩn hẳn toggle, đỡ rối mắt.
+            // Họ chỉ thấy đúng 1 trạm của mình, tự động tải, không thấy trạm nào khác.
+            const modeToggleBar = document.getElementById('pickLiveModeToggleBar');
+            if (modeToggleBar) modeToggleBar.classList.toggle('hidden', pickLiveAllStations.length <= 1);
+
+            // [2026-07-23] Chế độ 'single' (mặc định): luôn đồng bộ về ĐÚNG 1 trạm
+            // đang chọn ở header — không cần user tick tay. Chế độ 'multi': giữ lại
+            // hành vi cũ (user ít trạm thì tự chọn hết + tự tải).
+            if (pickLiveViewMode === 'single') {
+                pickLiveSyncWithHeaderHub();
+            } else if (pickLiveRole !== 'admin' && pickLiveAllStations.length > 0 && pickLiveAllStations.length <= PICK_LIVE_AUTOLOAD_MAX_HUBS) {
+                pickLiveAllStations.forEach(s => pickLiveSelectedStations.add(s.name));
+                renderStationPickerPICK(pickLiveAllStations);
+                loadSelectedStationsPICKLive();
+            }
+        })
+        .withFailureHandler(err => {
+            pickLiveLoading = false;
+            pickLiveIndexLoadedOnce = true;
+            if (statusEl) { statusEl.textContent = pickT('Lỗi kết nối'); statusEl.className = 'text-[10px] font-black px-2 py-0.5 rounded-md err'; }
+            showToast(pickT('Lỗi tải danh sách trạm Live: ') + (err && err.message ? err.message : err), 'error', 'pick');
+        })
+        .pick_live_getStations();
+}
+
+/**
+ * renderStationPickerPICK(stations)
+ * Vẽ danh sách checkbox chọn trạm trong #pickLiveStationList (lọc theo ô tìm
+ * #pickLiveStationSearch nếu có nhập), kèm đếm "đã chọn/tổng" ở #pickLiveSelectedCount.
+ */
+function renderStationPickerPICK(stations) {
+    const box = document.getElementById('pickLiveStationList');
+    if (!box) return;
+    const searchEl = document.getElementById('pickLiveStationSearch');
+    const q = searchEl ? searchEl.value.trim().toLowerCase() : '';
+    const filtered = q ? stations.filter(s => s.name.toLowerCase().includes(q)) : stations;
+
+    if (!filtered.length) {
+        box.innerHTML = `<div class="text-[10px] text-slate-400 text-center py-3">${stations.length ? pickT('Không có trạm khớp tìm kiếm') : pickT('Chưa có trạm nào (đang chờ dữ liệu nền)')}</div>`;
+    } else {
+        box.innerHTML = filtered.map(s => {
+            const checked = pickLiveSelectedStations.has(s.name) ? 'checked' : '';
+            const safe = _pickEscJsAttr(s.name);
+            const label = _pickEsc(s.name);
+            return `<label class="flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-[11px] font-bold">
+<span class="flex items-center gap-2 truncate"><input type="checkbox" ${checked} onchange="toggleStationSelectPICKLive('${safe}', this.checked)"> <span class="truncate" title="${label}">${label}</span></span>
+<span class="text-slate-400 font-black shrink-0">${s.count}</span>
+</label>`;
+        }).join('');
+    }
+    const countEl = document.getElementById('pickLiveSelectedCount');
+    if (countEl) countEl.textContent = `${pickLiveSelectedStations.size}/${stations.length} trạm đã chọn`;
+}
+
+function filterStationListPICKLive() { renderStationPickerPICK(pickLiveAllStations); }
+
+function toggleStationSelectPICKLive(name, checked) {
+    if (checked) {
+        if (pickLiveSelectedStations.size >= PICK_LIVE_MAX_HUBS_PER_SELECT) {
+            showToast(`Chỉ chọn tối đa ${PICK_LIVE_MAX_HUBS_PER_SELECT} trạm/lần để đảm bảo tốc độ tải`, 'error', 'pick');
+            renderStationPickerPICK(pickLiveAllStations);
+            return;
+        }
+        pickLiveSelectedStations.add(name);
+    } else {
+        pickLiveSelectedStations.delete(name);
+    }
+    renderStationPickerPICK(pickLiveAllStations);
+}
+
+function selectAllStationsPICKLive() {
+    pickLiveAllStations.slice(0, PICK_LIVE_MAX_HUBS_PER_SELECT).forEach(s => pickLiveSelectedStations.add(s.name));
+    if (pickLiveAllStations.length > PICK_LIVE_MAX_HUBS_PER_SELECT) {
+        showToast(`Đã chọn ${PICK_LIVE_MAX_HUBS_PER_SELECT} trạm đầu (giới hạn/lần) — bỏ bớt để chọn trạm khác nếu cần`, 'error', 'pick');
+    }
+    renderStationPickerPICK(pickLiveAllStations);
+}
+
+function clearStationSelectionPICKLive() {
+    pickLiveSelectedStations.clear();
+    renderStationPickerPICK(pickLiveAllStations);
+}
+
+/**
+ * loadSelectedStationsPICKLive()
+ * Nút "Tải dữ liệu đã chọn" — gọi pick_live_getStationData() CHỈ với các trạm
+ * đang được chọn. Đây là lần duy nhất dữ liệu chi tiết được tải/render.
+ */
+function loadSelectedStationsPICKLive() {
+    if (pickLiveLoading) return;
+    if (pickLiveSelectedStations.size === 0) { showToast(pickT('Chọn ít nhất 1 trạm để xem dữ liệu Live'), 'error', 'pick'); return; }
+    if (typeof google === 'undefined' || !google.script || !google.script.run) return;
+    pickLiveLoading = true;
+
+    const icon = document.getElementById('pickLiveRefreshIcon');
+    if (icon) icon.classList.add('fa-spin');
+    const finish = () => { pickLiveLoading = false; if (icon) icon.classList.remove('fa-spin'); };
+
+    google.script.run
+        .withSuccessHandler(res => {
+            finish();
+            let parsed;
+            try { parsed = JSON.parse(res); } catch(e) { parsed = { success: false, error: pickT('Không đọc được phản hồi từ server') }; }
+            if (!parsed.success) {
+                showToast(parsed.error || pickT('Không tải được dữ liệu Live'), 'error', 'pick');
+                return;
+            }
+            globalCacheDataPICKLive = parsed.data || [];
+            pickLiveCurrentPage = 1;
+            // [2026-07-23] Dữ liệu vừa đổi trạm/nạp mới — bỏ các bộ lọc cột chi tiết
+            // của lượt trước (Trạm/Loại đơn/AOM/SUP/mốc giờ), tránh trường hợp còn dính
+            // filter cũ khiến bảng trạm mới hiện "0 dòng" mà user không hiểu vì sao.
+            // Ô search + chip trạng thái vẫn giữ nguyên vì đó là lựa chọn có chủ đích.
+            PICK_LIVE_FILTER_COLS.forEach(col => { isFilterActivePICKLive[col] = false; multiFiltersPICKLive[col].clear(); });
+            const updatedAtEl = document.getElementById('pickLiveUpdatedAt');
+            if (updatedAtEl && parsed.generatedAt) updatedAtEl.textContent = new Date(parsed.generatedAt).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'});
+            if (typeof spxSetLastSeenTs === 'function') spxSetLastSeenTs('pick-live', parsed.fetchedAt || Date.now());
+
+            updateLiveStatusChipsPICK();
+            renderLiveTablePICK();
+            const nStations = parsed.stationsReturned ? parsed.stationsReturned.length : pickLiveSelectedStations.size;
+            showToast(`Đã tải ${globalCacheDataPICKLive.length} đơn từ ${nStations} trạm`, 'success', 'pick');
+        })
+        .withFailureHandler(err => {
+            finish();
+            showToast(pickT('Lỗi tải dữ liệu Live: ') + (err && err.message ? err.message : err), 'error', 'pick');
+        })
+        .pick_live_getStationData(Array.from(pickLiveSelectedStations));
+}
+
+/**
+ * refreshLivePICK()
+ * Nút "Làm mới dữ liệu" — build lại cache nền NGAY (pick_live_forceRefreshNow,
+ * có LockService bảo vệ) rồi tải lại danh sách trạm + dữ liệu đang chọn (nếu có).
+ * Đây là 1 lần full-scan sheet nên chỉ nên bấm khi thật sự cần dữ liệu mới nhất
+ * ngay, không nên tự động lặp lại.
+ */
+function refreshLivePICK() {
+    if (pickLiveLoading) return;
+    if (typeof google === 'undefined' || !google.script || !google.script.run) return;
+    pickLiveLoading = true;
+    const icon = document.getElementById('pickLiveRefreshIcon');
+    if (icon) icon.classList.add('fa-spin');
+    showToast(pickT('Đang làm mới dữ liệu nguồn (có thể mất vài giây)...'), 'success', 'pick');
+
+    google.script.run
+        .withSuccessHandler(() => {
+            pickLiveLoading = false;
+            if (icon) icon.classList.remove('fa-spin');
+            loadLiveIndexPICK();
+            if (pickLiveSelectedStations.size > 0) loadSelectedStationsPICKLive();
+        })
+        .withFailureHandler(err => {
+            pickLiveLoading = false;
+            if (icon) icon.classList.remove('fa-spin');
+            showToast(pickT('Lỗi làm mới: ') + (err && err.message ? err.message : err), 'error', 'pick');
+        })
+        .pick_live_forceRefreshNow();
+}
+
+/**
+ * updateLiveStatusChipsPICK()
+ * Sinh chip trạng thái ĐỘNG theo giá trị fleet_final_status thực tế có trong dữ liệu
+ * (khác các chip ETA cố định của Manual) — dùng fleet_final_status (không phải
+ * action_needed) vì đây mới là "trạng thái đơn" tương đương cột Order Status bên
+ * Manual; action_needed chỉ là bước xử lý nội bộ (vd '0. Pending Pickup'), không
+ * phải trạng thái đơn thật.
+ */
+// [2026-07-23] Chuyển từ dải chip ngang (đầu bảng) sang card dọc trong sidebar, ĐÚNG
+// pattern trực quan của Manual (categoryListPICK: icon + nhãn + số đếm, bấm để lọc).
+// Vì Live có nhiều loại fleet_final_status hơn 5 trạng thái cố định của Manual nên
+// vẫn phải sinh động theo dữ liệu thực tế — chỉ đổi CÁCH HIỂN THỊ cho đồng bộ mắt nhìn.
+function updateLiveStatusChipsPICK() {
+    const container = document.getElementById('pickLiveStatusChips');
+    const summaryBar = document.getElementById('pickLiveStatusSummaryBar');
+    if (!container && !summaryBar) return;
+    const counts = {};
+    globalCacheDataPICKLive.forEach(r => { const s = r.fleetFinalStatus || pickT('(Trống)'); counts[s] = (counts[s] || 0) + 1; });
+    const statuses = Object.keys(counts).sort();
+
+    if (statuses.length === 0) {
+        if (container) container.innerHTML = `<div class="text-[10px] font-bold text-slate-400 text-center py-4"><i class="fas fa-inbox mb-1 block text-lg opacity-40"></i>Chưa có dữ liệu</div>`;
+        if (summaryBar) summaryBar.innerHTML = '';
+        return;
+    }
+
+    const cardsHtml = [], summaryHtml = [];
+    statuses.forEach(s => {
+        const active = activeLiveStatusesPICK.has(s);
+        const sl = s.toLowerCase();
+        // Suy ra icon/màu theo nhóm ý nghĩa trạng thái — cùng logic màu với getLiveStatusBadgePICK
+        // (badge trong bảng) để 1 trạng thái luôn có cùng 1 màu ở card, dải tóm tắt lẫn bảng dữ liệu.
+        let icon = 'fa-circle-dot', iconColor = 'text-slate-400', badgeBg = 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400', dotColor = 'bg-slate-400';
+        if (sl.includes('fail') || sl.includes('lost') || sl.includes('cancel') || sl.includes('onhold')) { icon = 'fa-triangle-exclamation'; iconColor = 'text-rose-500'; badgeBg = 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400'; dotColor = 'bg-rose-500'; }
+        else if (sl.includes('handedover') || sl.includes('done') || sl.includes('success')) { icon = 'fa-warehouse'; iconColor = 'text-emerald-500'; badgeBg = 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'; dotColor = 'bg-emerald-500'; }
+        else if (sl.includes('pack') || sl.includes('seal')) { icon = 'fa-box'; iconColor = 'text-indigo-500'; badgeBg = 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400'; dotColor = 'bg-indigo-500'; }
+        else if (sl.includes('assign') || sl.includes('pending') || sl.includes('created')) { icon = 'fa-hourglass-start'; iconColor = 'text-amber-500'; badgeBg = 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'; dotColor = 'bg-amber-500'; }
+        const safe = _pickEscJsAttr(s);
+        const label = _pickEsc(s);
+
+        if (container) {
+            // [UI/UX-FIX] Quay về card 1 cột dọc, đủ chữ — state code Live thường dài
+            // (vd "FMHub_pickup_pending_failed") nên không dùng truncate/2-cột như trước.
+            const activeCls = active
+                ? 'ring-2 ring-sky-400 dark:ring-sky-500/60 bg-sky-50 dark:bg-sky-900/20 border-transparent shadow-md'
+                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e293b]';
+            // [2026-07-24] FIX TRÀN/ĐÈ CHỮ: bản cũ bọc icon+label trong 1 div con riêng rồi để
+            // label "break-words" — với state code dài KHÔNG có khoảng trắng (chỉ có "_"),
+            // trình duyệt bắt buộc phải ngắt giữa từ, xuống 2 dòng, mà khối 3 chấm đếm bên phải
+            // (shrink-0, canh giữa theo items-center) lại chồng ngay lên dòng 2 vừa xuống —
+            // đúng như ảnh "FMHUB_PICKUP_HANDEDOV" / "22" đè lên / "D_STA". Nguyên nhân gốc: có
+            // "min-w-0" ở div CHA nhưng KHÔNG có ở chính cái span chứa chữ — flex item mặc định
+            // min-width:auto (co theo nội dung), với text 1 "từ" dài thì auto = full width, nên
+            // không co được. Sửa đúng gốc: bỏ div lồng, đưa icon/label/badge làm 3 con trực tiếp
+            // của 1 hàng flex, gắn "flex-1 min-w-0 truncate" THẲNG lên chính span label — giờ
+            // label luôn co đúng phần còn lại, hiện 1 dòng + "...", không bao giờ đè lên badge.
+            cardsHtml.push(`<div onclick="toggleLiveStatusFilterPICK('${safe}')" title="${label}" class="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl cursor-pointer border font-black text-[10px] uppercase text-slate-700 dark:text-slate-300 transition-all active:scale-[0.98] ${activeCls}"><i class="fas ${icon} ${iconColor} text-base w-5 text-center shrink-0"></i><span class="truncate flex-1 min-w-0">${label}</span><span class="px-2.5 py-1 rounded-lg ${badgeBg} shadow-inner shrink-0 tabular-nums">${counts[s]}</span></div>`);
+        }
+        if (summaryBar) {
+            // Dải tóm tắt: chữ đơn giản (chấm màu + nhãn + số), KHÔNG bọc "card" — hiển thị
+            // TRỰC TIẾP ngoài toolbar chính, đủ toàn bộ trạng thái, vẫn bấm lọc được như card.
+            const activeCls = active ? 'text-sky-600 dark:text-sky-400 underline decoration-2 underline-offset-2' : 'hover:text-slate-700 dark:hover:text-slate-200';
+            summaryHtml.push(`<span onclick="toggleLiveStatusFilterPICK('${safe}')" title="${label}" class="inline-flex items-center gap-1 cursor-pointer transition-colors ${activeCls}"><span class="w-1.5 h-1.5 rounded-full ${dotColor} shrink-0"></span>${label} <b class="tabular-nums">${counts[s]}</b></span>`);
+        }
+    });
+    if (container) container.innerHTML = cardsHtml.join('');
+    if (summaryBar) summaryBar.innerHTML = summaryHtml.join('');
+}
+
+function toggleLiveStatusFilterPICK(status) {
+    if (activeLiveStatusesPICK.has(status)) activeLiveStatusesPICK.delete(status); else activeLiveStatusesPICK.add(status);
+    pickLiveCurrentPage = 1;
+    updateLiveStatusChipsPICK();
+    renderLiveTablePICK();
+}
+
+/**
+ * getLiveStatusBadgePICK(status)
+ * Badge màu riêng cho fleet_final_status của Live — KHÔNG dùng chung getUIBadgePICK()
+ * (badge của Manual) vì tập giá trị khác hẳn: Manual dùng "Order Status" tự nhập tay,
+ * Live dùng nguyên văn state code từ hệ thống fleet (vd FMHub_Pickup_Assigned,
+ * FMHub_Packed, FMHub_pickup_pending_failed...). Match theo từ khóa để chịu được
+ * các state code mới phát sinh sau này mà không phải sửa code.
+ */
+function getLiveStatusBadgePICK(status) {
+    const s = (status || '').toString().toLowerCase();
+    let bg = 'bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700';
+    if (s.includes('fail') || s.includes('lost') || s.includes('cancel')) bg = 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 border border-rose-200 dark:border-rose-800/50';
+    else if (s.includes('pack') || s.includes('seal')) bg = 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 border border-indigo-200 dark:border-indigo-800/50';
+    else if (s.includes('inbound') || s.includes('done') || s.includes('success')) bg = 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border border-emerald-200 dark:border-emerald-800/50';
+    else if (s.includes('assign') || s.includes('pending')) bg = 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 border border-amber-200 dark:border-amber-800/50';
+    const raw = (status || pickT('(Trống)')).toString();
+    const esc = raw.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // [2026-07-24] FIX TRÀN: state code fleet dài (vd FMHub_Pickup_Handedover_to_Station,
+    // 35 ký tự, không có khoảng trắng để ngắt dòng) từng bung ra khỏi khung 150px cố định
+    // (table-fixed) và đè lên cột Loại đơn bên cạnh, vì <td> không cắt overflow. Thêm
+    // "truncate" + "max-w-full" NGAY TRÊN badge (không chỉ ở <td>) để chữ tự co lại có
+    // dấu "..." khi hẹp, kèm title= để vẫn xem được đầy đủ khi hover.
+    return `<span title="${esc}" class="inline-block max-w-full align-middle truncate px-2 py-0.5 rounded-md text-[10px] font-black ${bg}">${esc}</span>`;
+}
+
+// [2026-07-24] Cột "Action" — thay hẳn AOM/SUP (dư thừa: 1 trạm = 1 AOM/SUP cố định,
+// user đã lọc theo trạm nên biết rõ, không cần lặp lại trên từng dòng). Dùng đúng field
+// `actionNeeded` backend đã đọc sẵn từ cột K "action_needed" của sheet '3. FM action
+// realtime' (xem _pickLive_buildRawSnapshot_ trong backend.gs) — cho biết ĐANG CẦN LÀM GÌ
+// TIẾP THEO với đơn đó, hữu ích hơn nhiều so với AOM/SUP tĩnh.
+function getActionBadgePICK(action) {
+    const s = (action || '').toString().toLowerCase();
+    let bg = 'bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700', icon = 'fa-circle-dot';
+    if (s.includes('pickup')) { bg = 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 border border-amber-200 dark:border-amber-800/50'; icon = 'fa-hand'; }
+    else if (s.includes('inbound')) { bg = 'bg-sky-50 dark:bg-sky-900/20 text-sky-600 border border-sky-200 dark:border-sky-800/50'; icon = 'fa-warehouse'; }
+    else if (s.includes('seal')) { bg = 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 border border-indigo-200 dark:border-indigo-800/50'; icon = 'fa-box'; }
+    if (!action) return `<span class="text-slate-300 dark:text-slate-600 text-[10px]">—</span>`;
+    const esc = action.toString().replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // [2026-07-24] Cùng fix chống tràn với getLiveStatusBadgePICK — phòng khi action_needed
+    // sau này có giá trị dài hơn: icon giữ cố định (shrink-0), chỉ phần chữ co lại + "...".
+    return `<span title="${esc}" class="inline-flex items-center gap-1 max-w-full px-2 py-0.5 rounded-md text-[10px] font-black ${bg}"><i class="fas ${icon} text-[9px] shrink-0"></i><span class="truncate min-w-0">${esc}</span></span>`;
+}
+
+// ==========================================
+// [2026-07-23] BỘ LỌC CHI TIẾT THEO CỘT CHO BẢNG LIVE
+// ==========================================
+// Trước đây Live chỉ có 1 ô search (mã đơn/trạm) + chip trạng thái — không lọc
+// được theo Trạm (hữu ích khi bật chế độ "Nhiều trạm"), Loại đơn hay mốc giờ
+// Tạo/Cập nhật. Nay thêm dropdown multi-select CÙNG PATTERN với bên Manual
+// (multiFiltersPICK/updateInlineFiltersPICK): checkbox độc lập, đếm số dòng
+// theo từng giá trị, nút "CHỈ" cô lập nhanh, ô tìm trong dropdown.
+// [2026-07-24] Bỏ AOM/SUP khỏi bộ lọc (đã bỏ khỏi bảng — xem lý do ở
+// getActionBadgePICK phía trên), thêm 'action' để lọc theo việc cần làm tiếp.
+// Trạng thái đơn (fleetFinalStatus) đã có chip riêng (updateLiveStatusChipsPICK)
+// nên KHÔNG lặp lại thành dropdown ở đây.
+const PICK_LIVE_FILTER_COLS = ['station', 'orderType', 'action', 'created', 'lastTouch'];
+const PICK_LIVE_FILTER_TITLES = { station: pickT('Tất cả trạm'), orderType: pickT('Loại đơn'), action: 'Action', created: pickT('TG Tạo'), lastTouch: pickT('TG cập nhật') };
+let multiFiltersPICKLive = { station: new Set(), orderType: new Set(), action: new Set(), created: new Set(), lastTouch: new Set() };
+let isFilterActivePICKLive = { station: false, orderType: false, action: false, created: false, lastTouch: false };
+
+
+// Backend trả epoch ms cho createdTime/lastTouchAt (xem fmtDT trong renderLiveTablePICK) —
+// quy về mốc 3 tiếng giống getTimeBucketPICK bên Manual để dùng làm giá trị lọc.
+function getLiveTimeBucketPICK(epochMs) {
+    if (!epochMs) return pickT('Chưa xác định');
+    const d = new Date(epochMs);
+    const start = Math.floor(d.getHours() / 3) * 3, end = start + 3;
+    return `${String(start).padStart(2, '0')}:00-${String(end).padStart(2, '0')}:00`;
+}
+function liveFilterValueOf(r, col) {
+    switch (col) {
+        case 'station': return r.stationName || '';
+        case 'orderType': return r.orderType || '';
+        case 'action': return r.actionNeeded || '';
+        case 'created': return getLiveTimeBucketPICK(r.createdTime);
+        case 'lastTouch': return getLiveTimeBucketPICK(r.lastTouchAt);
+    }
+    return '';
+}
+function toggleDropdownPICKLive(col) {
+    PICK_LIVE_FILTER_COLS.forEach(c => { if (c !== col) document.getElementById(`dropdown-live-${c}`)?.classList.add('hidden'); });
+    document.getElementById(`dropdown-live-${col}`)?.classList.toggle('hidden');
+}
+function filterDropdownListPICKLive(col, term) {
+    term = (term || '').toLowerCase();
+    document.querySelectorAll(`.dropdown-live-item-${col}`).forEach(item => { item.style.display = item.querySelector('.item-text').innerText.toLowerCase().includes(term) ? 'flex' : 'none'; });
+}
+function toggleAllDropdownPICKLive(col, isChecked) {
+    document.querySelectorAll(`.chk-live-${col}`).forEach(chk => { if (chk.closest('label').style.display !== 'none') chk.checked = isChecked; });
+}
+function applyMultiSelectPICKLive(col) {
+    const chks = document.querySelectorAll(`.chk-live-${col}`);
+    multiFiltersPICKLive[col].clear(); let allChecked = true;
+    chks.forEach(chk => { if (chk.checked) multiFiltersPICKLive[col].add(chk.value); else allChecked = false; });
+    isFilterActivePICKLive[col] = !allChecked;
+    updateFilterButtonTextPICKLive(col);
+    document.getElementById(`dropdown-live-${col}`)?.classList.add('hidden');
+    pickLiveCurrentPage = 1; renderLiveTablePICK();
+}
+function selectOnlyPICKLive(col, value) {
+    multiFiltersPICKLive[col] = new Set([value]); isFilterActivePICKLive[col] = true;
+    updateFilterButtonTextPICKLive(col);
+    document.getElementById(`dropdown-live-${col}`)?.classList.add('hidden');
+    pickLiveCurrentPage = 1; renderLiveTablePICK();
+}
+document.addEventListener('click', function (e) {
+    const btn = e.target.closest('.pick-live-only-btn');
+    if (btn) { e.preventDefault(); e.stopPropagation(); selectOnlyPICKLive(btn.dataset.col, btn.dataset.val); }
+});
+document.addEventListener('click', function (e) { if (!e.target.closest('.multi-select-container-live')) { PICK_LIVE_FILTER_COLS.forEach(c => document.getElementById(`dropdown-live-${c}`)?.classList.add('hidden')); } });
+
+function updateFilterButtonTextPICKLive(col) {
+    const btnText = document.getElementById(`btn-text-live-${col}`); if (!btnText) return;
+    if (!isFilterActivePICKLive[col] || multiFiltersPICKLive[col].size === 0) {
+        btnText.innerHTML = `<i class="fas fa-filter"></i> ${PICK_LIVE_FILTER_TITLES[col]}`;
+        btnText.parentElement.classList.remove('bg-sky-50', 'text-sky-600', 'dark:bg-sky-900/30', 'dark:text-sky-400');
+        btnText.parentElement.classList.add('text-orange-600', 'dark:text-orange-400');
+    } else {
+        btnText.innerHTML = `<i class="fas fa-filter"></i> Đã lọc (${multiFiltersPICKLive[col].size})`;
+        btnText.parentElement.classList.remove('text-orange-600', 'dark:text-orange-400');
+        btnText.parentElement.classList.add('bg-sky-50', 'text-sky-600', 'dark:bg-sky-900/30', 'dark:text-sky-400');
+    }
+}
+
+// Build danh sách checkbox từ dữ liệu ĐÃ lọc theo trạng thái+search (baseRows) —
+// để bộ đếm phản ánh đúng ngữ cảnh đang xem, giống cách Manual làm ở updateInlineFiltersPICK.
+function updateInlineFiltersPICKLive(rows) {
+    const uniqueVals = {}; PICK_LIVE_FILTER_COLS.forEach(c => uniqueVals[c] = new Map());
+    const bump = (map, key) => map.set(key, (map.get(key) || 0) + 1);
+    rows.forEach(r => PICK_LIVE_FILTER_COLS.forEach(c => bump(uniqueVals[c], liveFilterValueOf(r, c) || pickT('(Trống)'))));
+    PICK_LIVE_FILTER_COLS.forEach(col => {
+        let html = '';
+        Array.from(uniqueVals[col].keys()).sort((a, b) => String(a).localeCompare(String(b), 'vi')).forEach(v => {
+            const strVal = String(v), count = uniqueVals[col].get(v);
+            const isChecked = !isFilterActivePICKLive[col] || multiFiltersPICKLive[col].has(strVal) ? 'checked' : '';
+            const safeAttr = strVal.replace(/"/g, '&quot;');
+            const label = strVal.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            html += `<div class="group flex items-center gap-1.5 p-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded transition-colors dropdown-live-item-${col}">`
+                 + `<label class="flex items-center gap-2 flex-1 min-w-0 cursor-pointer">`
+                 + `<input type="checkbox" value="${safeAttr}" class="chk-live-${col} w-3 h-3 text-sky-500 dark:text-sky-400 rounded border-slate-300 dark:border-slate-600 dark:bg-slate-900 cursor-pointer shrink-0" ${isChecked}>`
+                 + `<span class="item-text truncate text-slate-700 dark:text-slate-300 text-[10px] font-bold">${label}</span>`
+                 + `</label>`
+                 + `<span class="text-slate-400 dark:text-slate-500 text-[9px] font-black shrink-0 tabular-nums">${count}</span>`
+                 + `<button type="button" class="pick-live-only-btn opacity-0 group-hover:opacity-100 text-sky-500 dark:text-sky-400 hover:text-sky-600 text-[9px] font-black uppercase shrink-0 transition-opacity px-1" data-col="${col}" data-val="${safeAttr}" title="Chỉ lọc riêng mục này">CHỈ</button>`
+                 + `</div>`;
+        });
+        const listEl = document.getElementById(`list-live-${col}`); if (listEl) listEl.innerHTML = html;
+        updateFilterButtonTextPICKLive(col);
+    });
+}
+
+// Sinh HTML dropdown lọc cho 1 cột Live — dùng chung 1 template thay vì lặp lại
+// khối HTML dài trong index.html (khớp #pickliveth-<col> đặt sẵn trong <thead>).
+function _pickLiveFilterThHtml(col, align) {
+    const dir = align === 'right' ? 'right-0' : 'left-0';
+    return `<div class="multi-select-container-live relative w-full"><div onclick="toggleDropdownPICKLive('${col}')" class="w-full bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded px-2 py-1.5 text-[11px] cursor-pointer flex justify-between items-center text-orange-600 dark:text-orange-400"><span id="btn-text-live-${col}" class="truncate"><i class="fas fa-filter"></i> ${PICK_LIVE_FILTER_TITLES[col]}</span></div>`
+         + `<div id="dropdown-live-${col}" class="hidden absolute top-[calc(100%+4px)] ${dir} w-52 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 shadow-xl rounded-xl z-[100] flex flex-col font-normal text-slate-700 dark:text-slate-300">`
+         + `<div class="p-2 border-b dark:border-slate-700"><input type="text" placeholder="Tìm..." data-i18n-placeholder="Tìm..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded text-[10px] px-2 py-1.5 outline-none text-slate-700 dark:text-white" onkeyup="filterDropdownListPICKLive('${col}', this.value)"></div>`
+         + `<div class="max-h-48 overflow-y-auto p-1 custom-scroll" id="list-live-${col}"></div>`
+         + `<div class="p-2 border-t dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex justify-between rounded-b-xl"><label class="text-[11px] text-sky-500 dark:text-sky-400 font-black cursor-pointer flex items-center gap-1"><input type="checkbox" checked onchange="toggleAllDropdownPICKLive('${col}', this.checked)" class="w-3 h-3 rounded"> <span data-i18n-ui="Chọn hết">Chọn hết</span></label><button onclick="applyMultiSelectPICKLive('${col}')" class="bg-sky-500 text-white px-3 py-1 rounded text-[11px] font-black" data-i18n-ui="ÁP DỤNG">ÁP DỤNG</button></div>`
+         + `</div></div>`;
+}
+function initPickLiveFilterHeaders() {
+    const aligns = { station: 'left', orderType: 'left', created: 'left', lastTouch: 'right', action: 'right' };
+    PICK_LIVE_FILTER_COLS.forEach(col => {
+        const th = document.getElementById(`pickliveth-${col}`);
+        if (th && !th.dataset.init) { th.innerHTML = _pickLiveFilterThHtml(col, aligns[col]); th.dataset.init = '1'; }
+    });
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPickLiveFilterHeaders);
+else initPickLiveFilterHeaders();
+
+function resetInlineFiltersPICKLive() {
+    PICK_LIVE_FILTER_COLS.forEach(col => { isFilterActivePICKLive[col] = false; multiFiltersPICKLive[col].clear(); updateFilterButtonTextPICKLive(col); });
+    const s = document.getElementById('search-id-pick-live'); if (s) s.value = '';
+    activeLiveStatusesPICK.clear();
+    pickLiveCurrentPage = 1;
+    updateLiveStatusChipsPICK(); renderLiveTablePICK();
+}
+
+function applyLiveFilterPICKDebounced() {
+    clearTimeout(liveFilterDebounceTimerPICK);
+    liveFilterDebounceTimerPICK = setTimeout(() => { pickLiveCurrentPage = 1; renderLiveTablePICK(); }, 120);
+}
+
+/**
+ * pickLivePagerGo(delta)
+ * Chuyển trang bảng Live (-1 = trước, +1 = sau) — gọi từ nút phân trang trong
+ * pickLiveMainBlock. Cuộn khu vực bảng về đầu để user không mất vị trí đọc.
+ */
+function pickLivePagerGo(delta) {
+    pickLiveCurrentPage += delta;
+    renderLiveTablePICK();
+    const area = document.getElementById('pickLiveScrollArea');
+    if (area) area.scrollTop = 0;
+}
+
+/**
+ * renderLiveTablePICK()
+ * Lọc theo search (mã đơn / trạm) + chip trạng thái đang chọn trên
+ * globalCacheDataPICKLive (đã CHỈ chứa dữ liệu của các trạm user chọn — không
+ * còn toàn bộ hệ thống), rồi PHÂN TRANG (PICK_LIVE_PAGE_SIZE dòng/trang) trước
+ * khi render vào #tableBodyPICKLive — tránh treo trình duyệt khi 1 trạm/nhóm
+ * trạm vẫn còn hàng chục nghìn dòng. Nút "COPY MÃ HIỂN THỊ" vẫn copy TOÀN BỘ
+ * mã khớp bộ lọc (mọi trang), không chỉ trang đang xem — xem currentDisplayedOrderNumbersPICKLive.
+ * KHÔNG lọc lại theo quyền (đã lọc ở server trong pick_live_getStationData).
+ */
+function renderLiveTablePICK() {
+    const tbody = document.getElementById('tableBodyPICKLive');
+    if (!tbody) return;
+    const searchEl = document.getElementById('search-id-pick-live');
+    const q = searchEl ? searchEl.value.trim().toLowerCase() : '';
+
+    let baseRows = globalCacheDataPICKLive;
+    if (activeLiveStatusesPICK.size > 0) baseRows = baseRows.filter(r => activeLiveStatusesPICK.has(r.fleetFinalStatus || pickT('(Trống)')));
+    if (q) baseRows = baseRows.filter(r => (r.shipmentId || '').toLowerCase().includes(q) || (r.stationName || '').toLowerCase().includes(q));
+
+    // [2026-07-23] Xây danh sách checkbox lọc chi tiết TỪ baseRows (đã lọc trạng
+    // thái+search), rồi mới áp thêm bộ lọc cột (Trạm/Loại đơn/AOM/SUP/mốc giờ).
+    updateInlineFiltersPICKLive(baseRows);
+    let rows = baseRows;
+    PICK_LIVE_FILTER_COLS.forEach(col => {
+        if (isFilterActivePICKLive[col] && multiFiltersPICKLive[col].size > 0) {
+            rows = rows.filter(r => multiFiltersPICKLive[col].has(String(liveFilterValueOf(r, col) || pickT('(Trống)'))));
+        }
+    });
+
+    const totalEl = document.getElementById('stat-total-pick-live');
+    const dispEl = document.getElementById('stat-display-pick-live');
+    if (totalEl) totalEl.innerText = globalCacheDataPICKLive.length;
+    if (dispEl) dispEl.innerText = rows.length;
+    currentDisplayedOrderNumbersPICKLive = rows.map(r => r.shipmentId);
+
+    const totalPages = Math.max(1, Math.ceil(rows.length / PICK_LIVE_PAGE_SIZE));
+    if (pickLiveCurrentPage > totalPages) pickLiveCurrentPage = totalPages;
+    if (pickLiveCurrentPage < 1) pickLiveCurrentPage = 1;
+    const startIdx = (pickLiveCurrentPage - 1) * PICK_LIVE_PAGE_SIZE;
+    const pageRows = rows.slice(startIdx, startIdx + PICK_LIVE_PAGE_SIZE);
+
+    const pagerInfo = document.getElementById('pickLivePagerInfo');
+    if (pagerInfo) pagerInfo.textContent = rows.length ? `Trang ${pickLiveCurrentPage}/${totalPages} — dòng ${startIdx + 1}-${Math.min(startIdx + PICK_LIVE_PAGE_SIZE, rows.length)}/${rows.length}` : pickT('Không có dữ liệu');
+    const prevBtn = document.getElementById('pickLivePagerPrev');
+    const nextBtn = document.getElementById('pickLivePagerNext');
+    if (prevBtn) prevBtn.disabled = pickLiveCurrentPage <= 1;
+    if (nextBtn) nextBtn.disabled = pickLiveCurrentPage >= totalPages;
+
+    if (pageRows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-20 text-slate-400"><div class="w-12 h-12 bg-slate-50 dark:bg-[#1e293b] rounded-full flex items-center justify-center mx-auto mb-2 border border-slate-100 dark:border-slate-700 shadow-sm"><i class="fas fa-inbox text-xl text-slate-300"></i></div><p class="font-black text-xs uppercase tracking-widest">Không có dữ liệu khớp bộ lọc</p></td></tr>`;
+        spxFitScrollContainer('pickLiveScrollArea');
+        return;
+    }
+
+    const esc = s => (s === null || s === undefined) ? '' : String(s).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // [2026-07] Backend giờ trả epoch ms (number) cho các cột ngày/giờ thay vì chuỗi
+    // đã format sẵn (getDisplayValues() đã bỏ ở BE vì tốn chi phí format ở quy mô lớn)
+    // -> FE tự format dạng "hh:mm dd/mm". Chuỗi thường (do dữ liệu cũ/khác định dạng)
+    // vẫn hiển thị nguyên văn qua nhánh esc().
+    const fmtDT = v => {
+        if (v === '' || v === null || v === undefined) return '';
+        if (typeof v === 'number') {
+            const d = new Date(v);
+            return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')} ${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+        }
+        return esc(v);
+    };
+    // [FIX] Build TỪNG DÒNG trong try/catch riêng — trước đây .map() build cả loạt
+    // trong 1 lần, chỉ cần 1 dòng dữ liệu bất thường (field sai kiểu, v.v.) ném lỗi
+    // là toàn bộ tbody.innerHTML KHÔNG được gán (exception giữa chừng), khiến bảng
+    // "đứng hình" ở lần render thành công gần nhất trong khi ô đếm Tổng/Đang hiện
+    // (đã gán ở TRÊN, trước đoạn build này) vẫn cập nhật đúng số mới — gây cảm giác
+    // "có dữ liệu nhưng không cuộn xuống được". Nay: dòng nào lỗi thì log rõ ra
+    // console (kèm dữ liệu dòng đó) + render 1 hàng cảnh báo thay thế, KHÔNG làm
+    // hỏng các dòng còn lại.
+    let liveRowErrorCount = 0;
+    tbody.innerHTML = pageRows.map((r, idx) => {
+        try {
+            return `<tr>
+<td class="px-3 py-1 text-center border-r dark:border-slate-800 text-slate-400">${startIdx + idx + 1}</td>
+<td class="px-2 py-1 border-r dark:border-slate-800 font-black text-[11px] overflow-hidden"><div class="copy-id-cell bg-slate-50 dark:bg-[#1e293b] hover:bg-slate-800 hover:text-white dark:hover:bg-slate-700 px-2 py-1 rounded-lg text-sky-600 dark:text-sky-400 shadow-sm border border-slate-200 dark:border-slate-700 transition-all cursor-pointer inline-flex items-center gap-1.5 max-w-full" onclick="copySingleIDPICK('${esc(r.shipmentId)}', this)"><i class="fas fa-copy text-slate-400 opacity-60 text-[10px] shrink-0"></i><span class="truncate">${esc(r.shipmentId)}</span><span class="id-tooltip">✅ Copy thành công!</span></div></td>
+<td class="px-2 py-1 border-r dark:border-slate-800 truncate" title="${esc(r.stationName)}">${esc(r.stationName)}</td>
+<td class="px-2 py-1 border-r dark:border-slate-800 overflow-hidden">${getLiveStatusBadgePICK(r.fleetFinalStatus)}</td>
+<td class="px-2 py-1 border-r dark:border-slate-800 text-center">${esc(r.orderType)}</td>
+<td class="px-2 py-1 border-r dark:border-slate-800 truncate" title="${esc(r.productName)}">${esc(r.productName)}</td>
+<td class="px-2 py-1 border-r dark:border-slate-800 text-center">${fmtDT(r.createdTime)}</td>
+<td class="px-2 py-1 border-r dark:border-slate-800 text-center">${fmtDT(r.lastTouchAt)}</td>
+<td class="px-2 py-1 text-center overflow-hidden">${getActionBadgePICK(r.actionNeeded)}</td>
+</tr>`;
+        } catch (err) {
+            liveRowErrorCount++;
+            console.error('[JS_Pick][renderLiveTablePICK] Lỗi build dòng #' + (startIdx + idx + 1) + pickT(' — mã đơn: ') + (r && r.shipmentId) + pickT(' — dữ liệu dòng:'), r, err);
+            return `<tr class="bg-rose-50 dark:bg-rose-900/10"><td class="px-3 py-1 text-center border-r dark:border-slate-800 text-slate-400">${startIdx + idx + 1}</td><td colspan="8" class="px-2 py-1 text-rose-500 dark:text-rose-400 text-[11px] font-bold"><i class="fas fa-triangle-exclamation"></i> Lỗi hiển thị dòng này (mã đơn: ${esc(r && r.shipmentId)}) — xem Console để biết chi tiết.</td></tr>`;
+        }
+    }).join('');
+    if (liveRowErrorCount > 0) {
+        console.warn(`[JS_Pick][renderLiveTablePICK] ${liveRowErrorCount}/${pageRows.length} dòng bị lỗi khi render — gửi log Console (F12) ở trên để xác định nguyên nhân gốc.`);
+    }
+    spxFitScrollContainer('pickLiveScrollArea'); // co khung theo dữ liệu THẬT vừa render — xem giải thích ở định nghĩa hàm
+}
+
+// Khởi tạo đúng trạng thái nút toggle 'single'/'multi' ngay khi module Pick nạp xong
+// (trước khi user mở tab Live lần đầu) — tránh nút hiện sai chế độ trong khoảnh khắc đầu.
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', updatePickLiveViewModeUI);
+else updatePickLiveViewModeUI();
+
+function copyOrderNumbersLivePICK() {
+    if (currentDisplayedOrderNumbersPICKLive.length === 0) return showToast(pickT("Không có mã nào để copy"), "error", "pick-copy");
+    navigator.clipboard.writeText(currentDisplayedOrderNumbersPICKLive.join('\n'))
+        .then(() => showToast(`✅ Đã copy ${currentDisplayedOrderNumbersPICKLive.length} mã đơn`, "success", "pick-copy"))
+        .catch(err => showToast(pickT("Copy thất bại: ") + (err && err.message ? err.message : "trình duyệt chặn quyền clipboard"), "error", "pick-copy"));
+}
+</script>

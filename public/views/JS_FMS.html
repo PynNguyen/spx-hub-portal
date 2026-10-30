@@ -462,27 +462,11 @@ function _bindCsvFileFMS_() {
                 showToast(fmsT("Lỗi: ") + res.error, "error", "fms");
                 return;
             }
-            if (!res || !res.data || typeof res.data !== 'object') {
-                showToast(fmsT("Không tìm thấy dữ liệu hợp lệ trong file."), "error", "fms");
-                return;
-            }
             dataFMS = res; localStorage.setItem('SPX_Onhold_Data', JSON.stringify(res));
             // Cập nhật vào Radar tổng
-            let allFmsItems = [];
-            Object.keys(res.data || {}).forEach(h => {
-                if (res.data[h] && Array.isArray(res.data[h].details)) {
-                    res.data[h].details.forEach(catArr => {
-                        if (Array.isArray(catArr)) {
-                            catArr.forEach(r => {
-                                allFmsItems.push({ shipmentId: r[0], processStatus: r[4], hubName: h });
-                            });
-                        }
-                    });
-                }
-            });
+            let allFmsItems = []; Object.keys(res.data).forEach(h => { res.data[h].details.forEach(catArr => { catArr.forEach(r => { allFmsItems.push({ shipmentId: r[0], processStatus: r[4], hubName: h }); }); }); });
             RUNTIME_CACHE.fmsData = allFmsItems;
-            initHubSelectorFMS(true);
-            showToast(fmsT("Tải dữ liệu FMS hoàn tất!"), "success","fms");
+            initHubSelectorFMS(true); showToast(fmsT("Tải dữ liệu FMS hoàn tất!"), "success","fms");
         }).onhold_processFMSInMemory(evt.target.result);
     };
     reader.readAsText(file); e.target.value = '';

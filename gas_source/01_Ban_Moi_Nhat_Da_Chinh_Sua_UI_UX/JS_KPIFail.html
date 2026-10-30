@@ -1,0 +1,827 @@
+<div class="flex flex-col h-full kfn" id="kfn-root" style="width:100%;min-width:0;flex:1 1 0%">
+<style>
+  .kfn{--kb:#2563eb;--kpur:#5146e5;--kline:#dfe6f0;--ktext:#17243b;--kmut:#6c7a90;--kbg:#f4f7fb;--kcard:#fff;--khead:#f8fafd;--kok-bg:#e8f7ef;--kok:#067647;--kbad-bg:#fee4e2;--kbad:#b42318;--kshadow:0 5px 18px rgba(25,46,79,.07);background:var(--kbg);color:var(--ktext);font-size:13px;font-family:Inter,'Segoe UI',Arial,sans-serif}
+  .dark .kfn{--kline:#243049;--ktext:#e6edf7;--kmut:#8da0bd;--kbg:#0b1121;--kcard:#111a30;--khead:#0f1830;--kok-bg:#0f3a2a;--kok:#34d399;--kbad-bg:#4a1a1a;--kbad:#f87171;--kshadow:none}
+  .kfn *{box-sizing:border-box}
+  .kfn-sel,.kfn-in{border:1px solid var(--kline);background:var(--kcard);color:var(--ktext);border-radius:9px;padding:7px 10px;font-size:12.5px;min-width:130px;outline:none}
+  .kfn-sel:focus,.kfn-in:focus{border-color:var(--kb)}
+  .kfn-in.date{min-width:0;width:136px}
+  .kfn-upd{color:var(--kmut);font-size:11.5px}
+  .kfn-btn{border:1px solid var(--kline);background:var(--kcard);color:var(--ktext);border-radius:9px;padding:6px 12px;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap}
+  .kfn-btn:hover{border-color:var(--kb)} .kfn-btn.on{background:var(--kpur);border-color:var(--kpur);color:#fff} .kfn-btn.pri{background:var(--kb);border-color:var(--kb);color:#fff} .kfn-btn:disabled{opacity:.45;cursor:not-allowed}
+  .kfn-scroll{flex:1;overflow-y:auto;padding:16px 16px 120px}
+  .kfn-crumb{color:var(--kmut);font-size:11.5px;margin-bottom:3px} .kfn-title{font-size:22px;font-weight:900;letter-spacing:-.01em;margin:0}
+  .kfn-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+  .kfn-nav{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+  .kfn-card{background:var(--kcard);border:1px solid var(--kline);border-radius:14px;box-shadow:var(--kshadow);margin-bottom:16px;overflow:hidden}
+  .kfn-ch{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--kline);flex-wrap:wrap}
+  .kfn-ic{width:30px;height:30px;border-radius:9px;background:#eaf0ff;color:#2f5be0;display:grid;place-items:center;font-weight:900} .dark .kfn-ic{background:#1b2a52;color:#9db8ff}
+  .kfn-ct{font-weight:900;font-size:15px} .kfn-cs{color:var(--kmut);font-size:11px;margin-top:1px}
+  .kfn-seg{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap} .kfn-bar{display:flex;gap:8px;align-items:center;padding:10px 16px;flex-wrap:wrap;border-bottom:1px solid var(--kline)}
+  .kfn-chip{background:#eaf0ff;color:#1e40af;border-radius:999px;padding:5px 12px;font-weight:800;font-size:12px} .dark .kfn-chip{background:#1b2a52;color:#9db8ff}
+  .kfn-mon{text-align:center;padding:9px;color:var(--kmut);font-size:12.5px} .kfn-mon b{background:#e8efff;color:#1d4ed8;border-radius:999px;padding:3px 9px;font-size:10px;margin-right:8px}
+  .kfn-wrap{overflow-x:auto}
+  .kfn-tbl{border-collapse:collapse;width:100%;font-size:12.5px}
+  .kfn-tbl th{background:var(--khead);color:var(--kmut);font-weight:800;font-size:10.5px;text-align:center;padding:9px 10px;white-space:nowrap;border-bottom:1px solid var(--kline)}
+  .kfn-tbl th small{display:block;font-weight:600;font-size:9.5px;opacity:.85}
+  .kfn-tbl td{padding:9px 10px;text-align:center;border-bottom:1px solid var(--kline);white-space:nowrap}
+  .kfn-tbl td.nm,.kfn-tbl th.nm{text-align:left;font-weight:800;position:sticky;left:0;background:var(--kcard);z-index:1} .kfn-tbl th.nm{background:var(--khead)}
+  .kfn-tbl td.nm small{display:block;color:var(--kmut);font-weight:600;font-size:10px}
+  .kfn-tbl td.ok{background:var(--kok-bg);color:var(--kok);font-weight:800} .kfn-tbl td.bad{background:var(--kbad-bg);color:var(--kbad);font-weight:800} .kfn-tbl td.neu{font-weight:700}
+  .kfn-tbl tr.tot td{font-weight:900;background:var(--khead)} .kfn-tbl tr.tot td.nm{background:var(--khead)}
+  .kfn-tbl tbody tr.cl{cursor:pointer} .kfn-tbl tbody tr.cl:hover td.nm{color:var(--kb)}
+  .kfn-tbl .clk{cursor:pointer} .kfn-tbl td.clk:hover{outline:2px solid var(--kb);outline-offset:-2px} .kfn-tbl th.clk:hover{color:var(--kb);text-decoration:underline}
+  .kfn-tbl td small.cnt{display:block;font-weight:600;font-size:9.5px;opacity:.75}
+  .kfn-id{cursor:pointer;font-weight:800} .kfn-id:hover{color:var(--kb);text-decoration:underline}
+  .kfn-foot{color:var(--kmut);font-size:11px;padding:8px 16px}
+  .kfn-note{background:#fff7e6;border:1px solid #fde1a8;color:#8a5a00;border-radius:10px;padding:9px 12px;font-size:12px;margin-bottom:12px} .dark .kfn-note{background:#3a2c0f;border-color:#6b4f12;color:#f5c26b}
+  .kfn-empty{padding:34px;text-align:center;color:var(--kmut)} .kfn-load{padding:30px;text-align:center;color:var(--kmut)}
+  .kfn-ct2{display:inline-block;border-radius:6px;padding:2px 7px;font-size:10.5px;font-weight:800}
+  .kfn-ct2.FM{background:#fff1e0;color:#b25e00} .kfn-ct2.LM{background:#e0f2fe;color:#0369a1} .kfn-ct2.SOP{background:#f1e9ff;color:#6d28d9}
+  .kfn-pg{display:flex;gap:8px;align-items:center;justify-content:flex-start;padding:10px 16px;flex-wrap:wrap}
+  .kfn-mask{position:fixed;inset:0;background:rgba(10,20,40,.55);z-index:9998;display:flex;align-items:center;justify-content:center;padding:16px}
+  .kfn-modal{background:var(--kcard);color:var(--ktext);border-radius:16px;max-width:620px;width:100%;max-height:90vh;overflow:auto;padding:18px}
+  .kfn-modal.wide{max-width:1080px;padding:0}
+  .kfn-kv{display:grid;grid-template-columns:150px 1fr;gap:6px 12px;font-size:12.5px;margin:10px 0} .kfn-kv span:nth-child(odd){color:var(--kmut)}
+  .kfn-ta{width:100%;min-height:90px;border:1px solid var(--kline);background:var(--kcard);color:var(--ktext);border-radius:10px;padding:9px;font-size:13px;resize:vertical}
+  .kfn-toast{position:fixed;top:22px;left:50%;transform:translateX(-50%);padding:9px 16px;border-radius:12px;color:#fff;font-weight:800;font-size:12px;z-index:10000;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+  @keyframes kfnShimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+  .kfn-skeleton { background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%); background-size: 200% 100%; animation: kfnShimmer 1.5s infinite; border-radius: 6px; }
+  .dark .kfn-skeleton { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); }
+  .kfn-loading-panel { display: flex; flex-direction: column; gap: 16px; padding: 4px 0 24px; }
+  .kfn-loading-status { display: flex; align-items: center; gap: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 16px; color: var(--kmut); font-size: 13px; font-weight: 500; }
+  .dark .kfn-loading-status { background: #1e293b; border-color: #334155; color: #94a3b8; }
+  .kfn-loading-spinner { width: 16px; height: 16px; border: 2px solid #cbd5e1; border-top-color: var(--kp, #ee4d2d); border-radius: 50%; animation: kfnSpin 0.8s linear infinite; flex-shrink: 0; }
+  @keyframes kfnSpin { to { transform: rotate(360deg); } }
+</style>
+
+<div class="kfn-scroll" data-scroll-root="true" id="kfn-body">
+  <div class="kfn-loading-panel">
+    <div class="kfn-loading-status"><div class="kfn-loading-spinner"></div><span>Đang tải và tổng hợp dữ liệu KPI (FM, LM, SOP, Sản lượng)…</span></div>
+    <div class="kfn-card" style="padding:16px 20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div><div class="kfn-skeleton" style="height:14px;width:180px;margin-bottom:8px"></div><div class="kfn-skeleton" style="height:24px;width:320px"></div></div>
+        <div class="kfn-skeleton" style="height:32px;width:220px;border-radius:20px"></div>
+      </div>
+      <div class="kfn-wrap"><table class="kfn-tbl"><thead><tr>
+        <th class="nm"><div class="kfn-skeleton" style="height:12px;width:80px"></div></th>
+        <th><div class="kfn-skeleton" style="height:12px;width:60px"></div></th>
+        <th><div class="kfn-skeleton" style="height:12px;width:70px"></div></th>
+        <th><div class="kfn-skeleton" style="height:12px;width:50px"></div></th>
+        <th><div class="kfn-skeleton" style="height:12px;width:50px"></div></th>
+        <th><div class="kfn-skeleton" style="height:12px;width:50px"></div></th>
+      </tr></thead><tbody>
+        <tr><td class="nm"><div class="kfn-skeleton" style="height:14px;width:120px"></div></td><td><div class="kfn-skeleton" style="height:14px;width:50px;margin:auto"></div></td><td><div class="kfn-skeleton" style="height:14px;width:60px;margin:auto"></div></td><td><div class="kfn-skeleton" style="height:14px;width:45px;margin:auto"></div></td><td><div class="kfn-skeleton" style="height:14px;width:45px;margin:auto"></div></td><td><div class="kfn-skeleton" style="height:14px;width:45px;margin:auto"></div></td></tr>
+        <tr><td class="nm"><div class="kfn-skeleton" style="height:14px;width:120px"></div></td><td><div class="kfn-skeleton" style="height:14px;width:50px;margin:auto"></div></td><td><div class="kfn-skeleton" style="height:14px;width:60px;margin:auto"></div></td><td><div class="kfn-skeleton" style="height:14px;width:45px;margin:auto"></div></td><td><div class="kfn-skeleton" style="height:14px;width:45px;margin:auto"></div></td><td><div class="kfn-skeleton" style="height:14px;width:45px;margin:auto"></div></td></tr>
+        <tr><td class="nm"><div class="kfn-skeleton" style="height:14px;width:120px"></div></td><td><div class="kfn-skeleton" style="height:14px;width:50px;margin:auto"></div></td><td><div class="kfn-skeleton" style="height:14px;width:60px;margin:auto"></div></td><td><div class="kfn-skeleton" style="height:14px;width:45px;margin:auto"></div></td><td><div class="kfn-skeleton" style="height:14px;width:45px;margin:auto"></div></td><td><div class="kfn-skeleton" style="height:14px;width:45px;margin:auto"></div></td></tr>
+      </tbody></table></div>
+    </div>
+  </div>
+</div>
+<div id="kfn-modal-host"></div>
+<div id="kfn-day-host"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════
+   ĐƠN KHÔNG ĐẠT KPI / FAIL KPI ORDER — giao diện theo wireframe, 2 ngôn ngữ (theo SPX_LANG của trang chủ).
+   Tỉ lệ: 4 nguồn FM/LM/SOP/success (FlmKpi_Backend.gs → flm_getKpiBundle). Danh sách đơn: nguồn đơn fail hiện có.
+   Cấp bậc do HEADER TRANG CHỦ quyết định (vai trò thật / XEM THỬ / Hub đang chọn); module chỉ cho "đi xuống" bằng cách bấm dòng.
+   GIỮ NGUYÊN các hàm trang chủ gọi vào: initKPIFailUI, kpifailLoadData, kpifailRenderAll, kpifailSelectHub,
+   kpifailApplyPreviewLevel, kpifailLoadNotes, kpifailCheckFresh, KPIFAIL_STATE.
+   ═══════════════════════════════════════════════════════════════════════ */
+var KPIFAIL_STATE = window.KPIFAIL_STATE || { loaded: false, loading: false, silentLoad: false, filterHub: 'ALL', hubs: [], records: [],
+  notes: {}, notesVersion: 0, notesLoadedAt: 0, access: null, dataVersion: '', previewOrgScopeHubs: null };
+window.KPIFAIL_STATE = KPIFAIL_STATE;
+
+/* ───────── ngôn ngữ: [Tiếng Việt, English] — mỗi giao diện chỉ hiện đúng 1 ngôn ngữ ───────── */
+var KFN_D = {
+  title: ['Đơn không đạt KPI — FM, LM, Sai SOP', 'Fail KPI Order — FM OT, LM OT, Wrong SOP'],
+  c1: ['FLM Assistant', 'FLM Assistant'], c2: ['Hiệu suất', 'Performance'], c3: ['Đơn không đạt KPI', 'Fail KPI Order'],
+  lvRom: ['Cấp ROM', 'ROM level'], lvAom: ['Cấp AOM', 'AOM level'], lvSup: ['Cấp SUP', 'SUP level'], lvLead: ['Cấp Lead', 'Lead level'],
+  scRom: ['khu vực ROM', 'ROM area'], scAom: ['khu vực AOM', 'AOM area'], scSup: ['cụm SUP', 'SUP cluster'], scLead: ['Hub', 'Hub'],
+  back: ['‹ Quay lại cấp trên', '‹ Back to parent level'],
+  kDay: ['Chỉ số vận hành (theo ngày)', 'Operational KPI (daily)'], kWeek: ['Chỉ số vận hành (theo tuần)', 'Operational KPI (weekly)'], kMonth: ['Chỉ số vận hành (theo tháng)', 'Operational KPI (monthly)'],
+  dataTo: ['Dữ liệu đến {0} · cập nhật hằng ngày', 'Data up to {0} · updated daily'],
+  gDay: ['Ngày · 30 ngày', 'Daily · last 30 days'], gWeek: ['Tuần', 'Week'], gMonth: ['Tháng', 'Month'],
+  mon: ['Chỉ số theo dõi', 'Monitoring'], kpiMonth: ['KPI tháng {0} · cập nhật đến {1}', 'KPI month {0} · updated to {1}'],
+  colKpi: ['Chỉ số', 'KPI'], colTarget: ['Mục tiêu', 'Target'], mtd: ['Lũy kế tháng', 'Month to date'],
+  rFm: ['% FM đúng hạn', '% FM on-time'], rLm: ['% LM đúng hạn', '% LM on-time'], rSop: ['Sai SOP', 'Wrong SOP'], rSopS: ['Tỷ lệ trên số đơn lấy hàng', 'Share of pickups'],
+  rSuc: ['% Giao thành công', '% Delivery success'], rSucS: ['Đã giao / Được giao', 'Delivered / Assigned'], rVol: ['Sản lượng đơn', 'Shipment volume'], rVolS: ['Số đơn được giao', 'Assigned orders'],
+  clkHint: ['Bấm để xem các đơn không đạt', 'Click to see failed orders'],
+  tTitle: ['Chỉ số theo {0} — {1}', 'KPI by {0} — {1}'], lAom: ['AOM', 'AOM'], lSup: ['SUP', 'SUP'], lHub: ['Hub', 'Hub'],
+  full: ['Bảng đầy đủ', 'Full table'], matrix: ['Ma trận theo thời gian', 'Matrix over time'], gDate: ['Ngày', 'Date'],
+  latest: ['(mới nhất)', '(latest)'], mtdP: ['(lũy kế)', '(MTD)'], wk: ['Tuần {0}', 'W{0}'],
+  sName: ['Sắp xếp: Tên A–Z', 'Sort: Name A–Z'], sFm: ['Sắp xếp: % FM thấp → cao', 'Sort: % FM low → high'], sLm: ['Sắp xếp: % LM thấp → cao', 'Sort: % LM low → high'], sSop: ['Sắp xếp: Sai SOP cao → thấp', 'Sort: Wrong SOP high → low'], sVol: ['Sắp xếp: Sản lượng cao → thấp', 'Sort: Volume high → low'], sSuc: ['Sắp xếp: % Giao TC thấp → cao', 'Sort: % Success low → high'],
+  search: ['Tìm đơn vị…', 'Search unit…'], totRegion: ['TỔNG KHU VỰC', 'REGION TOTAL'], totCluster: ['TỔNG CỤM', 'CLUSTER TOTAL'],
+  cFm: ['% FM đúng hạn', '% FM on-time'], cLm: ['% LM đúng hạn', '% LM on-time'], tgt: ['mục tiêu {0}', 'target {0}'], kpiLe: ['mục tiêu ≤ {0}', 'target ≤ {0}'], orders: ['{0} đơn', '{0} orders'],
+  cVol: ['Sản lượng đơn', 'Shipment volume'], cVolS: ['Được giao', 'Assigned'], cVolWithMtd: ['Được giao · LK tháng', 'Assigned · MTD'],
+  cSuc: ['% Giao thành công', '% Delivery success'], cSucS: ['Đã giao / Được giao', 'Delivered / Assigned'], cSucWithMtd: ['Đã giao / Được giao · LK tháng', 'Delivered / Assigned · MTD'],
+  noUnit: ['Không có đơn vị phù hợp.', 'No matching unit.'], showing: ['Hiển thị {0}/{1} {2} · bấm vào một dòng để xem cấp dưới', 'Showing {0}/{1} {2} · click a row to drill down'], showing2: ['Hiển thị {0}/{1} {2}', 'Showing {0}/{1} {2}'],
+  lag: ['Một số chỉ số chưa có số liệu mới nhất: {0}. Các ô thiếu hiển thị “—”.', 'Some indicators have no latest data yet: {0}. Missing cells show “—”.'], lagTo: ['{0} đến {1}', '{0} up to {1}'],
+  partial: ['Đang bổ sung dữ liệu lịch sử (tuần/tháng cũ) — các kỳ cũ có thể hiển thị “—” cho tới khi hoàn tất, trang sẽ tự cập nhật.', 'Historical data is still loading — older periods may show “—” until done; the page will refresh automatically.'],
+  empty: ['Chưa có dữ liệu KPI trong phạm vi của bạn. Nếu bạn nghĩ đây là nhầm lẫn, hãy liên hệ admin để kiểm tra phân quyền Hub.', 'No KPI data in your scope yet. If this looks wrong, ask an admin to check your hub permissions.'],
+  loading: ['Đang tải dữ liệu KPI…', 'Loading KPI data…'], upd: ['Cập nhật {0} · dữ liệu đến {1}', 'Updated {0} · data up to {1}'],
+  retry: ['Thử lại', 'Retry'], detail: ['Chi tiết', 'Details'], failLoad: ['Không tải được dữ liệu', 'Could not load data'], refreshFail: ['Không làm mới được dữ liệu', 'Could not refresh data'],
+  preparing: ['⏳ Đang chuẩn bị dữ liệu KPI lần đầu (có thể mất vài phút)… tự thử lại sau 15 giây ({0}/12)', '⏳ Preparing KPI data for the first time (may take a few minutes)… retrying in 15s ({0}/12)'],
+  oTitle: ['Danh sách đơn không đạt KPI', 'Failed-KPI order list'], oSub: ['{0} · phục vụ kiểm tra và giải trình', '{0} · for review and explanation'], recErr: ['Không tải được danh sách đơn: {0}', 'Could not load the order list: {0}'],
+  recLoad: ['Đang tải danh sách đơn…', 'Loading the order list…'],
+  fAll: ['Tất cả ({0})', 'All ({0})'], fFm: ['FM trễ ({0})', 'FM late ({0})'], fLm: ['LM trễ ({0})', 'LM late ({0})'], fSop: ['Sai SOP ({0})', 'Wrong SOP ({0})'],
+  allTypes: ['Tất cả loại', 'All types'], allRiders: ['Tất cả Rider', 'All riders'], searchId: ['Tìm mã đơn…', 'Search order ID…'], noNote: ['Chưa ghi chú: {0}', 'No note yet: {0}'],
+  from: ['Từ ngày', 'From'], to: ['Đến ngày', 'To'], pLatest: ['Ngày mới nhất', 'Latest day'], p7: ['7 ngày', '7 days'], p30: ['30 ngày', '30 days'],
+  hId: ['Mã đơn', 'Order ID'], hHub: ['Hub', 'Hub'], hRider: ['Rider', 'Rider'], hKind: ['Loại không đạt', 'Failure type'], hInfo: ['Chi tiết', 'Details'], hDate: ['Ngày', 'Date'], hNote: ['Ghi chú giải trình', 'Explanation note'], hAct: ['Thao tác', 'Action'],
+  check: ['Kiểm tra', 'Review'], none: ['Chưa có', 'None'], noRows: ['Không có đơn phù hợp bộ lọc.', 'No orders match the filters.'], rowsPg: ['{0} đơn · trang {1}/{2}', '{0} orders · page {1}/{2}'], prev: ['‹ Trước', '‹ Previous'], next: ['Sau ›', 'Next ›'],
+  csv: ['Xuất CSV', 'Export CSV'], copied: ['Đã copy {0}', 'Copied {0}'], copyFail: ['Không copy được', 'Copy failed'], copyHint: ['Bấm để copy mã đơn', 'Click to copy the order ID'],
+  late: ['trễ {0} giờ', '{0}h late'],
+  dTitle: ['Kiểm tra đơn không đạt KPI', 'Review failed-KPI order'], dClose: ['Đóng', 'Close'], dNote: ['Ghi chú giải trình', 'Explanation note'], dPh: ['Nhập nguyên nhân / hướng xử lý…', 'Enter cause / action…'],
+  dLast: ['Lần sửa gần nhất: {0} · {1}', 'Last edited: {0} · {1}'], dNoNote: ['Chưa có ghi chú', 'No note yet'], dSave: ['Lưu ghi chú', 'Save note'], dSaving: ['Đang lưu…', 'Saving…'],
+  dEmpty: ['Vui lòng nhập ghi chú', 'Please enter a note'], dErr: ['Lỗi lưu ghi chú: {0}', 'Could not save the note: {0}'], dOk: ['✓ Đã lưu ghi chú thành công', '✓ Note saved'],
+  cfTitle: ['Đơn này vừa được người khác cập nhật ghi chú', 'Someone else just updated this note'], cfOk: ['Ghi đè', 'Overwrite'], cfAsk: ['Ghi đè bằng nội dung bạn vừa nhập?', 'Overwrite with what you just entered?'], unk: ['không rõ', 'unknown'],
+  kId: ['Mã đơn', 'Order ID'], kHub: ['Hub', 'Hub'], kKind: ['Loại không đạt', 'Failure type'], kType: ['Phân loại', 'Category'], kReason: ['Lý do', 'Reason'], kDate: ['Ngày', 'Date'], kDelay: ['Trễ (giờ)', 'Delay (h)'],
+  rPicked: ['Giờ lấy hàng', 'Picked'], rInbound: ['Giờ nhập Hub', 'Inbound'], rPacked: ['Giờ đóng gói', 'Packed'], rLhArr: ['Giờ xe tuyến đến', 'Linehaul arrived'], rLhArrF: ['Giờ xe tuyến đến (chốt)', 'Linehaul arrived (final)'], rLhPack: ['Giờ xe tuyến đóng', 'Linehaul packed'], rFmEta: ['Hạn FM', 'FM deadline'], rCot: ['Số lần trễ COT', 'COT late count'], rPickSt: ['Trạm lấy hàng', 'Pickup station'],
+  rArr: ['Giờ đến', 'Arrived'], rAtt: ['Giờ giao lần 1', 'First attempt'], rLmEta: ['Hạn LM', 'LM deadline'], rLmIn: ['Giờ nhập Hub giao', 'Delivery hub inbound'], rRider: ['Rider', 'Rider'], rPickEta: ['Hạn lấy hàng', 'Pickup deadline'],
+  xTitle: ['Đơn không đạt KPI ngày {0}', 'Failed-KPI orders on {0}'], xScope: ['Phạm vi: {0}', 'Scope: {0}'], xAllScope: ['toàn bộ phạm vi của bạn', 'your entire scope'], xNone: ['Không có đơn không đạt trong ngày này.', 'No failed orders on this day.'], xLoad: ['Đang tải đơn không đạt…', 'Loading failed orders…'],
+  xSlow: ['Lần đầu có thể mất vài giây.', 'The first load may take a few seconds.']
+};
+var KFN_TYPES = {
+  'LM_Forward_Late': ['LM trễ · chiều giao', 'LM late · forward'], 'LM_Return_Late': ['LM trễ · chiều hoàn', 'LM late · return'],
+  'FM_Forward_Late': ['FM trễ · chiều lấy', 'FM late · forward'], 'FM_Return_Late': ['FM trễ · chiều hoàn', 'FM late · return'],
+  'wrong fm': ['Sai SOP lấy hàng (FM)', 'Wrong pickup SOP (FM)'], 'wrong lm': ['Sai SOP giao hàng (LM)', 'Wrong delivery SOP (LM)'], 'Late': ['Trễ', 'Late']
+};
+var KFN_REASONS = {
+  'Missing status': ['Thiếu trạng thái', 'Missing status'], 'FM - Linehaul Fault': ['FM - Lỗi xe tuyến', 'FM - Linehaul fault'],
+  'Packed after ETA': ['Đóng gói sau hạn', 'Packed after deadline']
+};
+function kfnLang() { return (typeof SPX_LANG !== 'undefined' && SPX_LANG === 'en') ? 'en' : 'vi'; }
+function kfnT(k) {
+  var e = KFN_D[k]; if (!e) return k;
+  var s = e[kfnLang() === 'en' ? 1 : 0];
+  for (var i = 1; i < arguments.length; i++) s = s.split('{' + (i - 1) + '}').join(arguments[i]);
+  return s;
+}
+function kfnPretty(s) { return String(s == null ? '' : s).replace(/_/g, ' ').replace(/\s+/g, ' ').trim(); }
+function kfnTypeLabel(t) { var e = KFN_TYPES[t]; return e ? e[kfnLang() === 'en' ? 1 : 0] : kfnPretty(t); }
+function kfnReasonLabel(t) { var e = KFN_REASONS[t]; return e ? e[kfnLang() === 'en' ? 1 : 0] : kfnPretty(t); }
+function kfnCatLabel(c) { return kfnT(c === 'FM' ? 'fFm' : c === 'LM' ? 'fLm' : 'fSop', '').replace(/\s*\(\)$/, ''); }
+
+var KFN_T = { fm: 0.99, lm: 0.99, sop: 0.005 };    // mặc định; máy chủ luôn gửi mục tiêu hiện hành qua bundle.targets
+var KFN_PAGE = 25, KFN_DAYPAGE = 50;
+var KFN = { bundle: null, sel: { aom: '', sup: '', hub: '' }, drill: { aom: '', sup: '', hub: '' }, retry: 0, kGran: 'day', tGran: 'mtd', tPeriod: 0, tView: 'full', tMetric: 'fm',
+            sort: 'name', q: '', watch: false, modal: null,
+            rec: { hub: '', loading: false, list: null, err: '', from: '', to: '', cat: 'ALL', type: '', rider: '', q: '', page: 1 },
+            day: { open: false, date: '', cat: 'ALL', q: '', page: 1, loading: false, err: '', data: null, local: false, seq: 0 } };
+
+/* ───────── tiện ích ───────── */
+function kfnEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function kfnPct(x, d) {
+  if (x == null || !isFinite(x)) return '—'; d = (d == null) ? 1 : d;
+  var p = x * 100, s = p.toFixed(d);
+  if (x < 1 && parseFloat(s) >= 100) s = Math.min(99.99, Math.floor(p * 100) / 100).toFixed(2);     // không bao giờ hiện "100.0%" cho số chưa đạt 100%
+  return s + '%';
+}
+function kfnTgt(x) { return (x * 100).toFixed(x * 100 % 1 ? 1 : 0) + '%'; }
+function kfnInt(x) { return (x == null || !isFinite(x)) ? '—' : Math.round(x).toLocaleString('en-US'); }
+function kfnUniq(a) { var o = {}, r = []; a.forEach(function (x) { if (x && !o[x]) { o[x] = 1; r.push(x); } }); return r; }
+function kfnSortVi(a) { return a.slice().sort(function (x, y) { return String(x).localeCompare(String(y), 'vi'); }); }
+function kfnVisible() { var v = document.getElementById('view-kpifail'); return !!v && !v.classList.contains('hidden') && !document.hidden; }
+function kfnToast(msg, type) {
+  var t = document.createElement('div'); t.className = 'kfn-toast'; t.style.background = type === 'error' ? '#ef4444' : '#10b981'; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(function () { t.style.transition = 'opacity .3s'; t.style.opacity = '0'; }, type === 'error' ? 3200 : 1600); setTimeout(function () { t.remove(); }, 3600);
+}
+function kfnCopy(text) {          // copy bền vững trong iframe Apps Script: Clipboard API → execCommand
+  var ok = function () { kfnToast(kfnT('copied', text)); }, fb = function () {
+    try { var t = document.createElement('textarea'); t.value = text; t.style.cssText = 'position:fixed;left:-9999px;top:0'; document.body.appendChild(t); t.focus(); t.select(); var r = document.execCommand('copy'); t.remove(); if (r) ok(); else kfnToast(kfnT('copyFail'), 'error'); }
+    catch (e) { kfnToast(kfnT('copyFail'), 'error'); }
+  };
+  try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(ok, fb); return; } } catch (e) {}
+  fb();
+}
+var kfnWDv = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'], kfnWDe = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+function kfnDay(ds) { var p = ds.split('-'); var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])); return { wd: (kfnLang() === 'en' ? kfnWDe : kfnWDv)[d.getDay()], dm: p[2] + '/' + p[1], full: p[2] + '/' + p[1] + '/' + p[0] }; }
+function kfnAdd(ds, n) { var p = ds.split('-'); var t = Date.UTC(+p[0], +p[1] - 1, +p[2]) + n * 86400000; var d = new Date(t); var m = d.getUTCMonth() + 1, dd = d.getUTCDate(); return d.getUTCFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (dd < 10 ? '0' : '') + dd; }
+function kfnWeekNo(key) { return key.replace(/^\d{4}-W0?/, ''); }
+function kfnWeekRange(key) {
+  var m = key.match(/^(\d{4})-W(\d{2})$/); if (!m) return '';
+  var y = +m[1], w = +m[2], jan4 = new Date(Date.UTC(y, 0, 4)); var dow = jan4.getUTCDay() || 7;
+  var mon = new Date(jan4.getTime() + (-(dow - 1) + (w - 1) * 7) * 86400000), sun = new Date(mon.getTime() + 6 * 86400000);
+  var f = function (d) { return ('0' + d.getUTCDate()).slice(-2) + '/' + ('0' + (d.getUTCMonth() + 1)).slice(-2); };
+  return f(mon) + '–' + f(sun);
+}
+
+/* ───────── tính toán ───────── */
+function kfnSum(hubs, kind, i) {
+  var ix = kind === 'd' ? 4 : kind === 'w' ? 5 : 6, s = [0, 0, 0, 0, 0, 0, 0, 0], any = false;
+  for (var h = 0; h < hubs.length; h++) { var c = hubs[h][ix][i]; if (c) { any = true; for (var k = 0; k < 8; k++) s[k] += c[k]; } }
+  return any ? s : null;
+}
+function kfnM(s) {
+  if (!s) return null;
+  return { fm: s[1] > 0 ? s[0] / s[1] : null, lm: s[3] > 0 ? s[2] / s[3] : null, sop: s[5] > 0 ? s[4] / s[5] : null, suc: s[7] > 0 ? s[6] / s[7] : null, vol: s[7], sopW: s[4], delivered: s[6] };
+}
+function kfnCls(metric, v) {
+  if (v == null) return '';
+  if (metric === 'fm') return v >= KFN_T.fm ? 'ok' : 'bad';
+  if (metric === 'lm') return v >= KFN_T.lm ? 'ok' : 'bad';
+  if (metric === 'sop') return v <= KFN_T.sop ? 'ok' : 'bad';
+  return 'neu';
+}
+function kfnAllHubs() { return KFN.bundle ? KFN.bundle.hubs : []; }
+function kfnHubs() { var s = KFN.sel; return kfnAllHubs().filter(function (h) { return (!s.aom || h[2] === s.aom) && (!s.sup || h[3] === s.sup) && (!s.hub || h[0] === s.hub); }); }
+function kfnLevel() { return KFN.sel.hub ? 'lead' : KFN.sel.sup ? 'sup' : KFN.sel.aom ? 'aom' : 'rom'; }
+var KFN_LVK = { rom: ['lvRom', 'scRom'], aom: ['lvAom', 'scAom'], sup: ['lvSup', 'scSup'], lead: ['lvLead', 'scLead'] };
+
+/* ───────── PHÂN CẤP — MỘT NGUỒN DUY NHẤT: HEADER TRANG CHỦ ───────── */
+function kfnNormHub(s) { return (typeof cleanHubString === 'function') ? cleanHubString(s) : String(s || '').toLowerCase().trim(); }
+function kfnHostSel() {
+  var b = KFN.bundle, all = b ? b.hubs : [], s = { aom: '', sup: '', hub: '' };
+  var admin = !!(window.SPX_ACCESS && window.SPX_ACCESS.role === 'admin'), pv = window.SPX_PREVIEW_LEVEL, ent = (typeof window.SPX_PREVIEW_ENTITY === 'string') ? window.SPX_PREVIEW_ENTITY : '';
+  if (admin && ent) {
+    if (pv === 'aom' && all.some(function (h) { return h[2] === ent; })) s.aom = ent;
+    else if (pv === 'sup') { var p = all.filter(function (h) { return h[3] === ent; })[0]; if (p) { s.aom = p[2]; s.sup = ent; } }
+  }
+  var hh = ''; try { hh = localStorage.getItem('spx_default_hub') || ''; } catch (e) {}
+  if (!hh || hh === 'ALL') hh = KPIFAIL_STATE.filterHub || 'ALL';
+  if (hh && hh !== 'ALL') { var t = kfnNormHub(hh), h = all.filter(function (x) { return kfnNormHub(x[0]) === t; })[0]; if (h) { s.aom = h[2]; s.sup = h[3]; s.hub = h[0]; } }
+  if (b && b.scoped) {
+    var pool = all.filter(function (h) { return (!s.aom || h[2] === s.aom) && (!s.sup || h[3] === s.sup); });
+    var aoms = kfnUniq(pool.map(function (h) { return h[2]; })); if (!s.aom && aoms.length === 1) s.aom = aoms[0];
+    if (s.aom && !s.sup) { var sups = kfnUniq(all.filter(function (h) { return h[2] === s.aom; }).map(function (h) { return h[3]; })); if (sups.length === 1) s.sup = sups[0]; }
+    if (s.sup && !s.hub) { var hs = all.filter(function (h) { return h[2] === s.aom && h[3] === s.sup; }); if (hs.length === 1) s.hub = hs[0][0]; }
+  }
+  return s;
+}
+function kfnComputeSel() { var h = kfnHostSel(), d = KFN.drill; return { aom: h.aom || d.aom || '', sup: h.sup || d.sup || '', hub: h.hub || d.hub || '' }; }
+function kfnSetSel(kind, val) {
+  var d = KFN.drill, all = kfnAllHubs();
+  if (kind === 'aom') { d.aom = val; d.sup = ''; d.hub = ''; }
+  else if (kind === 'sup') { d.sup = val; d.hub = ''; var h = all.filter(function (x) { return x[3] === val && (!KFN.sel.aom || x[2] === KFN.sel.aom); })[0]; if (h) d.aom = h[2]; }
+  else if (kind === 'hub') { d.hub = val; var h2 = all.filter(function (x) { return x[0] === val; })[0]; if (h2) { d.aom = h2[2]; d.sup = h2[3]; } }
+  KFN.q = ''; KFN.rec.page = 1; kpifailRenderAll();
+}
+function kfnCanBack() { var d = KFN.drill; return !!(d.hub || d.sup || d.aom); }
+function kfnBack() { var d = KFN.drill; if (d.hub) d.hub = ''; else if (d.sup) d.sup = ''; else if (d.aom) d.aom = ''; KFN.q = ''; KFN.rec.page = 1; }
+
+/* ───────── đầu trang + bảng chỉ số ───────── */
+function kfnHeadHtml() {
+  var lv = kfnLevel(), s = KFN.sel;
+  var trail = [kfnT('c1'), kfnT('c2'), kfnT('c3')]; if (s.aom) trail.push(s.aom); if (s.sup) trail.push(s.sup); if (s.hub) trail.push(s.hub);
+  return '<div class="kfn-nav">' + (kfnCanBack() ? '<button class="kfn-btn" data-kfn-act="back">' + kfnT('back') + '</button>' : '') + '<span class="kfn-chip">' + kfnT(KFN_LVK[lv][0]) + '</span></div>' +
+    '<div class="kfn-head"><div><div class="kfn-crumb">' + trail.map(kfnEsc).join(' / ') + '</div><h1 class="kfn-title">' + kfnT('title') + '</h1></div>' +
+    '<div style="display:flex;flex-direction:column;align-items:flex-end"><span class="kfn-upd" id="kpifail-updated-label"></span></div></div>';
+}
+function kfnColumns() {
+  var b = KFN.bundle, P = b.periods, hubs = kfnHubs(), cols = [], g = KFN.kGran;
+  if (g === 'day') {
+    cols.push({ h: kfnT('mtd'), sub: '', s: kfnSum(hubs, 'm', P.m.length - 1) });
+    for (var i = P.d.length - 1; i >= 0; i--) { var d = kfnDay(P.d[i]); cols.push({ h: d.wd, sub: d.dm, s: kfnSum(hubs, 'd', i), date: P.d[i] }); }
+  } else if (g === 'week') {
+    for (var j = P.w.length - 1; j >= 0; j--) cols.push({ h: kfnT('wk', kfnWeekNo(P.w[j])), sub: kfnWeekRange(P.w[j]), s: kfnSum(hubs, 'w', j) });
+  } else {
+    for (var k = P.m.length - 1; k >= 0; k--) cols.push({ h: P.m[k].replace('-', '/'), sub: k === P.m.length - 1 ? kfnT('mtdP') : '', s: kfnSum(hubs, 'm', k) });
+  }
+  return cols;
+}
+function kfnRenderK() {
+  var lv = kfnLevel(), cols = kfnColumns(), b = KFN.bundle;
+  var gb = function (g, t) { return '<button class="kfn-btn' + (KFN.kGran === g ? ' on' : '') + '" data-kfn-act="kgran" data-kfn-v="' + g + '">' + t + '</button>'; };
+  var rows = [
+    { k: 'fm', lab: kfnT('rFm'), sub: '', tgt: kfnTgt(KFN_T.fm), f: function (m) { return kfnPct(m.fm); }, cat: 'FM' },
+    { k: 'lm', lab: kfnT('rLm'), sub: '', tgt: kfnTgt(KFN_T.lm), f: function (m) { return kfnPct(m.lm); }, cat: 'LM' },
+    { k: 'sop', lab: kfnT('rSop'), sub: kfnT('rSopS'), tgt: '≤ ' + kfnTgt(KFN_T.sop), f: function (m) { return kfnPct(m.sop, 2); }, cat: 'SOP' },
+    { k: 'suc', lab: kfnT('rSuc'), sub: kfnT('rSucS'), tgt: '—', f: function (m) { return kfnPct(m.suc); } },
+    { k: 'vol', lab: kfnT('rVol'), sub: kfnT('rVolS'), tgt: '—', f: function (m) { return (m.vol > 0 || m.suc != null) ? kfnInt(m.vol) : '—'; } }
+  ];
+  var head = '<tr><th class="nm">' + kfnT('colKpi') + '</th><th>' + kfnT('colTarget') + '</th>' + cols.map(function (c) {
+    return c.date ? '<th class="clk" title="' + kfnEsc(kfnT('clkHint')) + '" data-kfn-act="dayfail" data-kfn-v="' + c.date + '|ALL">' + kfnEsc(c.h) + '<small>' + kfnEsc(c.sub) + '</small></th>' : '<th>' + kfnEsc(c.h) + '<small>' + kfnEsc(c.sub) + '</small></th>';
+  }).join('') + '</tr>';
+  var body = rows.map(function (r) {
+    return '<tr><td class="nm">' + r.lab + (r.sub ? '<small>' + r.sub + '</small>' : '') + '</td><td>' + r.tgt + '</td>' + cols.map(function (c) {
+      var m = kfnM(c.s); if (!m) return '<td>—</td>';
+      var v = m[r.k], cls = kfnCls(r.k === 'vol' ? 'x' : r.k, v), clk = (c.date && r.cat) ? ' clk" title="' + kfnEsc(kfnT('clkHint')) + '" data-kfn-act="dayfail" data-kfn-v="' + c.date + '|' + r.cat : '';
+      return '<td class="' + cls + clk + '">' + r.f(m) + '</td>';
+    }).join('') + '</tr>';
+  }).join('');
+  var ttl = KFN.kGran === 'day' ? 'kDay' : KFN.kGran === 'week' ? 'kWeek' : 'kMonth';
+  return '<div class="kfn-card"><div class="kfn-ch"><div class="kfn-ic">K</div><div><div class="kfn-ct">' + kfnT(ttl) + ' — ' + kfnEsc(kfnT(KFN_LVK[lv][1])) + '</div>' +
+    '<div class="kfn-cs">' + kfnT('dataTo', kfnDay(b.asOf).full) + '</div></div>' +
+    '<div class="kfn-seg">' + gb('day', kfnT('gDay')) + gb('week', kfnT('gWeek')) + gb('month', kfnT('gMonth')) + '</div></div>' +
+    '<div class="kfn-mon"><b>' + kfnT('mon') + '</b>' + kfnT('kpiMonth', b.periods.m[b.periods.m.length - 1].replace('-', '/'), kfnDay(b.asOf).dm) + '</div>' +
+    '<div class="kfn-wrap"><table class="kfn-tbl"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div></div>';
+}
+
+/* ───── bảng theo cấp con ───── */
+function kfnChildren() {
+  var lv = kfnLevel(), hubs = kfnHubs(), groups = {}, order = [];
+  var keyIx = lv === 'rom' ? 2 : lv === 'aom' ? 3 : 0;
+  hubs.forEach(function (h) { var k = h[keyIx]; if (!groups[k]) { groups[k] = []; order.push(k); } groups[k].push(h); });
+  return { label: kfnT(lv === 'rom' ? 'lAom' : lv === 'aom' ? 'lSup' : 'lHub'), names: order, groups: groups };
+}
+function kfnRenderSkeleton() {
+  return '<div class="kfn-loading-panel">' +
+    '<div class="kfn-loading-status"><div class="kfn-loading-spinner"></div><span>' + kfnT('loading') + '</span></div>' +
+    '<div class="kfn-card" style="padding:16px 20px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">' +
+        '<div><div class="kfn-skeleton" style="height:14px;width:180px;margin-bottom:8px"></div><div class="kfn-skeleton" style="height:24px;width:320px"></div></div>' +
+        '<div class="kfn-skeleton" style="height:32px;width:220px;border-radius:20px"></div>' +
+      '</div>' +
+      '<div class="kfn-wrap"><table class="kfn-tbl"><thead><tr>' +
+        '<th class="nm"><div class="kfn-skeleton" style="height:12px;width:80px"></div></th>' +
+        '<th><div class="kfn-skeleton" style="height:12px;width:60px"></div></th>' +
+        '<th><div class="kfn-skeleton" style="height:12px;width:70px"></div></th>' +
+        '<th><div class="kfn-skeleton" style="height:12px;width:50px"></div></th>' +
+        '<th><div class="kfn-skeleton" style="height:12px;width:50px"></div></th>' +
+        '<th><div class="kfn-skeleton" style="height:12px;width:50px"></div></th>' +
+      '</tr></thead><tbody>' +
+        [1,2,3,4,5].map(function () {
+          return '<tr><td class="nm"><div class="kfn-skeleton" style="height:14px;width:120px"></div></td>' +
+            '<td><div class="kfn-skeleton" style="height:14px;width:50px;margin:auto"></div></td>' +
+            '<td><div class="kfn-skeleton" style="height:14px;width:60px;margin:auto"></div></td>' +
+            '<td><div class="kfn-skeleton" style="height:14px;width:45px;margin:auto"></div></td>' +
+            '<td><div class="kfn-skeleton" style="height:14px;width:45px;margin:auto"></div></td>' +
+            '<td><div class="kfn-skeleton" style="height:14px;width:45px;margin:auto"></div></td></tr>';
+        }).join('') +
+      '</tbody></table></div>' +
+    '</div>' +
+    '<div class="kfn-card" style="padding:16px 20px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">' +
+        '<div><div class="kfn-skeleton" style="height:20px;width:260px"></div></div>' +
+        '<div class="kfn-skeleton" style="height:32px;width:160px;border-radius:20px"></div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">' +
+        '<div class="kfn-skeleton" style="height:32px;width:100px;border-radius:18px"></div>' +
+        '<div class="kfn-skeleton" style="height:32px;width:80px;border-radius:18px"></div>' +
+        '<div class="kfn-skeleton" style="height:32px;width:80px;border-radius:18px"></div>' +
+        '<div class="kfn-skeleton" style="height:32px;width:80px;border-radius:18px"></div>' +
+        '<div class="kfn-skeleton" style="height:32px;width:140px;border-radius:8px"></div>' +
+        '<div class="kfn-skeleton" style="height:32px;width:180px;border-radius:8px"></div>' +
+      '</div>' +
+      '<div class="kfn-wrap"><table class="kfn-tbl"><thead><tr>' +
+        '<th class="nm"><div class="kfn-skeleton" style="height:12px;width:100px"></div></th>' +
+        '<th><div class="kfn-skeleton" style="height:12px;width:70px"></div></th>' +
+        '<th><div class="kfn-skeleton" style="height:12px;width:70px"></div></th>' +
+        '<th><div class="kfn-skeleton" style="height:12px;width:60px"></div></th>' +
+        '<th><div class="kfn-skeleton" style="height:12px;width:80px"></div></th>' +
+        '<th><div class="kfn-skeleton" style="height:12px;width:90px"></div></th>' +
+      '</tr></thead><tbody>' +
+        [1,2,3,4,5,6].map(function () {
+          return '<tr><td class="nm"><div class="kfn-skeleton" style="height:14px;width:150px"></div></td>' +
+            '<td><div class="kfn-skeleton" style="height:14px;width:55px;margin:auto"></div></td>' +
+            '<td><div class="kfn-skeleton" style="height:14px;width:55px;margin:auto"></div></td>' +
+            '<td><div class="kfn-skeleton" style="height:14px;width:55px;margin:auto"></div></td>' +
+            '<td><div class="kfn-skeleton" style="height:14px;width:60px;margin:auto"></div></td>' +
+            '<td><div class="kfn-skeleton" style="height:14px;width:55px;margin:auto"></div></td></tr>';
+        }).join('') +
+      '</tbody></table></div>' +
+    '</div>' +
+  '</div>';
+}
+function kfnPeriodList() {
+  var P = KFN.bundle.periods, g = KFN.tGran, out = [];
+  var mCur = P.m[P.m.length - 1];
+  if (g === 'mtd') {
+    out.push({ i: P.m.length - 1, kind: 'm', isMtd: true, label: kfnT('mtd') + ' (' + mCur.replace('-', '/') + ')' });
+  } else if (g === 'day') {
+    for (var i = P.d.length - 1; i >= 0; i--) out.push({ i: i, kind: 'd', label: kfnDay(P.d[i]).dm + (i === P.d.length - 1 ? ' ' + kfnT('latest') : '') });
+  } else if (g === 'week') {
+    for (var j = P.w.length - 1; j >= 0; j--) out.push({ i: j, kind: 'w', label: kfnT('wk', kfnWeekNo(P.w[j])) + ' · ' + kfnWeekRange(P.w[j]) + (j === P.w.length - 1 ? ' ' + kfnT('latest') : '') });
+  } else {
+    for (var k = P.m.length - 1; k >= 0; k--) out.push({ i: k, kind: 'm', label: P.m[k].replace('-', '/') + (k === P.m.length - 1 ? ' ' + kfnT('mtdP') : '') });
+  }
+  return out;
+}
+function kfnRenderT() {
+  var lv = kfnLevel(), ch = kfnChildren(), P = KFN.bundle.periods;
+  var plist = kfnPeriodList(); if (KFN.tPeriod >= plist.length) KFN.tPeriod = 0;
+  var cur = plist[KFN.tPeriod] || plist[0], hubsAll = kfnHubs();
+  var kind = cur.kind || (KFN.tGran === 'day' ? 'd' : KFN.tGran === 'week' ? 'w' : 'm');
+  var isMtd = (KFN.tGran === 'mtd' || !!cur.isMtd);
+  var rows = ch.names.map(function (n) {
+    var s = kfnSum(ch.groups[n], kind, cur.i);
+    return { n: n, sub: lv === 'sup' ? (ch.groups[n][0][1] || '') : '', m: kfnM(s), hubs: ch.groups[n] };
+  });
+  rows = rows.filter(function (r) { return !(/^Chưa phân/.test(r.n) && !r.m); });
+  var q = KFN.q.toLowerCase().trim();
+  var shown = rows.filter(function (r) { return !q || r.n.toLowerCase().indexOf(q) >= 0; });
+  var so = KFN.sort, nullLast = function (a, b, f, dir) { var x = a ? f(a) : null, y = b ? f(b) : null; if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1; return dir * (x - y); };
+  shown.sort(function (a, b) {
+    if (so === 'fm') return nullLast(a, b, function (x) { return x.m ? x.m.fm : null; }, 1);
+    if (so === 'lm') return nullLast(a, b, function (x) { return x.m ? x.m.lm : null; }, 1);
+    if (so === 'sop') return nullLast(a, b, function (x) { return x.m ? x.m.sop : null; }, -1);
+    if (so === 'vol') return nullLast(a, b, function (x) { return x.m ? x.m.vol : null; }, -1);
+    if (so === 'suc') return nullLast(a, b, function (x) { return x.m ? x.m.suc : null; }, 1);
+    return String(a.n).localeCompare(String(b.n), 'vi');
+  });
+  var gb = function (g, t) { return '<button class="kfn-btn' + (KFN.tGran === g ? ' on' : '') + '" data-kfn-act="tgran" data-kfn-v="' + g + '">' + t + '</button>'; };
+  var vb = function (v, t) { return '<button class="kfn-btn' + (KFN.tView === v ? ' on' : '') + '" data-kfn-act="tview" data-kfn-v="' + v + '">' + t + '</button>'; };
+  var sel1 = '<select class="kfn-sel" data-kfn-sel="tperiod">' + plist.map(function (p, ix) { return '<option value="' + ix + '"' + (ix === KFN.tPeriod ? ' selected' : '') + '>' + kfnEsc(p.label) + '</option>'; }).join('') + '</select>';
+  var sel2 = '<select class="kfn-sel" data-kfn-sel="sort">' + [['name', 'sName'], ['fm', 'sFm'], ['lm', 'sLm'], ['sop', 'sSop'], ['vol', 'sVol'], ['suc', 'sSuc']].map(function (o) { return '<option value="' + o[0] + '"' + (so === o[0] ? ' selected' : '') + '>' + kfnT(o[1]) + '</option>'; }).join('') + '</select>';
+  var bar = '<div class="kfn-bar"><span class="kfn-chip">' + kfnT(KFN_LVK[lv][0]) + ' · ' + rows.length + ' ' + ch.label + '</span>' +
+    gb('mtd', kfnT('mtd')) + gb('day', kfnT('gDate')) + gb('week', kfnT('gWeek')) + gb('month', kfnT('gMonth')) +
+    (KFN.tView === 'full' && plist.length > 1 ? sel1 : '') + sel2 +
+    '<input class="kfn-in" id="kfn-q" placeholder="' + kfnEsc(kfnT('search')) + '" value="' + kfnEsc(KFN.q) + '"></div>';
+  var tableHtml;
+  if (KFN.tView === 'full') {
+    var tm = kfnM(kfnSum(hubsAll, kind, cur.i));
+    var cell = function (metric, m, d) {
+      if (!m) return '<td>—</td>';
+      var v = m[metric];
+      var sopSub = (metric === 'sop' && m.sopW != null) ? '<small class="cnt">' + kfnT('orders', kfnInt(m.sopW)) + '</small>' : '';
+      return '<td class="' + kfnCls(metric, v) + '">' + kfnPct(v, d) + sopSub + '</td>';
+    };
+    var volCell = function (m) {
+      if (!m) return '<td>—</td>';
+      var hasVol = (m.vol > 0 || m.suc != null);
+      var val = hasVol ? kfnInt(m.vol) : '—';
+      return '<td>' + val + '</td>';
+    };
+    var sucCell = function (m) {
+      if (!m || m.suc == null) return '<td class="neu">—</td>';
+      return '<td class="neu">' + kfnPct(m.suc) + '</td>';
+    };
+    var line = function (r, tot) {
+      return '<tr class="' + (tot ? 'tot' : 'cl') + '"' + (tot ? '' : ' data-kfn-act="drill" data-kfn-v="' + kfnEsc(r.n) + '"') + '><td class="nm">' + kfnEsc(r.n) + (r.sub ? '<small>' + kfnEsc(r.sub) + '</small>' : '') + '</td>' +
+        cell('fm', r.m, 1) + cell('lm', r.m, 1) + cell('sop', r.m, 2) + volCell(r.m) + sucCell(r.m) + '</tr>';
+    };
+    var tot = line({ n: kfnT(lv === 'sup' ? 'totCluster' : 'totRegion'), sub: '', m: tm }, true);
+    var volHeaderSub = isMtd ? kfnT('mtdP') : kfnT('cVolS');
+    var sucHeaderSub = isMtd ? kfnT('mtdP') : kfnT('cSucS');
+    tableHtml = '<div class="kfn-wrap"><table class="kfn-tbl"><thead><tr>' +
+      '<th class="nm">' + ch.label + '</th>' +
+      '<th>' + kfnT('cFm') + '<small>' + kfnT('tgt', kfnTgt(KFN_T.fm)) + '</small></th>' +
+      '<th>' + kfnT('cLm') + '<small>' + kfnT('tgt', kfnTgt(KFN_T.lm)) + '</small></th>' +
+      '<th>' + kfnT('rSop') + '<small>' + kfnT('kpiLe', kfnTgt(KFN_T.sop)) + '</small></th>' +
+      '<th>' + kfnT('cVol') + '<small>' + volHeaderSub + '</small></th>' +
+      '<th>' + kfnT('cSuc') + '<small>' + sucHeaderSub + '</small></th>' +
+      '</tr></thead><tbody>' +
+      tot + shown.map(function (r) { return line(r, false); }).join('') + '</tbody></table></div>' +
+      (shown.length ? '' : '<div class="kfn-empty">' + kfnT('noUnit') + '</div>') + '<div class="kfn-foot">' + kfnT('showing', shown.length, rows.length, ch.label) + '</div>';
+  } else {
+    var mk = KFN.tMetric, P = KFN.bundle.periods, idxs = plist.map(function (p) { return p.i; });
+    var mb = function (k, t) { return '<button class="kfn-btn' + (mk === k ? ' on' : '') + '" data-kfn-act="tmetric" data-kfn-v="' + k + '">' + t + '</button>'; };
+    var hasMtdCol = (KFN.tGran === 'day' || KFN.tGran === 'week');
+    var mtdHead = hasMtdCol ? '<th>' + kfnT('mtd') + '<small>' + kfnT('mtdP') + '</small></th>' : '';
+    var heads = mtdHead + idxs.map(function (i) { var lab = KFN.tGran === 'day' ? kfnDay(P.d[i]) : null; return '<th>' + (lab ? lab.wd + '<small>' + lab.dm + '</small>' : KFN.tGran === 'week' ? kfnT('wk', kfnWeekNo(P.w[i])) + '<small>' + kfnWeekRange(P.w[i]) + '</small>' : P.m[i].replace('-', '/')) + '</th>'; }).join('');
+    var dd = mk === 'sop' ? 2 : 1;
+    var mrow = function (name, hs, tot) {
+      var mMtd = kfnM(kfnSum(hs, 'm', P.m.length - 1));
+      var mtdCell = '';
+      if (hasMtdCol) {
+        if (!mMtd) mtdCell = '<td>—</td>';
+        else if (mk === 'vol') mtdCell = '<td style="font-weight:600;color:var(--kp,#ee4d2d)">' + ((mMtd.vol > 0 || mMtd.suc != null) ? kfnInt(mMtd.vol) : '—') + '</td>';
+        else {
+          var vM = mMtd[mk];
+          mtdCell = '<td class="' + kfnCls(mk, vM) + '" style="font-weight:600">' + (mk === 'suc' ? kfnPct(vM) : kfnPct(vM, dd)) + '</td>';
+        }
+      }
+      var cells = idxs.map(function (i) {
+        var m = kfnM(kfnSum(hs, kind, i));
+        if (!m) return '<td>—</td>';
+        if (mk === 'vol') return '<td>' + ((m.vol > 0 || m.suc != null) ? kfnInt(m.vol) : '—') + '</td>';
+        var v = m[mk];
+        return '<td class="' + kfnCls(mk, v) + '">' + kfnPct(v, dd) + '</td>';
+      }).join('');
+      return '<tr class="' + (tot ? 'tot' : 'cl') + '"' + (tot ? '' : ' data-kfn-act="drill" data-kfn-v="' + kfnEsc(name) + '"') + '><td class="nm">' + kfnEsc(name) + '</td>' + mtdCell + cells + '</tr>';
+    };
+    tableHtml = '<div class="kfn-bar">' + mb('fm', kfnT('cFm')) + mb('lm', kfnT('cLm')) + mb('sop', kfnT('rSop')) + mb('suc', kfnT('cSuc')) + mb('vol', kfnT('cVol')) + '</div>' +
+      '<div class="kfn-wrap"><table class="kfn-tbl"><thead><tr><th class="nm">' + ch.label + '</th>' + heads + '</tr></thead><tbody>' + mrow(kfnT(lv === 'sup' ? 'totCluster' : 'totRegion'), hubsAll, true) +
+      shown.map(function (r) { return mrow(r.n, r.hubs, false); }).join('') + '</tbody></table></div><div class="kfn-foot">' + kfnT('showing2', shown.length, rows.length, ch.label) + '</div>';
+  }
+  return '<div class="kfn-card"><div class="kfn-ch"><div class="kfn-ic">T</div><div><div class="kfn-ct">' + kfnT('tTitle', ch.label, kfnEsc(kfnT(KFN_LVK[lv][1]))) + '</div><div class="kfn-cs">' + kfnT('dataTo', kfnDay(KFN.bundle.asOf).full) + '</div></div>' +
+    '<div class="kfn-seg">' + vb('full', kfnT('full')) + vb('matrix', kfnT('matrix')) + '</div></div>' + bar + tableHtml + '</div>';
+}
+
+/* ───── cấp LEAD: danh sách đơn không đạt (có bộ lọc ngày) ───── */
+function kfnRiderOf(r) { return (r.raw && r.raw.riderId) ? String(r.raw.riderId) : (r.riderId ? String(r.riderId) : ''); }
+function kfnRefDate() { var l = KFN.rec.list || []; return l.reduce(function (m, r) { return r.date > m ? r.date : m; }, ''); }
+function kfnRange() {
+  var R = KFN.rec, ref = kfnRefDate(); if (!ref) return { from: '', to: '', ref: '' };
+  var to = R.to || ref, from = R.from || kfnAdd(ref, -6); if (from > to) { var t = from; from = to; to = t; }
+  return { from: from, to: to, ref: ref };
+}
+function kfnRecFiltered() { var g = kfnRange(); return { rows: (KFN.rec.list || []).filter(function (r) { return r.date >= g.from && r.date <= g.to; }), ref: g.ref, from: g.from, to: g.to }; }
+function kfnFailRow(r, o) {
+  var n = (KPIFAIL_STATE.notes || {})[r.id];
+  var info = kfnTypeLabel(r.type) + (r.reason ? ' · ' + kfnReasonLabel(r.reason) : '') + ((r.delayHours != null && r.delayHours > 0) ? ' · ' + kfnT('late', r.delayHours) : '');
+  return '<tr><td class="nm"><span class="kfn-id" title="' + kfnEsc(kfnT('copyHint')) + '" data-kfn-act="copy" data-kfn-v="' + kfnEsc(r.id) + '">' + kfnEsc(r.id) + '</span></td><td>' + kfnEsc(r.hub) + '</td>' + (o.rider ? '<td>' + (kfnEsc(kfnRiderOf(r)) || '—') + '</td>' : '') +
+    '<td><span class="kfn-ct2 ' + r.category + '">' + kfnCatLabel(r.category) + '</span></td><td style="text-align:left;white-space:normal;max-width:260px">' + kfnEsc(info) + '</td><td>' + kfnDay(r.date).dm + '</td>' +
+    '<td style="text-align:left;white-space:normal;max-width:220px">' + (n && n.note ? kfnEsc(n.note).slice(0, 90) + '<small class="cnt">' + kfnEsc(n.user || '') + ' · ' + kfnEsc(n.time || '') + '</small>' : '<span style="color:var(--kmut)">' + kfnT('none') + '</span>') + '</td>' +
+    (o.action ? '<td><button class="kfn-btn" data-kfn-act="detail" data-kfn-v="' + kfnEsc(r.id) + '">' + kfnT('check') + '</button></td>' : '') + '</tr>';
+}
+function kfnRenderLead() {
+  var R = KFN.rec, hub = KFN.sel.hub;
+  if (R.loading || !R.list) {
+    return '<div class="kfn-card"><div class="kfn-ch"><div class="kfn-ic">!</div><div><div class="kfn-ct">' + kfnT('oTitle') + '</div></div></div>' +
+      (R.err ? '<div class="kfn-empty">⚠ ' + kfnEsc(R.err) + ' <button class="kfn-btn" data-kfn-act="recretry">' + kfnT('retry') + '</button></div>' : '<div class="kfn-load">' + kfnT('recLoad') + '</div>') + '</div>';
+  }
+  var f = kfnRecFiltered(), rows = f.rows, hasRider = (R.list || []).some(function (r) { return kfnRiderOf(r); });
+  var types = kfnSortVi(kfnUniq(rows.map(function (r) { return r.type; }))), rids = hasRider ? kfnSortVi(kfnUniq(rows.map(kfnRiderOf))) : [];
+  var q = R.q.toLowerCase().trim();
+  var lst = rows.filter(function (r) { return (R.cat === 'ALL' || r.category === R.cat) && (!R.type || r.type === R.type) && (!R.rider || kfnRiderOf(r) === R.rider) && (!q || String(r.id).toLowerCase().indexOf(q) >= 0); })
+    .sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : String(a.id).localeCompare(String(b.id)); });
+  var pages = Math.max(1, Math.ceil(lst.length / KFN_PAGE)); if (R.page > pages) R.page = pages;
+  var slice = lst.slice((R.page - 1) * KFN_PAGE, R.page * KFN_PAGE);
+  var cnt = { FM: 0, LM: 0, SOP: 0 }; rows.forEach(function (r) { cnt[r.category] = (cnt[r.category] || 0) + 1; });
+  var cb = function (c, t) { return '<button class="kfn-btn' + (R.cat === c ? ' on' : '') + '" data-kfn-act="rcat" data-kfn-v="' + c + '">' + t + '</button>'; };
+  var pb = function (k, t) { return '<button class="kfn-btn" data-kfn-act="rpreset" data-kfn-v="' + k + '">' + t + '</button>'; };
+  var notes = KPIFAIL_STATE.notes || {}, noNote = lst.filter(function (r) { return !notes[r.id] || !notes[r.id].note; }).length;
+  var minD = (R.list || []).reduce(function (m, r) { return (!m || r.date < m) ? r.date : m; }, ''), maxD = f.ref;
+  var head = '<tr><th class="nm">' + kfnT('hId') + '</th><th>' + kfnT('hHub') + '</th>' + (hasRider ? '<th>' + kfnT('hRider') + '</th>' : '') + '<th>' + kfnT('hKind') + '</th><th>' + kfnT('hInfo') + '</th><th>' + kfnT('hDate') + '</th><th>' + kfnT('hNote') + '</th><th>' + kfnT('hAct') + '</th></tr>';
+  var otbl = slice.length ? '<div class="kfn-wrap"><table class="kfn-tbl"><thead>' + head + '</thead><tbody>' + slice.map(function (r) { return kfnFailRow(r, { rider: hasRider, action: true }); }).join('') + '</tbody></table></div>' : '<div class="kfn-empty">' + kfnT('noRows') + '</div>';
+  return '<div class="kfn-card"><div class="kfn-ch"><div class="kfn-ic">!</div><div><div class="kfn-ct">' + kfnT('oTitle') + '</div><div class="kfn-cs">' + kfnT('oSub', kfnEsc(hub)) + '</div></div>' +
+    '<div class="kfn-seg"><button class="kfn-btn" data-kfn-act="csv">' + kfnT('csv') + '</button></div></div>' +
+    '<div class="kfn-bar"><label class="kfn-upd">' + kfnT('from') + '</label><input type="date" class="kfn-in date" data-kfn-sel="rfrom" value="' + f.from + '" min="' + minD + '" max="' + maxD + '">' +
+    '<label class="kfn-upd">' + kfnT('to') + '</label><input type="date" class="kfn-in date" data-kfn-sel="rto" value="' + f.to + '" min="' + minD + '" max="' + maxD + '">' + pb('latest', kfnT('pLatest')) + pb('7', kfnT('p7')) + pb('30', kfnT('p30')) + '</div>' +
+    '<div class="kfn-bar">' + cb('ALL', kfnT('fAll', rows.length)) + cb('FM', kfnT('fFm', cnt.FM)) + cb('LM', kfnT('fLm', cnt.LM)) + cb('SOP', kfnT('fSop', cnt.SOP)) +
+    '<select class="kfn-sel" data-kfn-sel="rtype"><option value="">' + kfnT('allTypes') + '</option>' + types.map(function (t) { return '<option' + (R.type === t ? ' selected' : '') + ' value="' + kfnEsc(t) + '">' + kfnEsc(kfnTypeLabel(t)) + '</option>'; }).join('') + '</select>' +
+    (hasRider ? '<select class="kfn-sel" data-kfn-sel="rrider"><option value="">' + kfnT('allRiders') + '</option>' + rids.filter(Boolean).map(function (t) { return '<option' + (R.rider === t ? ' selected' : '') + ' value="' + kfnEsc(t) + '">' + kfnEsc(t) + '</option>'; }).join('') + '</select>' : '') +
+    '<input class="kfn-in" id="kfn-rq" placeholder="' + kfnEsc(kfnT('searchId')) + '" value="' + kfnEsc(R.q) + '"><span class="kfn-chip">' + kfnT('noNote', noNote) + '</span></div>' + otbl +
+    '<div class="kfn-pg"><button class="kfn-btn" data-kfn-act="rpage" data-kfn-v="-1"' + (R.page <= 1 ? ' disabled' : '') + '>' + kfnT('prev') + '</button><button class="kfn-btn" data-kfn-act="rpage" data-kfn-v="1"' + (R.page >= pages ? ' disabled' : '') + '>' + kfnT('next') + '</button><span class="kfn-upd">' + kfnT('rowsPg', lst.length, R.page, pages) + '</span></div></div>';
+}
+
+/* ───── tải đơn + ghi chú ───── */
+function kfnEnsureRecords() {
+  var R = KFN.rec, hub = KFN.sel.hub;
+  if (!hub) return;
+  if (R.hub === hub && (R.list || R.loading)) return;
+  R.hub = hub; R.list = null; R.err = ''; R.loading = true; R.page = 1; R.from = ''; R.to = '';
+  if (typeof google === 'undefined' || !google.script || !google.script.run) { R.loading = false; R.err = '—'; return; }
+  google.script.run.withFailureHandler(function (e) { R.loading = false; R.err = kfnT('recErr', (e && e.message) || e); kpifailRenderAll(); })
+    .withSuccessHandler(function (str) {
+      if (R.hub !== hub) return;
+      var res; try { res = JSON.parse(str); } catch (e) { res = null; }
+      R.loading = false;
+      if (!res || !res.success) { R.err = kfnT('recErr', (res && res.error) || '—'); kpifailRenderAll(); return; }
+      R.list = (res.records || []).filter(function (r) { return r.category === 'FM' || r.category === 'LM' || r.category === 'SOP'; });
+      KPIFAIL_STATE.records = R.list;
+      kpifailRenderAll(); kpifailLoadNotes(false, true);
+    }).kpifail_getMasterDataLite(hub, 31);
+}
+function kpifailLoadNotes(silent, force) {
+  if (typeof google === 'undefined' || !google.script || !google.script.run || typeof google.script.run.kpifail_getNotes !== 'function') return;
+  if (!force && KPIFAIL_STATE.notesLoadedAt && (Date.now() - KPIFAIL_STATE.notesLoadedAt) < 30000) return;
+  google.script.run.withFailureHandler(function () {}).withSuccessHandler(function (str) {
+    var res; try { res = typeof str === 'string' ? JSON.parse(str) : str; } catch (e) { res = null; }
+    var fresh = (res && res.success && res.notes) ? res.notes : {};
+    Object.keys(KPIFAIL_STATE.notes || {}).forEach(function (id) { if (KPIFAIL_STATE.notes[id] && KPIFAIL_STATE.notes[id]._pending) fresh[id] = KPIFAIL_STATE.notes[id]; });
+    var changed = JSON.stringify(fresh) !== JSON.stringify(KPIFAIL_STATE.notes);
+    KPIFAIL_STATE.notes = fresh; KPIFAIL_STATE.notesLoadedAt = Date.now(); KPIFAIL_STATE.notesVersion++;
+    if (changed && !KFN.modal) { if (KFN.sel.hub && KFN.rec.list) kpifailRenderAll(); if (KFN.day.open) kfnRenderDay(); }
+  }).kpifail_getNotes();
+}
+
+/* ───── bấm vào một ngày → toàn bộ đơn không đạt của ngày đó (mọi cấp) ───── */
+function kfnDayScopeHubs() { return kfnHubs().map(function (h) { return h[0]; }); }
+function kfnDayScopeLabel() { var s = KFN.sel, p = []; if (s.aom) p.push(s.aom); if (s.sup) p.push(s.sup); if (s.hub) p.push(s.hub); return p.length ? p.join(' / ') : kfnT('xAllScope'); }
+function kfnOpenDay(date, cat) {
+  var D = KFN.day; D.open = true; D.date = date; D.cat = cat || 'ALL'; D.q = ''; D.page = 1; D.data = null; D.err = ''; kfnLoadDay();
+  kpifailLoadNotes(true, false);
+}
+function kfnLoadDay() {
+  var D = KFN.day, seq = ++D.seq, hubSel = KFN.sel.hub;
+  var local = !!(hubSel && KFN.rec.list && KFN.rec.hub === hubSel);
+  D.local = local;
+  if (local) {                                   // cấp Lead đã có sẵn đơn của Hub → không cần gọi máy chủ
+    var all = KFN.rec.list.filter(function (r) { return r.date === D.date; }), q = D.q.toLowerCase().trim();
+    var counts = { FM: 0, LM: 0, SOP: 0 }; all.forEach(function (r) { counts[r.category]++; });
+    var rows = all.filter(function (r) { return (D.cat === 'ALL' || r.category === D.cat) && (!q || String(r.id).toLowerCase().indexOf(q) >= 0); })
+      .sort(function (a, b) { var o = { FM: 0, LM: 1, SOP: 2 }; return (o[a.category] - o[b.category]) || String(a.id).localeCompare(String(b.id)); });
+    var pages = Math.max(1, Math.ceil(rows.length / KFN_DAYPAGE)); if (D.page > pages) D.page = pages;
+    D.data = { total: rows.length, counts: counts, page: D.page, pages: pages, rows: rows.slice((D.page - 1) * KFN_DAYPAGE, D.page * KFN_DAYPAGE) };
+    D.loading = false; kfnRenderDay(); return;
+  }
+  D.loading = true; kfnRenderDay();
+  google.script.run.withFailureHandler(function (e) { if (seq !== D.seq) return; D.loading = false; D.err = (e && e.message) || String(e); kfnRenderDay(); })
+    .withSuccessHandler(function (str) {
+      if (seq !== D.seq) return;
+      var res; try { res = JSON.parse(str); } catch (e) { res = null; }
+      D.loading = false;
+      if (!res || !res.success) { D.err = (res && res.error) || '—'; D.data = null; } else { D.data = res; D.page = res.page; }
+      kfnRenderDay();
+    }).flm_getFailOrdersByDay(JSON.stringify({ date: D.date, category: D.cat, hubs: kfnDayScopeHubs(), search: D.q, page: D.page, pageSize: KFN_DAYPAGE }));
+}
+function kfnRenderDay() {
+  var host = document.getElementById('kfn-day-host'); if (!host) return;
+  var D = KFN.day; if (!D.open) { host.innerHTML = ''; return; }
+  var d = D.data, body;
+  if (D.loading) body = '<div class="kfn-load">' + kfnT('xLoad') + '<br><small>' + kfnT('xSlow') + '</small></div>';
+  else if (D.err) body = '<div class="kfn-empty">⚠ ' + kfnEsc(D.err) + '<br><br><button class="kfn-btn pri" data-kfn-act="dayretry">' + kfnT('retry') + '</button></div>';
+  else if (d && !d.rows.length) body = '<div class="kfn-empty">' + kfnT('xNone') + '</div>';
+  else if (d) {
+    var hasRider = d.rows.some(function (r) { return kfnRiderOf(r); });
+    var head = '<tr><th class="nm">' + kfnT('hId') + '</th><th>' + kfnT('hHub') + '</th>' + (hasRider ? '<th>' + kfnT('hRider') + '</th>' : '') + '<th>' + kfnT('hKind') + '</th><th>' + kfnT('hInfo') + '</th><th>' + kfnT('hDate') + '</th><th>' + kfnT('hNote') + '</th></tr>';
+    body = '<div class="kfn-wrap"><table class="kfn-tbl"><thead>' + head + '</thead><tbody>' + d.rows.map(function (r) { return kfnFailRow(r, { rider: hasRider, action: false }); }).join('') + '</tbody></table></div>';
+  } else body = '';
+  var cb = function (c, t) { return '<button class="kfn-btn' + (D.cat === c ? ' on' : '') + '" data-kfn-act="daycat" data-kfn-v="' + c + '">' + t + '</button>'; };
+  var cn = d ? d.counts : { FM: 0, LM: 0, SOP: 0 }, totalAll = cn.FM + cn.LM + cn.SOP;
+  var hadFocus = document.activeElement && document.activeElement.id === 'kfn-dq';
+  host.innerHTML = '<div class="kfn-mask" data-kfn-act="dayclose-bg"><div class="kfn-modal wide"><div class="kfn-ch"><div class="kfn-ic">!</div><div><div class="kfn-ct">' + kfnT('xTitle', kfnDay(D.date).full) + '</div><div class="kfn-cs">' + kfnT('xScope', kfnEsc(kfnDayScopeLabel())) + '</div></div>' +
+    '<div class="kfn-seg"><button class="kfn-btn" data-kfn-act="daycsv">' + kfnT('csv') + '</button><button class="kfn-btn" data-kfn-act="dayclose">✕</button></div></div>' +
+    '<div class="kfn-bar">' + cb('ALL', kfnT('fAll', d ? totalAll : '…')) + cb('FM', kfnT('fFm', d ? cn.FM : '…')) + cb('LM', kfnT('fLm', d ? cn.LM : '…')) + cb('SOP', kfnT('fSop', d ? cn.SOP : '…')) +
+    '<input class="kfn-in" id="kfn-dq" placeholder="' + kfnEsc(kfnT('searchId')) + '" value="' + kfnEsc(D.q) + '"></div>' + body +
+    (d && d.rows.length ? '<div class="kfn-pg"><button class="kfn-btn" data-kfn-act="daypage" data-kfn-v="-1"' + (d.page <= 1 ? ' disabled' : '') + '>' + kfnT('prev') + '</button><button class="kfn-btn" data-kfn-act="daypage" data-kfn-v="1"' + (d.page >= d.pages ? ' disabled' : '') + '>' + kfnT('next') + '</button><span class="kfn-upd">' + kfnT('rowsPg', d.total, d.page, d.pages) + '</span></div>' : '') + '</div></div>';
+  if (hadFocus) { var el = document.getElementById('kfn-dq'); if (el) { el.focus(); try { el.setSelectionRange(el.value.length, el.value.length); } catch (e) {} } }
+}
+function kfnCloseDay() { KFN.day.open = false; KFN.day.seq++; kfnRenderDay(); }
+function kfnDayCsv() {
+  var D = KFN.day, esc = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  var save = function (rows) {
+    var notes = KPIFAIL_STATE.notes || {};
+    var out = [[kfnT('hId'), kfnT('hHub'), kfnT('hRider'), kfnT('hKind'), kfnT('hInfo'), kfnT('hDate'), kfnT('hNote')].join(',')].concat(rows.map(function (r) {
+      var n = notes[r.id] || {}; return [r.id, r.hub, kfnRiderOf(r), kfnCatLabel(r.category), kfnTypeLabel(r.type) + (r.reason ? ' · ' + kfnReasonLabel(r.reason) : ''), r.date, n.note].map(esc).join(',');
+    })).join('\n');
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + out], { type: 'text/csv;charset=utf-8' }));
+    a.download = 'fail_kpi_' + D.date + '.csv'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  };
+  if (D.local) { save(KFN.rec.list.filter(function (r) { return r.date === D.date && (D.cat === 'ALL' || r.category === D.cat); })); return; }
+  google.script.run.withFailureHandler(function (e) { kfnToast(kfnT('dErr', (e && e.message) || e), 'error'); })
+    .withSuccessHandler(function (str) { var res; try { res = JSON.parse(str); } catch (e) { res = null; } if (res && res.success) save(res.rows); else kfnToast(kfnT('dErr', (res && res.error) || kfnT('unk')), 'error'); })
+    .flm_getFailOrdersByDay(JSON.stringify({ date: D.date, category: D.cat, hubs: kfnDayScopeHubs(), search: D.q, all: true }));
+}
+
+/* ───── chi tiết đơn + ghi chú ───── */
+function kfnOpenDetail(id) {
+  var r = (KFN.rec.list || []).filter(function (x) { return x.id === id; })[0]; if (!r) return;
+  KFN.modal = r;
+  var raw = r.raw || {}, kv = [[kfnT('kId'), r.id], [kfnT('kHub'), r.hub], [kfnT('kKind'), kfnCatLabel(r.category)], [kfnT('kType'), kfnTypeLabel(r.type)], [kfnT('kReason'), r.reason ? kfnReasonLabel(r.reason) : ''], [kfnT('kDate'), kfnDay(r.date).full], [kfnT('kDelay'), (r.delayHours != null && r.delayHours > 0) ? r.delayHours : '']];
+  var labels = { pickupStation: 'rPickSt', pickedTime: 'rPicked', inboundTime: 'rInbound', packedTime: 'rPacked', lhArrivedTime: 'rLhArr', lhArrivedTimeFinal: 'rLhArrF', lhPackedTime: 'rLhPack', fmEta: 'rFmEta', cotLate: 'rCot',
+                 arrivedTime: 'rArr', firstAttemptTime: 'rAtt', lmEta: 'rLmEta', lmInbound: 'rLmIn', riderId: 'rRider', pickupEta: 'rPickEta' };
+  Object.keys(raw).forEach(function (k) { if (raw[k] != null && raw[k] !== '' && labels[k]) kv.push([kfnT(labels[k]), raw[k]]); });
+  var n = (KPIFAIL_STATE.notes || {})[id] || {};
+  document.getElementById('kfn-modal-host').innerHTML = '<div class="kfn-mask" data-kfn-act="mclose-bg"><div class="kfn-modal"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:15px">' + kfnT('dTitle') + '</b><button class="kfn-btn" data-kfn-act="mclose">✕</button></div>' +
+    '<div class="kfn-kv">' + kv.filter(function (p) { return p[1] != null && p[1] !== ''; }).map(function (p) { return '<span>' + kfnEsc(p[0]) + '</span><span>' + kfnEsc(p[1]) + '</span>'; }).join('') + '</div>' +
+    '<div style="font-weight:800;margin:6px 0">' + kfnT('dNote') + '</div><textarea class="kfn-ta" id="kfn-note-ta" placeholder="' + kfnEsc(kfnT('dPh')) + '">' + kfnEsc(n.note || '') + '</textarea>' +
+    '<div style="color:var(--kmut);font-size:11px;margin:4px 0 10px">' + (n.user ? kfnT('dLast', kfnEsc(n.user), kfnEsc(n.time || '')) : kfnT('dNoNote')) + '</div>' +
+    '<div style="display:flex;gap:8px;justify-content:flex-end"><button class="kfn-btn" data-kfn-act="mclose">' + kfnT('dClose') + '</button><button class="kfn-btn pri" data-kfn-act="msave" id="kfn-note-save">' + kfnT('dSave') + '</button></div></div></div>';
+}
+function kfnCloseModal() { KFN.modal = null; document.getElementById('kfn-modal-host').innerHTML = ''; }
+function kfnSaveNote(force, retry) {
+  var r = KFN.modal; if (!r) return;
+  var ta = document.getElementById('kfn-note-ta'), text = ta ? ta.value.trim() : '', id = r.id;
+  if (!text) { kfnToast(kfnT('dEmpty'), 'error'); return; }
+  var prev = (KPIFAIL_STATE.notes || {})[id], expected = force ? undefined : (prev ? prev.note : '');
+  var btn = document.getElementById('kfn-note-save'); if (btn) { btn.disabled = true; btn.textContent = kfnT('dSaving'); }
+  var reset = function () { if (btn) { btn.disabled = false; btn.textContent = kfnT('dSave'); } };
+  google.script.run.withFailureHandler(function (e) { reset(); kfnToast(kfnT('dErr', (e && e.message) || e), 'error'); })
+    .withSuccessHandler(function (str) {
+      var res; try { res = JSON.parse(str); } catch (e) { res = null; } reset();
+      if (res && res.conflict) {
+        var msg = id + ' — ' + res.currentUser + ' · ' + res.currentTime + '\n\n"' + res.currentNote + '"\n\n' + kfnT('cfAsk');
+        if (typeof spxConfirm === 'function') spxConfirm({ title: kfnT('cfTitle'), message: msg, okText: kfnT('cfOk'), danger: true, onOk: function () { kfnSaveNote(true, 0); } });
+        else if (confirm(msg)) kfnSaveNote(true, 0);
+        return;
+      }
+      if (res && res.lockBusy && (retry || 0) < 3) { setTimeout(function () { kfnSaveNote(force, (retry || 0) + 1); }, 800 * ((retry || 0) + 1)); return; }
+      if (!res || !res.success) { kfnToast(kfnT('dErr', (res && res.error) || kfnT('unk')), 'error'); return; }
+      KPIFAIL_STATE.notes[id] = { note: text, user: res.user, time: res.time }; KPIFAIL_STATE.notesVersion++;
+      try { sessionStorage.removeItem('kpifail_idx_cache'); if (typeof window.loadKPIFailIndexCard === 'function') window.loadKPIFailIndexCard(); } catch (e2) {}
+      kfnCloseModal(); kfnToast(kfnT('dOk')); kpifailRenderAll();
+    }).kpifail_saveNote(id, text, expected);
+}
+function kfnCsv() {
+  var f = kfnRecFiltered(), R = KFN.rec, q = R.q.toLowerCase().trim(), notes = KPIFAIL_STATE.notes || {};
+  var rows = f.rows.filter(function (r) { return (R.cat === 'ALL' || r.category === R.cat) && (!R.type || r.type === R.type) && (!R.rider || kfnRiderOf(r) === R.rider) && (!q || String(r.id).toLowerCase().indexOf(q) >= 0); });
+  var esc = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  var out = [[kfnT('hId'), kfnT('hHub'), kfnT('hRider'), kfnT('hKind'), kfnT('hInfo'), kfnT('hDate'), kfnT('hNote')].join(',')].concat(rows.map(function (r) {
+    var n = notes[r.id] || {}; return [r.id, r.hub, kfnRiderOf(r), kfnCatLabel(r.category), kfnTypeLabel(r.type) + (r.reason ? ' · ' + kfnReasonLabel(r.reason) : ''), r.date, n.note].map(esc).join(',');
+  })).join('\n');
+  var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + out], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'fail_kpi_' + KFN.sel.hub.replace(/[^A-Za-z0-9]+/g, '_') + '_' + f.from + '_' + f.to + '.csv'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+
+/* ───── vẽ toàn bộ ───── */
+function kpifailRenderAll() {
+  if (!KPIFAIL_STATE.loaded || !KFN.bundle) return;
+  var body = document.getElementById('kfn-body'); if (!body) return;
+  var keepTop = body.scrollTop, fe = document.activeElement, focusId = fe && fe.id, caret = fe && fe.selectionStart;
+  if (KFN.bundle.targets) { if (KFN.bundle.targets.fm != null) KFN_T.fm = KFN.bundle.targets.fm; if (KFN.bundle.targets.lm != null) KFN_T.lm = KFN.bundle.targets.lm; if (KFN.bundle.targets.sopMax != null) KFN_T.sop = KFN.bundle.targets.sopMax; }
+  KFN.sel = kfnComputeSel();
+  if (!KFN.bundle.hubs.length) { body.innerHTML = kfnHeadHtml() + '<div class="kfn-card"><div class="kfn-empty">' + kfnT('empty') + '</div></div>'; return; }
+  var lv = kfnLevel(), html = kfnHeadHtml();
+  var src = KFN.bundle.sources || {}, lag = [], nm = { FM: 'FM', LM: 'LM', SOP: 'SOP', SUC: kfnLang() === 'en' ? 'Delivery' : 'Giao hàng' };
+  Object.keys(src).forEach(function (k) { if (src[k].lastDate && src[k].lastDate < KFN.bundle.asOf) lag.push(kfnT('lagTo', nm[k] || k, kfnDay(src[k].lastDate).dm)); });
+  if (lag.length) html += '<div class="kfn-note">' + kfnT('lag', kfnEsc(lag.join(' · '))) + '</div>';
+  if (KFN.bundle.partial) html += '<div class="kfn-note">' + kfnT('partial') + '</div>';
+  html += kfnRenderK();
+  if (lv === 'lead') { kfnEnsureRecords(); html += kfnRenderLead(); } else html += kfnRenderT();
+  body.innerHTML = html; body.scrollTop = keepTop;
+  if (focusId === 'kfn-q' || focusId === 'kfn-rq') { var el = document.getElementById(focusId); if (el) { el.focus(); try { el.setSelectionRange(caret, caret); } catch (e) {} } }
+  var lab = document.getElementById('kpifail-updated-label');
+  if (lab) { var bt = new Date(KFN.bundle.builtAt); lab.textContent = kfnT('upd', ('0' + bt.getHours()).slice(-2) + ':' + ('0' + bt.getMinutes()).slice(-2), kfnDay(KFN.bundle.asOf).dm); }
+  if (KFN.day.open) kfnRenderDay();
+}
+
+/* ───── tải dữ liệu + hàm trang chủ gọi vào ───── */
+function kpifailLoadData(force, prefetch) {
+  if (KPIFAIL_STATE.loading) return;
+  if (typeof google === 'undefined' || !google.script || !google.script.run) return;
+  KPIFAIL_STATE.loading = true; KPIFAIL_STATE.silentLoad = !!prefetch && !kfnVisible();
+  var body0 = document.getElementById('kfn-body'); if (body0 && !KPIFAIL_STATE.loaded) body0.innerHTML = kfnRenderSkeleton();
+  google.script.run.withFailureHandler(function (e) {
+    KPIFAIL_STATE.loading = false;
+    var body = document.getElementById('kfn-body');
+    if (body && !KPIFAIL_STATE.loaded) body.innerHTML = '<div class="kfn-card"><div class="kfn-empty">⚠ ' + kfnT('failLoad') + ': ' + kfnEsc((e && e.message) || e) + '<br><br><button class="kfn-btn pri" data-kfn-act="refresh">' + kfnT('retry') + '</button></div></div>';
+    else kfnToast(kfnT('refreshFail'), 'error');
+  }).withSuccessHandler(function (str) {
+    KPIFAIL_STATE.loading = false;
+    var res; try { res = JSON.parse(str); } catch (e) { res = null; }
+    var body = document.getElementById('kfn-body');
+    if (!res || !res.success) {
+      var msg = (res && res.error) || '—', det = (res && res.detail) ? '<br><small>' + kfnT('detail') + ': ' + kfnEsc(res.detail) + '</small>' : '';
+      if (res && res.building && KFN.retry < 12 && !KPIFAIL_STATE.loaded) {
+        KFN.retry++;
+        if (body) body.innerHTML = '<div class="kfn-card"><div class="kfn-load">' + kfnT('preparing', KFN.retry) + det + '</div></div>';
+        setTimeout(function () { if (!KPIFAIL_STATE.loaded) kpifailLoadData(false); }, 15000);
+        return;
+      }
+      if (body && !KPIFAIL_STATE.loaded) body.innerHTML = '<div class="kfn-card"><div class="kfn-empty">⚠ ' + kfnEsc(msg) + det + '<br><br><button class="kfn-btn pri" data-kfn-act="refresh">' + kfnT('retry') + '</button></div></div>';
+      return;
+    }
+    KFN.bundle = res;
+    KPIFAIL_STATE.loaded = true; KPIFAIL_STATE.access = res.access; KPIFAIL_STATE.hubs = res.hubs.map(function (h) { return h[0]; }); KPIFAIL_STATE.dataVersion = String(res.builtAt);
+    var names = {}; res.hubs.forEach(function (h) { names[h[0]] = h; });
+    if (KFN.drill.hub && !names[KFN.drill.hub]) KFN.drill.hub = '';
+    KFN.retry = 0;
+    if (!KPIFAIL_STATE.silentLoad) kpifailRenderAll();
+  }).flm_getKpiBundle();
+}
+function kpifailSelectHub(hubName, silent) {
+  KPIFAIL_STATE.filterHub = hubName || 'ALL'; KFN.drill = { aom: '', sup: '', hub: '' }; KFN.rec.page = 1;
+  if (!silent && KFN.bundle) kpifailRenderAll();
+}
+function kpifailApplyPreviewLevel(level) {
+  KFN.drill = { aom: '', sup: '', hub: '' }; KFN.rec.page = 1;
+  if (KFN.bundle) kpifailRenderAll();
+}
+function kpifailCheckFresh(reason) {
+  try {
+    if (document.hidden || !KPIFAIL_STATE.loaded || KPIFAIL_STATE.loading || !kfnVisible()) return;
+    var a = document.activeElement; if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) return;
+    google.script.run.withSuccessHandler(function (s) {
+      var r; try { r = JSON.parse(s); } catch (e) { r = null; }
+      if (!r || !r.success || !r.flm) return;
+      if (KFN.bundle && Number(r.flm) !== Number(KFN.bundle.builtAt)) kpifailLoadData(true);
+    }).kpifail_getDataVersion();
+  } catch (e) {}
+}
+
+/* ───── sự kiện ───── */
+function kfnOnClick(ev) {
+  var t = ev.target.closest('[data-kfn-act]'); if (!t || !document.getElementById('kfn-root').contains(t)) return;
+  var act = t.getAttribute('data-kfn-act'), v = t.getAttribute('data-kfn-v');
+  if (act === 'mclose-bg') { if (ev.target === t) kfnCloseModal(); return; }
+  if (act === 'dayclose-bg') { if (ev.target === t) kfnCloseDay(); return; }
+  if (act === 'copy') { kfnCopy(v); return; }
+  if (act === 'refresh') { kpifailLoadData(true); return; }
+  if (act === 'back') { kfnBack(); kpifailRenderAll(); return; }
+  if (act === 'dayfail') { var p = v.split('|'); kfnOpenDay(p[0], p[1]); return; }
+  if (act === 'dayclose') { kfnCloseDay(); return; }
+  if (act === 'daycat') { KFN.day.cat = v; KFN.day.page = 1; kfnLoadDay(); return; }
+  if (act === 'daypage') { KFN.day.page += Number(v); kfnLoadDay(); return; }
+  if (act === 'dayretry') { kfnLoadDay(); return; }
+  if (act === 'daycsv') { kfnDayCsv(); return; }
+  if (act === 'kgran') { KFN.kGran = v; }
+  else if (act === 'tgran') { KFN.tGran = v; KFN.tPeriod = 0; }
+  else if (act === 'tview') { KFN.tView = v; }
+  else if (act === 'tmetric') { KFN.tMetric = v; }
+  else if (act === 'drill') { var lv = kfnLevel(); if (lv === 'rom') kfnSetSel('aom', v); else if (lv === 'aom') kfnSetSel('sup', v); else if (lv === 'sup') kfnSetSel('hub', v); return; }
+  else if (act === 'rcat') { KFN.rec.cat = v; KFN.rec.page = 1; }
+  else if (act === 'rpage') { KFN.rec.page += Number(v); }
+  else if (act === 'rpreset') { var ref = kfnRefDate(); KFN.rec.to = ref; KFN.rec.from = v === 'latest' ? ref : kfnAdd(ref, -(Number(v) - 1)); KFN.rec.page = 1; }
+  else if (act === 'recretry') { KFN.rec.hub = ''; KFN.rec.err = ''; }
+  else if (act === 'detail') { kfnOpenDetail(v); return; }
+  else if (act === 'mclose') { kfnCloseModal(); return; }
+  else if (act === 'msave') { kfnSaveNote(false, 0); return; }
+  else if (act === 'csv') { kfnCsv(); return; }
+  kpifailRenderAll();
+}
+function kfnOnChange(ev) {
+  var t = ev.target, k = t.getAttribute && t.getAttribute('data-kfn-sel'); if (!k) return; var v = t.value;
+  if (k === 'tperiod') KFN.tPeriod = Number(v);
+  else if (k === 'sort') KFN.sort = v;
+  else if (k === 'rtype') { KFN.rec.type = v; KFN.rec.page = 1; }
+  else if (k === 'rrider') { KFN.rec.rider = v; KFN.rec.page = 1; }
+  else if (k === 'rfrom') { KFN.rec.from = v; KFN.rec.page = 1; }
+  else if (k === 'rto') { KFN.rec.to = v; KFN.rec.page = 1; }
+  kpifailRenderAll();
+}
+function kfnOnInput(ev) {
+  var t = ev.target;
+  if (t.id === 'kfn-q') { KFN.q = t.value; kpifailRenderAll(); }
+  else if (t.id === 'kfn-rq') { KFN.rec.q = t.value; KFN.rec.page = 1; kpifailRenderAll(); }
+  else if (t.id === 'kfn-dq') { KFN.day.q = t.value; KFN.day.page = 1; clearTimeout(KFN._dqT); KFN._dqT = setTimeout(function () { kfnLoadDay(); }, 350); }
+}
+function initKPIFailUI() {
+  var root = document.getElementById('kfn-root'); if (!root) return;
+  if (!root.__kfnBound) {
+    root.__kfnBound = true;
+    root.addEventListener('click', kfnOnClick); root.addEventListener('change', kfnOnChange); root.addEventListener('input', kfnOnInput);
+  }
+  if (!KFN.watch) {
+    KFN.watch = true;
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) kpifailCheckFresh('quay lại tab'); });
+    setInterval(function () { kpifailCheckFresh('định kỳ'); }, 5 * 60 * 1000);
+    setInterval(function () { if (kfnVisible() && KFN.sel.hub && KFN.rec.list && !KFN.modal) kpifailLoadNotes(true); }, 30000);
+  }
+  if (KPIFAIL_STATE.loaded) kpifailRenderAll(); else kpifailLoadData(false);
+}
+</script>
+</div>

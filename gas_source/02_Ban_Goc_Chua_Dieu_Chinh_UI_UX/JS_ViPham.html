@@ -1,0 +1,753 @@
+<script>
+// =========================================================================
+// MODULE VI PHẠM — REDESIGN THEO BẢN GỐC (index_vi_phạm.html, 1718 dòng,
+// "Dashboard Phân Tích Khiếu Nại Toàn Diện V17.1") — LOGIC DỮ LIỆU GIỮ
+// NGUYÊN 100%, gọi đúng getComplaintData(forceRefresh) thật (trả MẢNG THUẦN
+// hoặc {error:...}, KHÁC getOrders()). Bản trước (~124 dòng) chỉ có 1 bảng
+// phẳng + 3 KPI — bản này khôi phục lại các phần cốt lõi của bản gốc, BỎ
+// QUA Chart.js/PapaParse (CDN ngoài, không cần cho bản tích hợp) và thay
+// biểu đồ bằng thanh ngang HTML/CSS thuần — nhẹ, không phụ thuộc thư viện:
+//   1. Bộ lọc dữ liệu thật: Tháng/Tuần/AOM/Loại đơn/Lý do hoãn/Tài xế/Có
+//      ticket — đây là bộ lọc DỮ LIỆU (không phải chọn trạm) nên được phép.
+//   2. KPI grid đầy đủ hơn (tổng vụ, số trạm, số tài xế, tỉ lệ có ticket...).
+//   3. 2 bảng xếp hạng (Top nhóm Cấp 1, Top trạm/lý do hoãn).
+//   4. Bảng chi tiết có PHÂN TRANG thật (thay vì cắt cứng 300 dòng).
+//
+// [QUY TẮC BẮT BUỘC — ĐÃ SAI 1 LẦN Ở MODULE ĐƠN CẦN CẦU CỨU, RÚT KINH
+// NGHIỆM NGAY TẠI ĐÂY] Hub Selector trên HEADER là nơi DUY NHẤT để chọn
+// trạm trong toàn app. Bản gốc V17.1 có riêng 1 <select id="filter-station">
+// — KHÔNG mang cơ chế đó sang. Module này CHỈ ĐỌC lại đúng trạm header đang
+// chọn (_vpReadHeaderHub(), cùng quy ước _rqReadHeaderHub() của Đơn cầu cứu)
+// khi tải, và CHỈ đổi khi spxHeaderHubChange() gọi vpSelectStation() — không
+// có ô/chip/dropdown chọn trạm nào khác trong module này.
+// =========================================================================
+var VP_allCases = [];         // TOÀN BỘ vụ việc backend trả (đã lọc quyền hub theo allowedHubs, KHÔNG lọc thêm theo trạm header ở đây)
+var VP_selectedStation = '';  // '' = Tất cả trạm (theo đúng Hub header) | tên trạm cụ thể — LUÔN khớp header, không tự đổi trong module
+var VP_activeLevel1 = 'ALL';
+var VP_filters = { month: 'ALL', week: 'ALL', aom: 'ALL', orderType: 'ALL', reason: 'ALL', driver: 'ALL', hasTicket: false };
+var VP_page = 1;
+var VP_PAGE_SIZE = 50;
+var VP_loadedAt = 0;          // [MỚI] thời điểm tải dữ liệu thành công gần nhất (ms) — để biết khi nào cần tải lại
+var VP_dataInfo = null;       // [MỚI] { max, cnt, total, partial } — mốc ngày dữ liệu mới nhất trong sheet nguồn
+var VP_freshInstalled = false;
+var VP_AUTO_REFRESH_MS = 10 * 60 * 1000; // bằng TTL cache backend (10 phút): quá hạn đó mới có khả năng có số mới
+var VP_isLoading = false; // [FIX ỔN ĐỊNH] chặn bấm "Làm mới" liên tục gây gọi API trùng lặp cùng lúc
+// [MỚI — theo yêu cầu trực tiếp "phân hoá view theo level"] null = không giới
+// hạn thêm (Admin thật, hoặc ROM — quản lý toàn bộ). Mảng = giới hạn theo
+// đúng phạm vi AOM/SUP đang "Xem thử". Lead/Staff KHÔNG cần biến riêng —
+// VP_selectedStation (đọc từ header hub) đã tự đúng từ trước, y hệt nguyên
+// tắc đã áp dụng cho Đơn cần cầu cứu.
+var VP_previewAllowedStations = null;
+// [FIX HIỆU NĂNG] Bản tra cứu O(1) đi kèm — tránh indexOf() lặp trên từng dòng.
+var VP_previewAllowedSet = null;
+// [MỚI] Nhãn hiển thị phạm vi đang "Xem thử" — cùng nguyên tắc RQ_previewEntityLabel.
+var VP_previewEntityLabel = null;
+// [MỚI] Cấp cao mặc định ẩn số liệu thô/chi tiết — bấm mở khi cần tra cứu.
+var VP_showDetail = false;
+
+function _vpEsc(s) {
+  // [DỌN TRÙNG LẶP] Uỷ quyền lại spxEscHtml() dùng chung trong index.html.
+  // [SỬA — theo phản hồi: nhãn chung phải đổi theo ngôn ngữ] 'Không rõ' vừa là
+  // KHOÁ gom nhóm (byAom[c.aom || 'Không rõ']) vừa là chữ hiển thị. Không được
+  // dịch ở chỗ tạo khoá (sẽ vỡ thống kê khi đổi ngôn ngữ), nên dịch ở ĐÚNG đây —
+  // hàm này CHỈ dùng để xuất ra HTML, không bao giờ dùng làm khoá.
+  if (s === 'Không rõ') return spxEscHtml(vpT('Không rõ'));
+  return spxEscHtml(s);
+}
+// [SECURITY FIX — cùng lỗi/cùng cách sửa như _rqEscAttr() trong JS_DonCauCuu.html]
+function _vpEscAttr(s) { return (typeof spxEscJsAttr === 'function') ? spxEscJsAttr(s) : String(s == null ? '' : s); }
+// [MỚI] Wrapper i18n module-scoped — cùng pattern qhT()/kfT() đã dùng.
+// LƯU Ý QUAN TRỌNG: KHÔNG bọc các chuỗi dùng làm KHOÁ GOM NHÓM dữ liệu
+// (vd 'Không rõ' trong byAom[c.aom || 'Không rõ']) — bọc sẽ làm khoá đổi theo
+// ngôn ngữ, phá vỡ việc gom nhóm. Nhãn đó VẪN được dịch, nhưng ở lúc HIỂN THỊ
+// (xem _vpEsc), không phải ở lúc tạo khoá.
+function vpT(viText){ return (typeof spxUiLabel === 'function') ? spxUiLabel(viText) : viText; }
+
+// [MỚI] Đọc đúng trạm HEADER đang chọn — cùng quy ước _rqReadHeaderHub() của
+// Đơn cầu cứu, KHÔNG có ô chọn trạm riêng nào trong module này.
+function _vpReadHeaderHub(){
+  // [DỌN TRÙNG LẶP] Uỷ quyền spxReadHeaderHub() dùng chung (index.html).
+  return (typeof spxReadHeaderHub === 'function') ? spxReadHeaderHub() : '';
+}
+
+// ── Khung tĩnh ────────────────────────────────────────────────────────────
+function vpInit(){
+  VP_selectedStation = _vpReadHeaderHub();
+  var main = document.getElementById('view-violation');
+  main.innerHTML = ''
+    + '<div class="flex flex-row h-full w-full">'
+    + '  <main class="flex-1 min-w-0 flex flex-col h-full bg-white dark:bg-[#0b1121] relative overflow-y-auto">'
+    + '    <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2 flex-wrap shrink-0">'
+    + '      <i class="fas fa-warehouse text-[#ee4d2d] text-xs"></i>'
+    + '      <span class="text-xs font-black text-slate-700 dark:text-slate-200 mr-1" id="vp-scope-title">Tất cả trạm</span>'
+    + '      <div class="flex items-center gap-1.5 flex-wrap" id="vp-level1-tabs"></div>'
+    + '    </div>'
+    + '    <div class="px-4 pt-3 shrink-0" id="vp-fresh-banner"></div>'
+    + '    <div class="px-4 pt-3 shrink-0" id="vp-scope-banner"></div>'
+    + '    <div class="px-4 pt-3 shrink-0" id="vp-bigpicture"></div>'
+    + '    <div class="px-4 pb-2 shrink-0" id="vp-detail-toggle"></div>'
+    + '    <div id="vp-detail-zone">'
+    + '      <div class="p-4 border-b border-slate-100 dark:border-slate-800 shrink-0" id="vp-filter-bar"></div>'
+    + '      <div class="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 shrink-0" id="vp-kpi-grid"></div>'
+    + '      <div class="px-4 grid grid-cols-1 lg:grid-cols-2 gap-4 shrink-0" id="vp-breakdown"></div>'
+    + '      <div class="flex-1 px-4 pb-4 pt-4" id="vp-table-wrap"></div>'
+    + '    </div>'
+    + '  </main>'
+    + '</div>';
+  vpLoadData(false);
+  vpInstallAutoRefresh();
+}
+
+// ── Tải dữ liệu ───────────────────────────────────────────────────────────
+function vpLoadData(force, silent){
+  if (VP_isLoading) return; // [FIX ỔN ĐỊNH] đang tải rồi thì bỏ qua lượt bấm mới, tránh gọi API trùng
+  VP_isLoading = true;
+  var wrap = document.getElementById('vp-table-wrap');
+  // [MỚI] silent = tự tải lại nền: KHÔNG thay bảng bằng vòng quay, KHÔNG nhảy về trang 1, lỗi thì im lặng
+  if (!silent && wrap) wrap.innerHTML = '<div class="p-8 text-center text-slate-400 text-sm"><i class="fas fa-spinner fa-spin mr-2"></i>Đang tải dữ liệu thật...</div>';
+  google.script.run
+    .withSuccessHandler(function(res){
+      VP_isLoading = false;
+      // [Đối chiếu đúng cấu trúc thật] getComplaintData trả MẢNG THUẦN hoặc
+      // {error:...} — KHÁC getOrders() (không có "rows"/"access" bọc ngoài).
+      // Backend ĐÃ lọc theo allowedHubs của user (nếu không phải Admin/viewAll)
+      // — ở đây CHỈ lọc thêm theo đúng trạm header đang chọn (nếu có).
+      if (res && res.error) { if (wrap && !silent) wrap.innerHTML = '<div class="p-8 text-center text-rose-500 dark:text-rose-400 text-sm">Lỗi: ' + _vpEsc(res.error) + '</div>'; return; }
+      var next = vpSortNewestFirst(Array.isArray(res) ? res : []); // [SỬA] mới nhất lên đầu
+      VP_loadedAt = Date.now();
+      // [MỚI] Tải nền mà dữ liệu không đổi (cùng số dòng + cùng dòng cuối) -> khỏi vẽ lại, chỉ cập nhật mốc tải
+      if (silent && next.length === VP_allCases.length &&
+          (next.length === 0 || (next[next.length-1].case_id === VP_allCases[VP_allCases.length-1].case_id &&
+                                 next[0].case_id === VP_allCases[0].case_id))) { vpRenderFreshness(); return; }
+      VP_allCases = next;
+      if (!silent) VP_page = 1;
+      vpRenderFreshness();
+      vpRenderFilterBar();
+      vpRenderLevel1Tabs();
+      vpRenderMain();
+    })
+    .withFailureHandler(function(err){
+      VP_isLoading = false;
+      if (wrap && !silent) wrap.innerHTML = '<div class="p-8 text-center text-rose-500 dark:text-rose-400 text-sm">Lỗi tải dữ liệu: ' + _vpEsc(err.message || String(err)) + '</div>';
+    })
+    .getComplaintData(!!force);
+}
+
+// [MỚI — "vì sao không có dữ liệu mới?"] Màn hình này CHỈ hiển thị đúng những gì có trong sheet nguồn
+// 'complaint raw' (đọc qua getComplaintData, cache backend 10 phút). Trước đây không có chỗ nào cho biết
+// dữ liệu tới ngày nào nên khi nguồn ngừng cập nhật, người dùng không có cách nhận ra. Nay hiện mốc ngày
+// mới nhất, số vụ của ngày đó (ngày cuối thường thiếu), số ngày trễ, và nút "Làm mới" (force = bỏ cache).
+// [SỬA LỖI THẬT — "ngày cũ nhất lại hiện đầu tiên"] getComplaintData trả các vụ theo THỨ TỰ DÒNG của sheet nguồn
+// (không xếp theo gì cả) và giao diện chưa từng sắp xếp, nên bảng hiện lẫn lộn ngày cũ trên cùng. Nay xếp
+// MỚI NHẤT LÊN ĐẦU theo ngày tạo (rồi tới giờ tạo trong ngày); cùng thời điểm giữ nguyên thứ tự sheet.
+function vpCaseSortKey(c){
+  var d = String(c.case_create_date || '').slice(0, 10);
+  var tm = String(c.case_create_time || '');
+  return d + 'T' + (tm.length >= 19 ? tm.slice(11, 19) : '');
+}
+function vpSortNewestFirst(arr){
+  return arr.map(function(c, i){ return { c: c, i: i, k: vpCaseSortKey(c) }; })
+    .sort(function(a, b){ return a.k < b.k ? 1 : (a.k > b.k ? -1 : a.i - b.i); })
+    .map(function(x){ return x.c; });
+}
+
+function vpComputeDataInfo(){
+  var perDay = {}, max = '';
+  for (var i = 0; i < VP_allCases.length; i++) {
+    var d = String(VP_allCases[i].case_create_date || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) continue;
+    perDay[d] = (perDay[d] || 0) + 1;
+    if (d > max) max = d;
+  }
+  if (!max) return null;
+  var days = Object.keys(perDay).sort();
+  var prev = days.slice(Math.max(0, days.length - 8), days.length - 1).map(function(k){ return perDay[k]; }).sort(function(a, b){ return a - b; });
+  var median = prev.length ? prev[Math.floor(prev.length / 2)] : 0;
+  return { max: max, cnt: perDay[max], total: VP_allCases.length, partial: !!(median && perDay[max] < median * 0.4) };
+}
+function vpRenderFreshness(){
+  var el = document.getElementById('vp-fresh-banner');
+  if (!el) return;
+  var info = vpComputeDataInfo();
+  VP_dataInfo = info;
+  if (!info) { el.innerHTML = ''; return; }
+  var p = info.max.split('-');
+  // [SỬA] "hôm nay" theo GIỜ VIỆT NAM, so NGÀY LỊCH thuần (không phụ thuộc múi giờ máy)
+  var todayVn = (typeof spxVnDateStr === 'function') ? spxVnDateStr() : new Date().toISOString().slice(0, 10);
+  var behind = Math.round((Date.parse(todayVn + 'T00:00:00Z') - Date.parse(info.max + 'T00:00:00Z')) / 86400000);
+  var stale = behind >= 3;
+  var ltTxt = VP_loadedAt ? ((typeof spxFmtTimeVN === 'function') ? spxFmtTimeVN(new Date(VP_loadedAt), { hour: '2-digit', minute: '2-digit', hour12: false }) : '') : '';
+  var cls = stale
+    ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200'
+    : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300';
+  el.innerHTML = '<div class="flex items-center gap-2 flex-wrap rounded-xl border px-3 py-2 text-[11px] font-semibold ' + cls + '">'
+    + '<i class="fas ' + (stale ? 'fa-triangle-exclamation' : 'fa-clock') + '"></i>'
+    + '<span>' + vpT('Dữ liệu mới nhất tới') + ' <b>' + p[2] + '/' + p[1] + '/' + p[0] + '</b> · ' + info.cnt.toLocaleString() + ' ' + vpT('vụ trong ngày đó')
+    + (info.partial ? ' (' + vpT('ngày này có vẻ chưa đủ') + ')' : '')
+    + (stale ? ' · <b>' + behind + ' ' + vpT('ngày trước') + '</b>' : '')
+    + (ltTxt ? ' · ' + vpT('tải lúc') + ' ' + ltTxt : '') + '</span>'
+    + '<button onclick="vpLoadData(true)" class="ml-auto shrink-0 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-lg text-[10px] font-bold"><i class="fas fa-rotate mr-1"></i>' + vpT('Làm mới') + '</button>'
+    + (stale ? '<span class="w-full text-[10px] font-medium opacity-90">' + vpT('Màn hình hiện đúng những gì có trong sheet nguồn "complaint raw". Nếu thiếu các ngày gần đây thì sheet nguồn chưa được cập nhật — bấm Làm mới không bổ sung được, cần báo người phụ trách file dữ liệu.') + '</span>' : '')
+    + '</div>';
+}
+// [MỚI] Tự tải lại nền khi tab quay lại hoặc mỗi 5 phút — nhưng chỉ khi module đang hiện và dữ liệu đã
+// quá TTL cache backend (10 phút). Trước đây module chỉ tải 1 lần lúc mở, tab để mở nhiều giờ hiện số cũ.
+function vpInstallAutoRefresh(){
+  if (VP_freshInstalled) return;
+  VP_freshInstalled = true;
+  var tick = function(){
+    try {
+      if (document.hidden || VP_isLoading) return;
+      var main = document.getElementById('view-violation');
+      if (!main || main.offsetParent === null) return;
+      if (VP_loadedAt && Date.now() - VP_loadedAt < VP_AUTO_REFRESH_MS) return;
+      vpLoadData(false, true);
+    } catch (e) {}
+  };
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden) tick(); });
+  setInterval(tick, 5 * 60 * 1000);
+}
+
+// [MỚI] DUY NHẤT điểm vào để đổi trạm — chỉ được gọi từ spxHeaderHubChange()
+// khi người dùng đổi Hub trên HEADER. Cùng quy ước rqSelectStation() của Đơn
+// cầu cứu: name='' hoặc 'ALL' => "Tất cả trạm".
+function vpSelectStation(name){
+  VP_selectedStation = (name === 'ALL') ? '' : (name || '');
+  VP_page = 1;
+  vpRenderMain();
+}
+
+// ── Phạm vi theo trạm header (KHÔNG lọc theo tab Cấp 1 / bộ lọc khác) ──────
+function _vpStationScoped(){
+  var base = VP_selectedStation ? VP_allCases.filter(function(c){ return c.station_name === VP_selectedStation; }) : VP_allCases;
+  return VP_previewAllowedSet ? base.filter(function(c){ return VP_previewAllowedSet[c.station_name] === 1; }) : base;
+}
+
+/**
+ * vpApplyPreviewLevel(level)
+ * [MỚI — hoàn thành "phân hoá view theo level" cho Vi phạm, đúng pattern đã
+ * kiểm chứng ở Rider Plan/Đơn cần cầu cứu] ROM/Admin: bỏ giới hạn thêm. AOM/
+ * SUP: thu hẹp theo đúng danh sách trạm thuộc tổ chức đó
+ * (spxGetHubsInOrgScope() — dùng chung, không viết lại logic tra cứu tổ
+ * chức). Lead/Staff: KHÔNG cần xử lý gì thêm — module này đã LUÔN đọc đúng
+ * header hub (_vpReadHeaderHub()) từ trước, tự động đúng phạm vi ngay khi
+ * Admin chọn 1 Hub cụ thể ở header.
+ */
+function vpApplyPreviewLevel(level) {
+  if (typeof VP_allCases === 'undefined' || !VP_allCases.length) return;
+  var isRealAdmin = !!(window.SPX_ACCESS && window.SPX_ACCESS.role === 'admin');
+  var directEntity = (typeof window.SPX_PREVIEW_ENTITY === 'string' && window.SPX_PREVIEW_ENTITY) ? window.SPX_PREVIEW_ENTITY : '';
+
+  // [SỬA — theo yêu cầu "mọi cấp phải thấy đúng phạm vi của mình"] Trước đây ROM
+  // bị xếp chung với Admin (bỏ mọi giới hạn) vì giả định "ROM quản toàn bộ AOM".
+  // Giả định đó đúng khi ROM chưa có cấu hình; nay ROM có phạm vi thật (quản một
+  // nhóm AOM) nên phải lọc như AOM/SUP, nếu không ROM sẽ thấy số toàn hệ thống.
+  if (!isRealAdmin || !level || level === 'admin') {
+    if (VP_previewAllowedStations !== null || VP_previewEntityLabel !== null) {
+      VP_previewAllowedStations = null; VP_previewAllowedSet = null; VP_previewEntityLabel = null; VP_page = 1; vpRenderMain();
+    }
+    return;
+  }
+
+  if ((level === 'aom' || level === 'sup' || level === 'rom') && directEntity && typeof spxGetHubsInOrgScope === 'function') {
+    // [DỌN TRÙNG LẶP] Dùng chung spxResolvePreviewScope() (index.html) thay vì
+    // tự viết lại khối chuẩn hoá/gom trạm — Đơn cần cầu cứu dùng đúng hàm này.
+    var sc = (typeof spxResolvePreviewScope === 'function')
+      ? spxResolvePreviewScope(level, directEntity, VP_allCases, function(c){ return c.station_name; }) : null;
+    if (!sc) return;
+    VP_previewEntityLabel = (level === 'aom' ? 'AOM ' : level === 'rom' ? 'ROM ' : 'SUP ') + directEntity;
+    VP_previewAllowedStations = sc.list; VP_previewAllowedSet = sc.set;
+    VP_page = 1;
+    vpRenderMain();
+    return;
+  }
+}
+
+// ── Áp toàn bộ bộ lọc dữ liệu + tab Cấp 1 (KHÔNG gồm trạm — trạm lọc riêng ở trên) ──
+function _vpFilteredRows(){
+  var f = VP_filters;
+  return _vpStationScoped().filter(function(c){
+    if (VP_activeLevel1 !== 'ALL' && (c.level1_case_category_name || 'Không rõ') !== VP_activeLevel1) return false;
+    if (f.month !== 'ALL' && String(c.month) !== f.month) return false;
+    if (f.week !== 'ALL' && String(c.week) !== f.week) return false;
+    if (f.aom !== 'ALL' && (c.aom || 'Không rõ') !== f.aom) return false;
+    if (f.orderType !== 'ALL' && (c.order_type || 'Không rõ') !== f.orderType) return false;
+    if (f.reason !== 'ALL' && (c.last_onhold_reason || 'Không rõ') !== f.reason) return false;
+    if (f.driver !== 'ALL' && (c.driver_name || 'Không rõ') !== f.driver) return false;
+    if (f.hasTicket && !c.ticket_no) return false;
+    return true;
+  });
+}
+
+function _vpUniqueSorted(list){
+  var seen = {}, out = [];
+  list.forEach(function(v){ var k = v || 'Không rõ'; if (!seen[k]) { seen[k] = true; out.push(k); } });
+  return out.sort();
+}
+
+// ── Bộ lọc dữ liệu (tháng/tuần/AOM/loại đơn/lý do/tài xế/có ticket) ────────
+// [LƯU Ý] Đây là bộ lọc THUỘC TÍNH DỮ LIỆU, không phải chọn trạm — được phép
+// tồn tại trong module vì không cạnh tranh với Hub Selector trên header.
+function vpRenderFilterBar(){
+  var bar = document.getElementById('vp-filter-bar');
+  if (!bar) return;
+  var scoped = _vpStationScoped();
+  var opt = function(list, current){
+    return '<option value="ALL">-- ' + vpT('Tất cả') + ' --</option>' + list.map(function(v){
+      return '<option value="' + _vpEscAttr(v) + '" ' + (current === v ? 'selected' : '') + '>' + _vpEsc(v) + '</option>';
+    }).join('');
+  };
+  var months = _vpUniqueSorted(scoped.map(function(c){ return c.month; }).filter(Boolean));
+  var weeks = _vpUniqueSorted(scoped.map(function(c){ return c.week; }).filter(Boolean));
+  var aoms = _vpUniqueSorted(scoped.map(function(c){ return c.aom; }).filter(Boolean));
+  var orderTypes = _vpUniqueSorted(scoped.map(function(c){ return c.order_type; }).filter(Boolean));
+  var reasons = _vpUniqueSorted(scoped.map(function(c){ return c.last_onhold_reason; }).filter(Boolean));
+  var drivers = _vpUniqueSorted(scoped.map(function(c){ return c.driver_name; }).filter(Boolean));
+
+  var selCls = 'bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold outline-none focus:border-[#ee4d2d]';
+  bar.innerHTML = '<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 items-end">'
+    + '<div><label class="block text-[9px] font-black uppercase text-slate-400 mb-1">' + vpT('Tháng') + '</label><select class="w-full ' + selCls + '" onchange="vpSetFilter(\'month\', this.value)">' + opt(months, VP_filters.month) + '</select></div>'
+    + '<div><label class="block text-[9px] font-black uppercase text-slate-400 mb-1">' + vpT('Tuần') + '</label><select class="w-full ' + selCls + '" onchange="vpSetFilter(\'week\', this.value)">' + opt(weeks, VP_filters.week) + '</select></div>'
+    + '<div><label class="block text-[9px] font-black uppercase text-slate-400 mb-1">AOM</label><select class="w-full ' + selCls + '" onchange="vpSetFilter(\'aom\', this.value)">' + opt(aoms, VP_filters.aom) + '</select></div>'
+    + '<div><label class="block text-[9px] font-black uppercase text-slate-400 mb-1">' + vpT('Loại đơn') + '</label><select class="w-full ' + selCls + '" onchange="vpSetFilter(\'orderType\', this.value)">' + opt(orderTypes, VP_filters.orderType) + '</select></div>'
+    + '<div><label class="block text-[9px] font-black uppercase text-slate-400 mb-1">' + vpT('Lý do hoãn') + '</label><select class="w-full ' + selCls + '" onchange="vpSetFilter(\'reason\', this.value)">' + opt(reasons, VP_filters.reason) + '</select></div>'
+    + '<div><label class="block text-[9px] font-black uppercase text-slate-400 mb-1">' + vpT('Tài xế') + '</label><select class="w-full ' + selCls + '" onchange="vpSetFilter(\'driver\', this.value)">' + opt(drivers, VP_filters.driver) + '</select></div>'
+    + '<div class="flex items-center gap-3">'
+    + '<label class="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 cursor-pointer select-none"><input type="checkbox" ' + (VP_filters.hasTicket ? 'checked' : '') + ' onchange="vpSetFilter(\'hasTicket\', this.checked)"> ' + vpT('Có ticket') + '</label>'
+    + '<button onclick="vpResetFilters()" class="shrink-0 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all">' + vpT('Xóa lọc') + '</button>'
+    + '</div>'
+    + '</div>';
+}
+function vpSetFilter(key, val){
+  VP_filters[key] = val;
+  VP_page = 1;
+  vpRenderMain();
+}
+function vpResetFilters(){
+  VP_filters = { month: 'ALL', week: 'ALL', aom: 'ALL', orderType: 'ALL', reason: 'ALL', driver: 'ALL', hasTicket: false };
+  VP_page = 1;
+  vpRenderFilterBar();
+  vpRenderMain();
+}
+
+// ── Cấp 1 (tab bên aside) ───────────────────────────────────────────────
+function vpRenderLevel1Tabs(){
+  var scoped = _vpStationScoped();
+  var byLevel1 = {};
+  scoped.forEach(function(c){ var l1 = c.level1_case_category_name || 'Không rõ'; byLevel1[l1] = (byLevel1[l1]||0) + 1; });
+  var levels = ['ALL'].concat(Object.keys(byLevel1).sort(function(a,b){ return byLevel1[b]-byLevel1[a]; }));
+  document.getElementById('vp-level1-tabs').innerHTML = levels.map(function(l1){
+    var active = VP_activeLevel1 === l1;
+    var label = l1 === 'ALL' ? vpT('Tất cả') : l1;
+    var count = l1 === 'ALL' ? scoped.length : byLevel1[l1];
+    return '<button onclick="vpSetLevel1(\'' + _vpEscAttr(l1) + '\')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all ' +
+      (active ? 'bg-[#ee4d2d] text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700') + '">' +
+      _vpEsc(label) + ' <span class="' + (active ? 'text-white/80' : 'text-slate-400') + '">' + count + '</span></button>';
+  }).join('');
+}
+function vpSetLevel1(l1){ VP_activeLevel1 = l1; VP_page = 1; vpRenderLevel1Tabs(); vpRenderMain(); }
+
+// ── KPI grid ────────────────────────────────────────────────────────────
+function vpRenderKPI(){
+  var rows = _vpFilteredRows();
+  var stations = new Set(rows.map(function(r){ return r.station_name; }).filter(Boolean));
+  var drivers = new Set(rows.map(function(r){ return r.driver_id; }).filter(Boolean));
+  var withTicket = rows.filter(function(r){ return !!r.ticket_no; }).length;
+  var ticketPct = rows.length ? Math.round(withTicket / rows.length * 100) : 0;
+  var byLevel1 = {}, byAom = {}, byStation2 = {};
+  rows.forEach(function(c){
+    byLevel1[c.level1_case_category_name || 'Không rõ'] = (byLevel1[c.level1_case_category_name || 'Không rõ']||0) + 1;
+    byAom[c.aom || 'Không rõ'] = (byAom[c.aom || 'Không rõ']||0) + 1;
+    if (c.station_name) byStation2[c.station_name] = (byStation2[c.station_name]||0) + 1;
+  });
+  var topL1 = Object.keys(byLevel1).sort(function(a,b){ return byLevel1[b]-byLevel1[a]; })[0];
+  // [FIX — phát hiện qua rà soát "phân hoá view"] Khi đang "Xem thử" 1 AOM/SUP
+  // cụ thể, MỌI bản ghi trong phạm vi đều CÙNG 1 giá trị aom -> "AOM nhiều vụ
+  // nhất" sẽ luôn chỉ lặp lại đúng tên đang xem, vô nghĩa. Đổi sang xếp hạng
+  // theo trạm trong trường hợp đó — vẫn có ý nghĩa thật vì trong 1 AOM/SUP
+  // luôn có nhiều trạm khác nhau.
+  var lastCardLabel, lastCardVal;
+  if (VP_previewEntityLabel) {
+    var topStation2 = Object.keys(byStation2).sort(function(a,b){ return byStation2[b]-byStation2[a]; })[0];
+    lastCardLabel = vpT('Trạm nhiều vụ nhất');
+    lastCardVal = topStation2 ? (topStation2 + ' (' + byStation2[topStation2] + ')') : '—';
+  } else {
+    var topAom = Object.keys(byAom).sort(function(a,b){ return byAom[b]-byAom[a]; })[0];
+    lastCardLabel = vpT('AOM nhiều vụ nhất');
+    lastCardVal = topAom ? (topAom + ' (' + byAom[topAom] + ')') : '—';
+  }
+
+  var cards = [
+    [vpT('Tổng vụ việc'), rows.length, 'slate'],
+    [vpT('Số trạm liên quan'), stations.size, 'sky'],
+    [vpT('Số tài xế liên quan'), drivers.size, 'violet'],
+    [vpT('Có ticket'), ticketPct + '% (' + withTicket + ')', 'amber'],
+    [vpT('Nhóm Cấp 1 nhiều nhất'), topL1 ? (topL1 + ' (' + byLevel1[topL1] + ')') : '—', 'indigo'],
+    [lastCardLabel, lastCardVal, 'rose']
+  ];
+  var colorCls = { slate:'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800 text-slate-500', sky:'bg-sky-50 dark:bg-sky-900/15 border-sky-100 dark:border-sky-900/30 text-sky-500', violet:'bg-violet-50 dark:bg-violet-900/15 border-violet-100 dark:border-violet-900/30 text-violet-500', amber:'bg-amber-50 dark:bg-amber-900/15 border-amber-100 dark:border-amber-900/30 text-amber-500', indigo:'bg-indigo-50 dark:bg-indigo-900/15 border-indigo-100 dark:border-indigo-900/30 text-indigo-500', rose:'bg-rose-50 dark:bg-rose-900/15 border-rose-100 dark:border-rose-900/30 text-rose-500' };
+  var valCls = { slate:'text-slate-700 dark:text-slate-200', sky:'text-sky-600', violet:'text-violet-600', amber:'text-amber-600', indigo:'text-indigo-600', rose:'text-rose-600' };
+  document.getElementById('vp-kpi-grid').innerHTML = cards.map(function(c){
+    return '<div class="rounded-xl p-3 border ' + colorCls[c[2]] + '"><div class="text-[9px] font-black uppercase">' + c[0] + '</div><div class="text-base font-black truncate ' + valCls[c[2]] + '">' + c[1] + '</div></div>';
+  }).join('');
+}
+
+// ── Thanh ngang xếp hạng (thay Chart.js — nhẹ, không phụ thuộc CDN) ────────
+function _vpBarListHtml(title, counts, colorClass){
+  var entries = Object.keys(counts).map(function(k){ return [k, counts[k]]; }).sort(function(a,b){ return b[1]-a[1]; }).slice(0, 8);
+  var max = entries.length ? entries[0][1] : 1;
+  var rowsHtml = entries.length ? entries.map(function(e){
+    var pct = Math.round(e[1] / max * 100);
+    return '<div class="mb-2">'
+      + '<div class="flex justify-between text-[10px] font-bold text-slate-600 dark:text-slate-300 mb-0.5"><span class="truncate pr-2">' + _vpEsc(e[0]) + '</span><span class="shrink-0">' + e[1] + '</span></div>'
+      + '<div class="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="h-full ' + colorClass + ' rounded-full" style="width:' + pct + '%"></div></div>'
+      + '</div>';
+  }).join('') : '<div class="text-[11px] text-slate-400 py-4 text-center">Không có dữ liệu.</div>';
+  return '<div class="rounded-xl border border-slate-100 dark:border-slate-800 p-4">' +
+    '<div class="text-xs font-black text-slate-700 dark:text-slate-200 mb-3">' + title + '</div>' + rowsHtml + '</div>';
+}
+
+function vpRenderBreakdown(){
+  var rows = _vpFilteredRows();
+  var byLevel1 = {};
+  rows.forEach(function(c){ var k = c.level1_case_category_name || 'Không rõ'; byLevel1[k] = (byLevel1[k]||0)+1; });
+  var leftHtml = _vpBarListHtml('<i class="fas fa-layer-group text-indigo-500 dark:text-indigo-400 mr-1.5"></i>Top nhóm Cấp 1', byLevel1, 'bg-indigo-500');
+
+  var rightHtml;
+  if (!VP_selectedStation) {
+    // Đang xem "Tất cả trạm" -> bảng thứ 2 hợp lý nhất là xếp hạng theo trạm
+    var byStation = {};
+    rows.forEach(function(c){ if (c.station_name) byStation[c.station_name] = (byStation[c.station_name]||0)+1; });
+    var topStationTitle = VP_previewEntityLabel ? (vpT('Top trạm nhiều vụ nhất') + ' — ' + VP_previewEntityLabel) : vpT('Top trạm nhiều vụ nhất');
+    rightHtml = _vpBarListHtml('<i class="fas fa-warehouse text-rose-500 dark:text-rose-400 mr-1.5"></i>' + _vpEsc(topStationTitle), byStation, 'bg-rose-500');
+  } else {
+    // Đang xem 1 trạm cụ thể (theo header) -> trạm đã cố định, xếp hạng theo lý do hoãn có ích hơn
+    var byReason = {};
+    rows.forEach(function(c){ var k = c.last_onhold_reason || 'Không rõ'; byReason[k] = (byReason[k]||0)+1; });
+    rightHtml = _vpBarListHtml('<i class="fas fa-clock-rotate-left text-amber-500 dark:text-amber-400 mr-1.5"></i>Top lý do hoãn — ' + _vpEsc(VP_selectedStation), byReason, 'bg-amber-500');
+  }
+  document.getElementById('vp-breakdown').innerHTML = leftHtml + rightHtml;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// [MỚI — theo yêu cầu trực tiếp: "cái người ta cần nhìn là cái vùng được quản
+// lý đang như thế nào", cấp cao KHÔNG cần chi tiết từng đơn]
+// ── PHÁT HIỆN QUAN TRỌNG TỪ DỮ LIỆU THẬT (_CXL__Contact_Rate.xlsx) ──
+// Nghiệp vụ KHÔNG đo bằng "số vụ", mà bằng "% cs contact rate" (vụ/tổng đơn) —
+// xem sheet "aom monthly" do chính nghiệp vụ dựng. Khác biệt này KHÔNG nhỏ:
+// đối chiếu T7->T8, số vụ thô GIẢM ở cả 7 AOM, nhưng % rate lại TĂNG ở hầu hết
+// — vì tổng đơn giảm mạnh hơn số vụ. Nếu chỉ nhìn số vụ (như bảng xếp hạng cũ),
+// ROM sẽ kết luận NGƯỢC HOÀN TOÀN với thực tế đang xấu đi.
+// ── NGUỒN SỐ LIỆU ──
+// % rate lấy đúng từ sheet "aom monthly" (nghiệp vụ tự tính, chuẩn nhất). Nhúng
+// tĩnh vì: (1) sheet "hub mon" KHÔNG có số liệu (chỉ có tên hub — đã kiểm tra),
+// (2) complaint raw KHÔNG có cột tổng đơn nên không tự tính lại được, (3) số này
+// đổi theo THÁNG, không đổi trong ngày -> đúng nguyên tắc "không thêm backend
+// call cho dữ liệu ít đổi" đã áp dụng cho org mapping.
+// [CẬP NHẬT KHI CÓ THÁNG MỚI] Sửa đúng bảng dưới, không cần đụng code khác.
+var VP_AOM_RATE = {
+  'Trần Hữu Danh':       { m9: 0.00245, m8: 0.00199, m7: 0.00176 },
+  'Nguyễn Đức Huy':      { m9: 0.00207, m8: 0.00168, m7: 0.00156 },
+  'Nguyễn Đức Y':        { m9: 0.00199, m8: 0.00164, m7: 0.00162 },
+  'Nguyễn Thị Loan Anh': { m9: 0.00156, m8: 0.00195, m7: 0.00160 },
+  'Võ Thị Trà My':       { m9: 0.00177, m8: 0.00175, m7: 0.00160 },
+  'Lê Tấn Quang':        { m9: 0.00178, m8: 0.00152, m7: 0.00142 },
+  'Đinh Thị Thanh Vân':  { m9: 0.00209, m8: 0.00179, m7: 0.00167 }
+};
+
+function _vpPct(v){ return (v * 100).toFixed(3) + '%'; }
+
+function vpRenderBigPicture(){
+  var el = document.getElementById('vp-bigpicture');
+  if (!el) return;
+  if (VP_selectedStation) { el.innerHTML = ''; return; } // Lead/Staff -> nhường chỗ danh sách vụ
+
+  var rows = _vpStationScoped();
+  if (!rows.length) { el.innerHTML = ''; return; }
+
+  var lvl = (typeof window.SPX_PREVIEW_LEVEL === 'string' ? window.SPX_PREVIEW_LEVEL : '') || '';
+  var isAomView = !!VP_previewEntityLabel;
+
+  // ── Tổng hợp 1 lượt (không lặp mảng nhiều lần) ──
+  var byAom = {}, byStation = {}, byL2 = {}, byReason = {}, byDriver = {}, byMonth = {}, byWeek = {};
+  rows.forEach(function(c){
+    byAom[c.aom || 'Không rõ'] = (byAom[c.aom || 'Không rõ'] || 0) + 1;
+    if (c.station_name) byStation[c.station_name] = (byStation[c.station_name] || 0) + 1;
+    byL2[c.level2_case_category_name || 'Không rõ'] = (byL2[c.level2_case_category_name || 'Không rõ'] || 0) + 1;
+    var rs = c.last_onhold_reason || c.mapping_reason || 'Không rõ';
+    byReason[rs] = (byReason[rs] || 0) + 1;
+    if (c.driver_name) byDriver[c.driver_name] = (byDriver[c.driver_name] || 0) + 1;
+    if (c.month) byMonth[c.month] = (byMonth[c.month] || 0) + 1;
+    if (c.week) byWeek[c.week] = (byWeek[c.week] || 0) + 1;
+  });
+  var total = rows.length;
+  var sortDesc = function(o){ return Object.keys(o).sort(function(a,b){ return o[b]-o[a]; }); };
+
+  // ── 1. KẾT LUẬN 1 DÒNG (đọc trong 3 giây đầu) ──
+  var allR = Object.keys(VP_AOM_RATE).map(function(k){ return VP_AOM_RATE[k]; });
+  var avgNow = allR.reduce(function(s,v){ return s+v.m9; },0)/allR.length;
+  var avgPrev = allR.reduce(function(s,v){ return s+v.m8; },0)/allR.length;
+  var verdictHtml = '', vColor, vIcon, vText, vSub;
+
+  if (isAomView) {
+    var myName = VP_previewEntityLabel.replace(/^(AOM|SUP)\s+/, '');
+    var myR = VP_AOM_RATE[myName];
+    if (myR) {
+      var ranked = Object.keys(VP_AOM_RATE).sort(function(a,b){ return VP_AOM_RATE[b].m9 - VP_AOM_RATE[a].m9; });
+      var rank = ranked.indexOf(myName) + 1;
+      var worse = myR.m9 > myR.m8;
+      var dPct = myR.m8 ? Math.abs((myR.m9-myR.m8)/myR.m8*100).toFixed(1) : '0';
+      var aboveAvg = myR.m9 > avgNow;
+      vColor = (worse || aboveAvg) ? 'critical' : 'ok';
+      vIcon = (worse || aboveAvg) ? 'fa-triangle-exclamation' : 'fa-circle-check';
+      vText = vpT('Xếp hạng') + ' <b>' + rank + '/' + ranked.length + '</b> ' + vpT('toàn miền · rate') + ' <b>' + _vpPct(myR.m9) + '</b> ' +
+        (worse ? '<b>' + vpT('tăng') + ' ' + dPct + '%</b> ' + vpT('so tháng trước') : vpT('giảm') + ' ' + dPct + '% ' + vpT('so tháng trước'));
+      vSub = aboveAvg ? vpT('Đang CAO HƠN trung bình miền') + ' (' + _vpPct(avgNow) + ') — ' + vpT('cần hành động.') : vpT('Đang thấp hơn trung bình miền') + ' (' + _vpPct(avgNow) + ').';
+    }
+  } else {
+    var wo = Object.keys(VP_AOM_RATE).filter(function(k){ return VP_AOM_RATE[k].m9 > VP_AOM_RATE[k].m8; });
+    var regionWorse = avgNow > avgPrev;
+    var rPct = avgPrev ? Math.abs((avgNow-avgPrev)/avgPrev*100).toFixed(1) : '0';
+    vColor = regionWorse ? 'critical' : 'ok';
+    vIcon = regionWorse ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down';
+    vText = vpT('Toàn miền rate') + ' <b>' + _vpPct(avgNow) + '</b> — ' + (regionWorse ? '<b>' + vpT('xấu đi') + ' ' + rPct + '%</b>' : vpT('cải thiện') + ' ' + rPct + '%') + ' ' + vpT('so tháng trước');
+    vSub = '<b>' + wo.length + '/' + Object.keys(VP_AOM_RATE).length + ' AOM</b> ' + vpT('đang xấu đi') +
+      (wo.length ? ': ' + wo.slice(0,3).map(function(x){ return _vpEsc(x); }).join(', ') + (wo.length>3 ? ' ' + vpT('và') + ' ' + (wo.length-3) + ' ' + vpT('AOM khác') : '') : '.');
+  }
+  if (vText) {
+    var vc = vColor === 'critical' ? 'var(--spx-sev-critical,#ef4444)' : 'var(--spx-sev-ok,#22c55e)';
+    var vbg = vColor === 'critical' ? 'rgba(239,68,68,.08)' : 'rgba(34,197,94,.08)';
+    verdictHtml = '<div style="padding:12px 14px;background:' + vbg + ';border:1px solid ' + vc + '40;border-left:4px solid ' + vc + ';border-radius:10px;margin-bottom:12px">' +
+      '<div style="font-size:13px;font-weight:800;color:' + vc + '"><i class="fas ' + vIcon + ' mr-1.5"></i>' + vText + '</div>' +
+      '<div style="font-size:11px;color:var(--qh-cmp-text-muted,#64748b);margin-top:3px">' + vSub + '</div></div>';
+  }
+
+  // ── 1b. XU HƯỚNG THEO THỜI GIAN (dữ liệu week/month đã có sẵn trong nguồn) ──
+  // [BỔ SUNG — theo phản hồi trực tiếp "lũy tiến thời gian, biểu đồ... sao
+  // không làm"] Cột week/month CÓ SẴN trong complaint raw nhưng trước đây hoàn
+  // toàn không dùng — mất hẳn khả năng trả lời câu hỏi quan trọng nhất của cấp
+  // quản lý: "đang tăng tốc hay đã dịu đi?". Vẽ bằng CSS thuần (module cố ý
+  // không phụ thuộc Chart.js/CDN — xem ghi chú đầu file).
+  var wks = Object.keys(byWeek).map(Number).sort(function(a,b){ return a-b; });
+  var trendHtml = '';
+  if (wks.length >= 3) {
+    var wMax = Math.max.apply(null, wks.map(function(w){ return byWeek[w]; }));
+    // So 3 tuần gần nhất với 3 tuần trước đó -> kết luận tăng tốc/dịu đi
+    var last3 = wks.slice(-3), prev3 = wks.slice(-6, -3);
+    var avgL = last3.reduce(function(s,w){ return s+byWeek[w]; },0)/(last3.length||1);
+    var avgP = prev3.length ? prev3.reduce(function(s,w){ return s+byWeek[w]; },0)/prev3.length : avgL;
+    var accel = avgP ? ((avgL-avgP)/avgP*100) : 0;
+    var accUp = accel > 5, accDown = accel < -5;
+    var accCls = accUp ? 'text-rose-600 dark:text-rose-400' : (accDown ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500');
+    var accTxt = accUp ? '▲ ' + vpT('Đang tăng tốc') + ' ' + accel.toFixed(0) + '%' : (accDown ? '▼ ' + vpT('Đang dịu đi') + ' ' + Math.abs(accel).toFixed(0) + '%' : '● ' + vpT('Đi ngang'));
+
+    var bars = wks.map(function(w){
+      var n = byWeek[w], h = Math.max(4, Math.round(n/wMax*46));
+      var isLast3 = last3.indexOf(w) !== -1;
+      return '<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px" title="' + vpT('Tuần') + ' ' + w + ': ' + n + ' ' + vpT('vụ') + '">' +
+        '<div style="width:100%;max-width:22px;height:' + h + 'px;border-radius:3px 3px 0 0;background:' + (isLast3 ? 'var(--spx-sev-critical,#ef4444)' : 'rgba(148,163,184,.55)') + '"></div>' +
+        '<span style="font-size:8px;color:var(--qh-cmp-text-muted,#94a3b8)">' + w + '</span></div>';
+    }).join('');
+
+    // Lũy tiến theo tháng — so cùng bộ tháng có trong dữ liệu
+    var mks = Object.keys(byMonth).map(Number).sort(function(a,b){ return a-b; });
+    var monthHtml = mks.map(function(m){
+      var prev = byMonth[m-1];
+      var d = (prev != null) ? ((byMonth[m]-prev)/prev*100) : null;
+      var dCls = d == null ? 'text-slate-400' : (d > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400');
+      return '<div style="flex:1;text-align:center;padding:6px 4px;border-right:1px solid var(--qh-cmp-border,#e2e8f0)">' +
+        '<div style="font-size:9px;font-weight:800;color:var(--qh-cmp-text-muted,#94a3b8)">T' + m + '</div>' +
+        '<div style="font-size:15px;font-weight:900;color:var(--qh-cmp-text,#1e293b)">' + byMonth[m] + '</div>' +
+        (d == null ? '' : '<div class="' + dCls + '" style="font-size:9px;font-weight:700">' + (d>0?'▲':'▼') + ' ' + Math.abs(d).toFixed(0) + '%</div>') +
+        '</div>';
+    }).join('');
+
+    trendHtml = '<div class="rounded-xl border border-slate-100 dark:border-slate-800 overflow-hidden mb-3">' +
+      '<div class="px-3 py-2 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-1">' +
+        '<span class="text-[11px] font-black text-slate-700 dark:text-slate-200"><i class="fas fa-chart-column text-[#ee4d2d] mr-1.5"></i>' + vpT('Diễn biến theo tuần') + '</span>' +
+        '<span class="text-[10px] font-black ' + accCls + '">' + accTxt + ' <span class="text-slate-400 font-medium">' + vpT('(3 tuần gần nhất vs 3 tuần trước)') + '</span></span>' +
+      '</div>' +
+      '<div style="display:flex;align-items:flex-end;gap:2px;height:66px;padding:8px 10px 4px">' + bars + '</div>' +
+      (monthHtml ? '<div style="display:flex;border-top:1px solid var(--qh-cmp-border,#e2e8f0)">' + monthHtml + '</div>' : '') +
+      '</div>';
+  }
+
+  // ── 2. BẢNG SO SÁNH ĐƠN VỊ CẤP DƯỚI (ROM: các AOM · AOM/SUP: các trạm) ──
+  var cmpHtml = '';
+  if (!isAomView) {
+    var names = Object.keys(byAom).filter(function(a){ return VP_AOM_RATE[a]; })
+      .sort(function(a,b){ return VP_AOM_RATE[b].m9 - VP_AOM_RATE[a].m9; });
+    if (names.length) {
+      cmpHtml = names.map(function(a){
+        var r = VP_AOM_RATE[a], d = r.m9 - r.m8, w = d > 0;
+        var dp = r.m8 ? Math.abs(d/r.m8*100).toFixed(1) : '0.0';
+        var share = Math.round((byAom[a]||0)/total*100);
+        return '<tr class="border-b border-slate-100 dark:border-slate-800/60">' +
+          '<td class="p-2 text-xs font-bold text-slate-700 dark:text-slate-200">' + _vpEsc(a) +
+            (r.m9 > avgNow ? ' <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-rose-50 dark:bg-rose-900/25 text-rose-600 dark:text-rose-400">TRÊN TB</span>' : '') + '</td>' +
+          '<td class="p-2 text-center text-xs font-black ' + (r.m9>avgNow?'text-rose-600 dark:text-rose-400':'text-slate-700 dark:text-slate-200') + '">' + _vpPct(r.m9) + '</td>' +
+          '<td class="p-2 text-center text-xs font-bold ' + (w?'text-rose-600 dark:text-rose-400':(d<0?'text-emerald-600 dark:text-emerald-400':'text-slate-400')) + '">' + (w?'▲':(d<0?'▼':'●')) + ' ' + dp + '%</td>' +
+          '<td class="p-2 text-center text-xs text-slate-500">' + share + '%</td></tr>';
+      }).join('');
+      cmpHtml = '<div class="rounded-xl border border-slate-100 dark:border-slate-800 overflow-hidden mb-3"><div class="px-3 py-2 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800">' +
+        '<span class="text-[11px] font-black text-slate-700 dark:text-slate-200"><i class="fas fa-chart-line text-[#ee4d2d] mr-1.5"></i>' + vpT('7 AOM — % CS Contact Rate') + '</span>' +
+        '<span class="text-[9px] text-slate-400 font-medium ml-2">' + vpT('Rate TĂNG = xấu đi · TB miền') + ' ' + _vpPct(avgNow) + '</span></div>' +
+        '<table class="w-full"><thead><tr class="text-left text-[9px] uppercase font-black text-slate-400 bg-white dark:bg-[#0b1121]">' +
+        '<th class="p-2">AOM</th><th class="p-2 text-center">Rate</th><th class="p-2 text-center">Xu hướng</th><th class="p-2 text-center">% vụ</th>' +
+        '</tr></thead><tbody>' + cmpHtml + '</tbody></table></div>';
+    }
+  } else {
+    var st = sortDesc(byStation).slice(0, 8);
+    if (st.length) {
+      var stMax = byStation[st[0]] || 1;
+      cmpHtml = st.map(function(s){
+        var n = byStation[s], share = Math.round(n/total*100);
+        return '<tr class="border-b border-slate-100 dark:border-slate-800/60">' +
+          '<td class="p-2 text-xs font-bold text-slate-700 dark:text-slate-200">' + _vpEsc(s) + '</td>' +
+          '<td class="p-2 w-[45%]"><div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:' + Math.round(n/stMax*100) + '%;background:' + (share>=20?'var(--spx-sev-critical,#ef4444)':'var(--spx-sev-warning,#f59e0b)') + '"></div></div></td>' +
+          '<td class="p-2 text-center text-xs font-black text-slate-700 dark:text-slate-200">' + n + '</td>' +
+          '<td class="p-2 text-center text-xs ' + (share>=20?'text-rose-600 dark:text-rose-400 font-black':'text-slate-500') + '">' + share + '%</td></tr>';
+      }).join('');
+      cmpHtml = '<div class="rounded-xl border border-slate-100 dark:border-slate-800 overflow-hidden mb-3"><div class="px-3 py-2 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800">' +
+        '<span class="text-[11px] font-black text-slate-700 dark:text-slate-200"><i class="fas fa-warehouse text-[#ee4d2d] mr-1.5"></i>' + vpT('Trạm cần chú ý nhất trong vùng') + '</span>' +
+        '<span class="text-[9px] text-slate-400 font-medium ml-2">' + Object.keys(byStation).length + ' ' + vpT('trạm') + ' · ' + total + ' ' + vpT('vụ') + '</span></div>' +
+        '<table class="w-full"><thead><tr class="text-left text-[9px] uppercase font-black text-slate-400 bg-white dark:bg-[#0b1121]">' +
+        '<th class="p-2">Trạm</th><th class="p-2"></th><th class="p-2 text-center">Vụ</th><th class="p-2 text-center">% vùng</th>' +
+        '</tr></thead><tbody>' + cmpHtml + '</tbody></table></div>';
+    }
+  }
+
+  // ── 3. NGUYÊN NHÂN + TÀI XẾ LẶP LẠI (dồn về đúng việc cần làm) ──
+  var topR = sortDesc(byReason).slice(0, 3);
+  var reasonHtml = topR.length ? topR.map(function(r){
+    return '<div class="flex justify-between items-center text-[11px] py-1"><span class="text-slate-600 dark:text-slate-300 truncate pr-2">' + _vpEsc(r) + '</span>' +
+      '<span class="font-black text-slate-700 dark:text-slate-200 shrink-0">' + byReason[r] + ' <span class="text-slate-400 font-normal">(' + Math.round(byReason[r]/total*100) + '%)</span></span></div>';
+  }).join('') : '';
+
+  var repeat = sortDesc(byDriver).filter(function(d){ return byDriver[d] >= 3; }).slice(0, 5);
+  var driverHtml = repeat.length ? repeat.map(function(d){
+    return '<div class="flex justify-between items-center text-[11px] py-1"><span class="text-slate-600 dark:text-slate-300 truncate pr-2">' + _vpEsc(d) + '</span>' +
+      '<span class="font-black text-rose-600 dark:text-rose-400 shrink-0">' + byDriver[d] + ' ' + vpT('vụ') + '</span></div>';
+  }).join('') : '<div class="text-[11px] text-slate-400 py-1">' + vpT('Không có tài xế nào ≥3 vụ — lỗi phân tán, không tập trung cá nhân.') + '</div>';
+
+  var riderPct = Math.round((byL2['Rider behavior']||0)/total*100);
+  var twoCol = '<div class="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">' +
+    '<div class="rounded-xl border border-slate-100 dark:border-slate-800 p-3"><div class="text-[10px] font-black uppercase text-slate-400 mb-2"><i class="fas fa-list-ul mr-1"></i>' + vpT('3 nguyên nhân lớn nhất') + '</div>' + reasonHtml + '</div>' +
+    '<div class="rounded-xl border border-slate-100 dark:border-slate-800 p-3"><div class="text-[10px] font-black uppercase text-slate-400 mb-2"><i class="fas fa-user-clock mr-1"></i>' + vpT('Tài xế lặp lại (≥3 vụ)') + '</div>' + driverHtml + '</div>' +
+    '</div>';
+
+  // ── 4. VIỆC CẦN LÀM — nêu đích danh, không nói chung chung ──
+  var act = [];
+  if (!isAomView) {
+    var worst = Object.keys(VP_AOM_RATE).sort(function(a,b){ return (VP_AOM_RATE[b].m9-VP_AOM_RATE[b].m8) - (VP_AOM_RATE[a].m9-VP_AOM_RATE[a].m8); })[0];
+    if (worst && VP_AOM_RATE[worst].m9 > VP_AOM_RATE[worst].m8) {
+      act.push(vpT('Làm việc với') + ' <b>' + _vpEsc(worst) + '</b> — ' + vpT('tăng mạnh nhất miền') + ' (' + _vpPct(VP_AOM_RATE[worst].m8) + ' → ' + _vpPct(VP_AOM_RATE[worst].m9) + ').');
+    }
+  } else {
+    var topSt = sortDesc(byStation)[0];
+    if (topSt && byStation[topSt]/total >= 0.2) {
+      act.push(vpT('Xử lý riêng trạm') + ' <b>' + _vpEsc(topSt) + '</b> — ' + vpT('chiếm') + ' ' + Math.round(byStation[topSt]/total*100) + '% ' + vpT('vụ toàn vùng.'));
+    }
+  }
+  if (riderPct >= 25) act.push('<b>' + riderPct + '% ' + vpT('vụ do hành vi tài xế') + '</b> — ' + vpT('ưu tiên đào tạo/giám sát rider hơn quy trình kho.'));
+  if (topR.length && byReason[topR[0]]/total >= 0.3) act.push(vpT('Nguyên nhân') + ' <b>' + _vpEsc(topR[0]) + '</b> ' + vpT('chiếm') + ' ' + Math.round(byReason[topR[0]]/total*100) + '% — ' + vpT('xử lý gốc nguyên nhân này giải quyết phần lớn vụ.'));
+  if (repeat.length >= 3) act.push('<b>' + repeat.length + ' ' + vpT('tài xế') + '</b> ' + vpT('lặp lại ≥3 vụ — nhắc nhở cá nhân hiệu quả hơn phổ biến diện rộng.'));
+  var actHtml = act.length ? '<div class="module-note raw-note" style="margin-bottom:12px"><div class="text-[10px] font-black uppercase mb-1.5"><i class="fas fa-bolt mr-1"></i>' + vpT('Việc nên làm ngay') + '</div>' +
+    act.map(function(a){ return '<div class="text-[11px] py-0.5">• ' + a + '</div>'; }).join('') + '</div>' : '';
+
+  el.innerHTML = verdictHtml + trendHtml + cmpHtml + twoCol + actHtml;
+}
+
+function vpRenderMain(){
+  var titleEl = document.getElementById('vp-scope-title');
+  if (titleEl) {
+    if (VP_selectedStation) titleEl.textContent = VP_selectedStation;
+    else if (VP_previewEntityLabel) titleEl.textContent = (VP_previewAllowedStations ? VP_previewAllowedStations.length : 0) + ' ' + vpT('trạm') + ' — ' + VP_previewEntityLabel;
+    else titleEl.textContent = vpT('Tất cả trạm');
+  }
+  var bannerEl = document.getElementById('vp-scope-banner');
+  if (bannerEl) {
+    bannerEl.innerHTML = (VP_previewEntityLabel && !VP_selectedStation)
+      ? '<div style="padding:8px 12px;background:rgba(14,165,233,.10);border:1px solid rgba(14,165,233,.35);border-radius:8px;font-size:11.5px;color:var(--spx-sev-info,#0ea5e9)"><i class="fas fa-eye"></i> ' + vpT('Đang xem đúng góc nhìn của') + ' <b>' + _vpEsc(VP_previewEntityLabel) + '</b> — ' + vpT('bảng "Top trạm" dưới chỉ so sánh các trạm thuộc phạm vi này.') + '</div>'
+      : '';
+  }
+  vpRenderLevel1Tabs(); // [FIX] số đếm trên chip phụ thuộc phạm vi đang xem — phải vẽ lại khi đổi scope
+  vpRenderBigPicture();
+  // [MỚI — theo yêu cầu trực tiếp "cấp cao KHÔNG cần chi tiết từng đơn, số liệu
+  // thô không cho thấy bức tranh gì"] Ở góc nhìn cấp vùng (chưa khoá 1 trạm),
+  // ẩn KPI thô + bảng vụ chi tiết để panel toàn cảnh không bị loãng. KHÔNG xoá
+  // dữ liệu — vẫn mở lại được bằng nút bên dưới khi thực sự cần tra cứu.
+  var highLevel = !VP_selectedStation;
+  var detailWrap = document.getElementById('vp-detail-zone');
+  if (detailWrap) detailWrap.style.display = (highLevel && !VP_showDetail) ? 'none' : '';
+  var toggleEl = document.getElementById('vp-detail-toggle');
+  if (toggleEl) {
+    toggleEl.innerHTML = highLevel
+      ? '<button onclick="vpToggleDetail()" class="text-[11px] font-bold text-slate-500 hover:text-[#ee4d2d] transition-colors"><i class="fas fa-chevron-' + (VP_showDetail?'up':'down') + ' mr-1 text-[9px]"></i>' + (VP_showDetail ? vpT('Ẩn số liệu chi tiết') : vpT('Xem số liệu chi tiết từng vụ')) + '</button>'
+      : '';
+  }
+  if (!highLevel || VP_showDetail) {
+    vpRenderKPI();
+    vpRenderBreakdown();
+    vpRenderTable();
+  }
+}
+function vpToggleDetail(){ VP_showDetail = !VP_showDetail; vpRenderMain(); }
+
+// ── Bảng chi tiết (phân trang thật) ───────────────────────────────────────
+function vpRenderTable(){
+  var rows = _vpFilteredRows();
+  var wrap = document.getElementById('vp-table-wrap');
+  if (!rows.length) { wrap.innerHTML = '<div class="p-8 text-center text-slate-400 text-sm">' + vpT('Không có vụ việc nào trong bộ lọc hiện tại.') + '</div>'; return; }
+
+  var totalPages = Math.max(1, Math.ceil(rows.length / VP_PAGE_SIZE));
+  if (VP_page > totalPages) VP_page = totalPages;
+  var start = (VP_page - 1) * VP_PAGE_SIZE;
+  var pageRows = rows.slice(start, start + VP_PAGE_SIZE);
+
+  var tableHtml = '<div class="rounded-xl border border-slate-100 dark:border-slate-800 overflow-hidden"><table class="w-full text-sm"><thead class="sticky top-0 bg-slate-50 dark:bg-[#151e2f] border-b border-slate-200 dark:border-slate-800">' +
+    '<tr class="text-left text-[10px] uppercase font-black text-slate-500"><th class="p-3">Case ID</th><th class="p-3">Ngày tạo</th><th class="p-3">Station</th><th class="p-3">Cấp 1</th><th class="p-3">Cấp 2</th><th class="p-3">Cấp 3</th><th class="p-3">Mã vận đơn</th><th class="p-3">Tài xế</th><th class="p-3">Ticket</th></tr></thead><tbody>' +
+    pageRows.map(function(c){
+      return '<tr class="border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/30">' +
+        '<td class="p-3 font-mono font-bold text-slate-700 dark:text-slate-200 cursor-pointer hover:text-rose-500 transition-colors group" onclick="event.stopPropagation(); vpCopyCode(\'' + _vpEscAttr(c.case_id) + '\')" title="' + vpT('Click để copy Case ID') + '">' + _vpEsc(c.case_id) + '<i class="fas fa-copy ml-1.5 opacity-0 group-hover:opacity-60 text-[10px] transition-opacity"></i></td>' +
+        '<td class="p-3 text-slate-500">' + _vpEsc(c.case_create_date) + (c.case_create_time && String(c.case_create_time).length >= 16 ? ' <span class="text-[10px] text-slate-400">' + _vpEsc(String(c.case_create_time).slice(11, 16)) + '</span>' : '') + '</td>' +
+        '<td class="p-3 text-slate-500">' + _vpEsc(c.station_name) + '</td>' +
+        '<td class="p-3"><span class="px-2 py-1 rounded-md text-[10px] font-black uppercase bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400">' + _vpEsc(c.level1_case_category_name) + '</span></td>' +
+        '<td class="p-3 text-slate-500 text-xs">' + _vpEsc(c.level2_case_category_name) + '</td>' +
+        '<td class="p-3 text-slate-500 text-xs">' + _vpEsc(c.level3_case_category_name) + '</td>' +
+        '<td class="p-3 font-mono text-xs text-slate-500' + (c.order_shipping_id ? ' cursor-pointer hover:text-rose-500 transition-colors group' : '') + '"' + (c.order_shipping_id ? ' onclick="event.stopPropagation(); vpCopyCode(\'' + _vpEscAttr(c.order_shipping_id) + '\')" title="' + vpT('Click để copy Mã vận đơn') + '"' : '') + '>' + _vpEsc(c.order_shipping_id) + (c.order_shipping_id ? '<i class="fas fa-copy ml-1.5 opacity-0 group-hover:opacity-60 text-[10px] transition-opacity"></i>' : '') + '</td>' +
+        '<td class="p-3 text-slate-500">' + _vpEsc(c.driver_name) + ' <span class="text-[10px] text-slate-400">(' + _vpEsc(c.driver_id) + ')</span></td>' +
+        '<td class="p-3 text-xs">' + (c.ticket_no ? '<span class="font-mono text-emerald-600 dark:text-emerald-400 cursor-pointer hover:text-rose-500 transition-colors group" onclick="event.stopPropagation(); vpCopyCode(\'' + _vpEscAttr(c.ticket_no) + '\')" title="' + vpT('Click để copy Ticket') + '">' + _vpEsc(c.ticket_no) + '<i class="fas fa-copy ml-1.5 opacity-0 group-hover:opacity-60 text-[10px] transition-opacity"></i></span>' : '<span class="text-slate-300">—</span>') + '</td>' +
+        '</tr>';
+    }).join('') + '</tbody></table></div>';
+
+  var pagerHtml = '<div class="flex items-center justify-between mt-3 text-[11px] font-bold text-slate-500">' +
+    '<span>' + vpT('Hiện') + ' ' + (start+1) + '–' + Math.min(start+VP_PAGE_SIZE, rows.length) + ' / ' + rows.length + ' ' + vpT('vụ việc') + '</span>' +
+    '<div class="flex items-center gap-2">' +
+    '<button onclick="vpGoPage(' + (VP_page-1) + ')" ' + (VP_page<=1?'disabled':'') + ' class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"><i class="fas fa-chevron-left text-[10px]"></i></button>' +
+    '<span>Trang ' + VP_page + ' / ' + totalPages + '</span>' +
+    '<button onclick="vpGoPage(' + (VP_page+1) + ')" ' + (VP_page>=totalPages?'disabled':'') + ' class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"><i class="fas fa-chevron-right text-[10px]"></i></button>' +
+    '</div></div>';
+
+  wrap.innerHTML = tableHtml + pagerHtml;
+}
+function vpGoPage(p){ VP_page = p; vpRenderTable(); }
+
+// [MỚI — theo yêu cầu trực tiếp "1 số module thiếu copy mã nhanh"] Đúng pattern
+// đã dùng ở Pick/KPI Fail/Đơn cầu cứu — copy qua clipboard API, fallback
+// textarea nếu trình duyệt không hỗ trợ, báo toast xác nhận.
+function vpCopyCode(text) {
+  var done = function() { if (typeof showToast === 'function') showToast('✓ ' + vpT('Đã copy') + ': ' + text, 'success'); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(function() { _vpCopyFallback(text, done); });
+  } else {
+    _vpCopyFallback(text, done);
+  }
+}
+function _vpCopyFallback(text, cb) {
+  // [DỌN TRÙNG LẶP] Uỷ quyền spxCopyFallback() dùng chung (index.html).
+  if (typeof spxCopyFallback === 'function') spxCopyFallback(text, cb);
+}
+
+vpInit();
+</script>

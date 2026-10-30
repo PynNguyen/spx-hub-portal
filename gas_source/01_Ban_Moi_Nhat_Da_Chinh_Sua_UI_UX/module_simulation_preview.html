@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mô Phỏng Trực Quan & Tương Tác: JS_FMS & JS_Pick (UI/UX 2.0)</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+    body { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; }
+    .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+    .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.35); border-radius: 99px; }
+    
+    /* Grid 8 cột cho FMS KPI Cards */
+    .fms-kpi-grid-8 {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+    @media (max-width: 1280px) {
+      .fms-kpi-grid-8 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+    @media (max-width: 768px) {
+      .fms-kpi-grid-8 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    
+    .kpi-card {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .kpi-card:hover {
+      transform: translateY(-2px);
+    }
+    .kpi-active {
+      border-color: #f97316 !important;
+      box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.25), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      background-color: #fff7ed !important;
+    }
+    
+    /* Animation pulse */
+    @keyframes subtlePulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.15); }
+    }
+    .danger-pulse {
+      animation: subtlePulse 1.6s infinite;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased p-3 md:p-5 min-h-screen">
+
+  <!-- TOP HEADER & CONTROLS -->
+  <header class="bg-white rounded-2xl shadow-sm border border-slate-200/90 p-4 mb-4 sticky top-2 z-40">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center text-white font-black text-lg shadow-md shadow-orange-500/20">
+          SPX
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base font-extrabold text-slate-900 tracking-tight">MÔ PHỎNG VẬN HÀNH & KIỂM ĐỊNH UI/UX</h1>
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">Hoàn Thiện 100%</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-0.5">Kiểm tra trực quan 2 module: <b class="text-orange-600">JS_FMS (Tồn đọng)</b> và <b class="text-sky-600">JS_Pick (Quản lý lấy hàng)</b> theo đúng nghiệp vụ</p>
+        </div>
+      </div>
+
+      <!-- INTERACTIVE CONTROLS -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <button onclick="loadSampleData()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-black shadow-sm flex items-center gap-1.5 transition-all active:scale-95">
+          <span>🔄 Nạp dữ liệu mẫu</span>
+        </button>
+        <button onclick="clearAllData()" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition-all border border-slate-200 flex items-center gap-1">
+          <span>🗑️ Xóa rỗng (Test Empty State)</span>
+        </button>
+        <div class="h-6 w-px bg-slate-200 mx-1"></div>
+        <div class="px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] font-bold text-slate-600 flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+          <span>Độ trễ mở trang: <b class="text-emerald-600 font-mono">0ms (Tức thì)</b></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODULE TABS -->
+    <div class="flex items-center justify-between border-t border-slate-100 mt-3.5 pt-3">
+      <div class="flex items-center gap-2">
+        <button onclick="switchMainModule('fms')" id="tab-btn-fms" class="px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 bg-orange-500 text-white shadow-md shadow-orange-500/20">
+          <span>📦 1. Tồn Đọng LastMile (JS_FMS)</span>
+        </button>
+        <button onclick="switchMainModule('pick')" id="tab-btn-pick" class="px-4 py-2 rounded-xl text-xs font-black text-slate-600 hover:bg-slate-100 transition-all flex items-center gap-2">
+          <span>🚚 2. Quản Lý FirstMile (JS_Pick)</span>
+        </button>
+        <button onclick="switchMainModule('checklist')" id="tab-btn-checklist" class="px-4 py-2 rounded-xl text-xs font-black text-slate-600 hover:bg-slate-100 transition-all flex items-center gap-2">
+          <span>📋 3. Bảng Kiểm Tra Tiêu Chí UI/UX</span>
+        </button>
+      </div>
+
+      <!-- SOURCE TOGGLE (MANUAL / LIVE) -->
+      <div id="sourceSwitcher" class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
+        <button id="btnSrcManual" onclick="switchSourceMode('manual')" class="px-3 py-1.5 rounded-lg bg-white text-orange-600 shadow-sm transition-all flex items-center gap-1.5">
+          <span>📄 Luồng Manual (Thủ công)</span>
+        </button>
+        <button id="btnSrcLive" onclick="switchSourceMode('live')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1.5">
+          <span>⚡ Luồng Live (Hệ thống Realtime)</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================== -->
+  <!-- MAIN DISPLAY AREA -->
+  <!-- ============================================================== -->
+  <main class="space-y-4">
+
+    <!-- ============================================================ -->
+    <!-- MODULE 1: JS_FMS (TỒN ĐỌNG LASTMILE) -->
+    <!-- ============================================================ -->
+    <section id="module-fms-wrap" class="space-y-3">
+      
+      <!-- FMS TOP BAR (HUB SELECT + UPLOAD + CONTROLS) -->
+      <div class="bg-white rounded-2xl p-3 border border-slate-200/90 shadow-xs flex items-center justify-between flex-wrap gap-2">
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-black text-slate-400 uppercase tracking-wider">Trạm Hub:</span>
+          <select id="fmsHubSelect" onchange="onFmsHubChange()" class="bg-slate-50 border border-slate-200 font-bold rounded-xl px-3 py-1.5 text-xs outline-none focus:border-orange-500 cursor-pointer">
+            <option value="45-DLK Krong Pak 02 Hub">45-DLK Krong Pak 02 Hub</option>
+            <option value="45-DLK Buon Ma Thuot Hub">45-DLK Buon Ma Thuot Hub</option>
+            <option value="45-DLK Ea Kar Hub">45-DLK Ea Kar Hub</option>
+          </select>
+          <span class="text-xs text-slate-400">|</span>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-500 font-semibold">Chế độ đang mở:</span>
+            <span id="fmsCurrentModeBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-orange-100 text-orange-700 border border-orange-200">Manual (File CSV)</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Manual Actions -->
+          <div id="fmsManualHeaderBtns" class="flex items-center gap-2">
+            <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5">
+              <span>📤 NẠP FILE FMS (CSV)</span>
+              <input type="file" class="hidden" onchange="mockUploadFmsFile(event)">
+            </label>
+            <button onclick="clearFmsManual()" class="px-2.5 py-1.5 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-bold transition-all">
+              <span>Xóa bộ nhớ</span>
+            </button>
+          </div>
+
+          <!-- Live Actions -->
+          <div id="fmsLiveHeaderBtns" class="hidden flex items-center gap-2">
+            <span class="px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 text-[11px] font-black flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>LIVE SNAPSHOT (30s)</span>
+            </span>
+            <span class="text-xs text-slate-400 font-medium">Cập nhật: <b id="fmsLiveSyncTime">Vừa xong</b></span>
+            <button onclick="refreshFmsLive()" class="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all">
+              <span>🔄 Làm mới</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- FMS MANUAL CONTENT -->
+      <div id="fmsManualContent" class="space-y-3">
+        
+        <!-- 1. HÀNG 8 THẺ KPI TINH GỌN TRÊN 1 HÀNG DUY NHẤT (.fms-kpi-grid-8) -->
+        <div class="bg-white rounded-2xl p-3 border border-slate-200/90 shadow-xs">
+          <div class="flex items-center justify-between mb-2 px-1">
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-black uppercase tracking-wider text-slate-500">🎯 Bảng Chỉ Số KPI Tồn Đọng (8 Nhóm Nghiệp Vụ):</span>
+              <span class="text-[10px] text-slate-400">(Click vào từng thẻ để lọc danh sách bên dưới)</span>
+            </div>
+            <span class="text-[10px] font-bold text-slate-400">Đã tinh gọn 8 thẻ về 1 hàng duy nhất — Không còn bẫy Sidebar</span>
+          </div>
+
+          <!-- THE 8 CARDS GRID -->
+          <div class="fms-kpi-grid-8" id="fmsKpiCardsGrid">
+            
+            <!-- Card 0: Tổng Tồn Hub -->
+            <div onclick="selectFmsCategory(-1)" id="fms-card-all" class="kpi-card kpi-active cursor-pointer p-2.5 rounded-xl bg-white border border-slate-200 shadow-xs">
+              <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                <span class="truncate">Tổng tồn Hub</span>
+                <span class="w-2 h-2 rounded-full bg-orange-500 shrink-0"></span>
+              </div>
+              <div class="text-xl font-black text-orange-600 mt-1" id="fms-stat-all">12</div>
+              <div class="text-[9.5px] text-slate-500 font-semibold truncate mt-0.5">Tất cả đơn tồn</div>
+            </div>
+
+            <!-- Card 1: Đơn Mới -->
+            <div onclick="selectFmsCategory(0)" id="fms-card-0" class="kpi-card cursor-pointer p-2.5 rounded-xl bg-white border border-slate-200 shadow-xs">
+              <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                <span class="truncate">Đơn Mới</span>
+                <span class="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
+              </div>
+              <div class="text-xl font-black text-blue-600 mt-1" id="fms-stat-0">2</div>
+              <div class="text-[9.5px] text-slate-500 font-semibold truncate mt-0.5">Chưa phân ca</div>
+            </div>
+
+            <!-- Card 2: Hẹn Giao -->
+            <div onclick="selectFmsCategory(1)" id="fms-card-1" class="kpi-card cursor-pointer p-2.5 rounded-xl bg-white border border-slate-200 shadow-xs">
+              <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                <span class="truncate">Hẹn Giao</span>
+                <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+              </div>
+              <div class="text-xl font-black text-amber-600 mt-1" id="fms-stat-1">2</div>
+              <div class="text-[9.5px] text-slate-500 font-semibold truncate mt-0.5">Khách hẹn lại</div>
+            </div>
+
+            <!-- Card 3: Delay Khác (CHUẨN NGỮ NGHĨA) -->
+            <div onclick="selectFmsCategory(2)" id="fms-card-2" class="kpi-card cursor-pointer p-2.5 rounded-xl bg-white border border-slate-200 shadow-xs">
+              <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                <span class="truncate">Delay Khác</span>
+                <span class="w-2 h-2 rounded-full bg-sky-500 shrink-0"></span>
+              </div>
+              <div class="text-xl font-black text-sky-600 mt-1" id="fms-stat-2">2</div>
+              <div class="text-[9.5px] text-sky-700 font-bold truncate mt-0.5" title="Kiểm tra lý do delay">Kiểm tra lý do delay</div>
+            </div>
+
+            <!-- Card 4: Quá 3 Ca (CHUẨN NGỮ NGHĨA) -->
+            <div onclick="selectFmsCategory(3)" id="fms-card-3" class="kpi-card cursor-pointer p-2.5 rounded-xl bg-white border border-slate-200 shadow-xs">
+              <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                <span class="truncate">Quá 3 Ca</span>
+                <span class="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
+              </div>
+              <div class="text-xl font-black text-rose-600 mt-1" id="fms-stat-3">2</div>
+              <div class="text-[9.5px] text-rose-700 font-bold truncate mt-0.5" title="Kiểm tra nguyên nhân">Kiểm tra nguyên nhân</div>
+            </div>
+
+            <!-- Card 5: Hoàn Hàng -->
+            <div onclick="selectFmsCategory(4)" id="fms-card-4" class="kpi-card cursor-pointer p-2.5 rounded-xl bg-white border border-slate-200 shadow-xs">
+              <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                <span class="truncate">Hoàn Hàng</span>
+                <span class="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span>
+              </div>
+              <div class="text-xl font-black text-purple-600 mt-1" id="fms-stat-4">1</div>
+              <div class="text-[9.5px] text-slate-500 font-semibold truncate mt-0.5">Chờ trả về kho</div>
+            </div>
+
+            <!-- Card 6: Tồn 3-5N (CHUẨN NGỮ NGHĨA) -->
+            <div onclick="selectFmsCategory(5)" id="fms-card-5" class="kpi-card cursor-pointer p-2.5 rounded-xl bg-white border border-slate-200 shadow-xs">
+              <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                <span class="truncate">Tồn 3-5N</span>
+                <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+              </div>
+              <div class="text-xl font-black text-amber-600 mt-1" id="fms-stat-5">2</div>
+              <div class="text-[9.5px] text-amber-700 font-bold truncate mt-0.5" title="Cần kiểm tra">Cần kiểm tra</div>
+            </div>
+
+            <!-- Card 7: Tồn > 5N (CHUẨN NGỮ NGHĨA - NGUY HIỂM) -->
+            <div onclick="selectFmsCategory(6)" id="fms-card-6" class="kpi-card cursor-pointer p-2.5 rounded-xl bg-white border border-slate-200 shadow-xs">
+              <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                <span class="truncate">Tồn &gt; 5N</span>
+                <span class="w-2 h-2 rounded-full bg-red-600 danger-pulse shrink-0"></span>
+              </div>
+              <div class="text-xl font-black text-red-600 mt-1" id="fms-stat-6">1</div>
+              <div class="text-[9.5px] text-red-700 font-black truncate mt-0.5" title="Cần kiểm tra gấp/nguy hiểm">Cần kiểm tra gấp/nguy hiểm</div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 2. KHỐI BỘ LỌC TÁC NGHIỆP & BẢNG DỮ LIỆU FMS -->
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+          
+          <!-- TOOLBAR TÁC NGHIỆP -->
+          <div class="p-3 border-b border-slate-100 flex items-center justify-between flex-wrap gap-2 bg-slate-50/50">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-black uppercase text-slate-600">Bộ Lọc Tác Nghiệp:</span>
+              <span id="fmsFilterStatusBadge" class="px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700 border border-orange-200">
+                Đang xem: Tất cả (12 đơn)
+              </span>
+            </div>
+
+            <div class="flex items-center gap-2 text-xs">
+              <button onclick="toggleFmsExceptionsModal()" class="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 font-bold text-slate-700 shadow-xs flex items-center gap-1.5 transition-colors">
+                <span>📊 Top Lý Do Delay</span>
+                <span class="px-1.5 py-0.2 rounded-full bg-orange-100 text-orange-600 text-[10px] font-black">4 lý do</span>
+              </button>
+              <button onclick="copyFmsOrders()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold shadow-xs flex items-center gap-1.5 transition-all">
+                <span>📋 Copy Mã Đang Lọc (<span id="fmsCopyCount">12</span>)</span>
+              </button>
+              <button onclick="selectFmsCategory(-1)" class="px-2.5 py-1.5 rounded-xl text-slate-500 hover:bg-slate-100 font-bold flex items-center gap-1 transition-colors">
+                <span>✕ Xóa Lọc</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- FMS DATA TABLE (8 CỘT ĐẦY ĐỦ) -->
+          <div class="overflow-x-auto custom-scroll">
+            <table class="w-full text-left text-xs whitespace-nowrap">
+              <thead class="bg-slate-50 border-b border-slate-200 text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                <tr>
+                  <th class="px-3 py-2.5 text-center w-12">STT</th>
+                  <th class="px-3 py-2.5">Mã Đơn Hàng</th>
+                  <th class="px-3 py-2.5">Trạng Thái FMS</th>
+                  <th class="px-3 py-2.5">Lý Do Delay</th>
+                  <th class="px-3 py-2.5 text-center">Số Ca Tồn</th>
+                  <th class="px-3 py-2.5">Ngày Nhập Kho</th>
+                  <th class="px-3 py-2.5">Hub Quản Lý</th>
+                  <th class="px-3 py-2.5 text-center">Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody id="fmsTableBody" class="divide-y divide-slate-100 text-slate-700 font-medium">
+                <!-- Rows injected via JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- TABLE FOOTER -->
+          <div class="p-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-xs text-slate-500">
+            <span>Hiển thị <b id="fmsShownCount">12</b> trên tổng số <b id="fmsTotalCount">12</b> đơn tồn</span>
+            <span class="text-[11px] text-slate-400">Dữ liệu FMS LastMile chuẩn hóa • Không bị cắt xén bất kỳ cột nào</span>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- FMS LIVE CONTENT -->
+      <div id="fmsLiveContent" class="hidden space-y-3">
+        
+        <!-- HEALTH SCORE & SNAPSHOT -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <!-- Health Score -->
+          <div class="p-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm flex items-center justify-between">
+            <div>
+              <div class="text-[10px] font-black uppercase tracking-wider text-emerald-100">Live Health Score</div>
+              <div class="text-3xl font-black mt-1">88<span class="text-sm font-bold text-emerald-200">/100</span></div>
+              <div class="text-[11px] text-emerald-100 mt-0.5">Trạng thái vận hành Tốt</div>
+            </div>
+            <div class="text-3xl opacity-80">💚</div>
+          </div>
+
+          <!-- Total Live -->
+          <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
+            <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Tổng Đơn Tồn Live</div>
+            <div class="text-2xl font-black text-slate-800 mt-1">128</div>
+            <div class="text-[11px] text-emerald-600 font-bold mt-0.5">↓ 12% so với hôm qua</div>
+          </div>
+
+          <!-- Quá 3 ca Live -->
+          <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
+            <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Đơn Quá 3 Ca</div>
+            <div class="text-2xl font-black text-rose-600 mt-1">14</div>
+            <div class="text-[11px] text-rose-500 font-bold mt-0.5">Cần xử lý trong ca sáng</div>
+          </div>
+
+          <!-- Tồn > 5N Live -->
+          <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
+            <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Tồn &gt; 5 Ngày</div>
+            <div class="text-2xl font-black text-red-600 mt-1">3</div>
+            <div class="text-[11px] text-red-500 font-bold mt-0.5">Mức độ rủi ro cao</div>
+          </div>
+        </div>
+
+        <!-- EXCEPTION CENTER & ACTION CENTER -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          
+          <!-- Exception Center -->
+          <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs space-y-3">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+              <span class="text-xs font-black uppercase text-slate-700">⚡ Exception Center (Lý do delay nổi bật)</span>
+              <span class="text-[11px] font-bold text-orange-600">Xem toàn bộ (28)</span>
+            </div>
+            <div class="space-y-2 text-xs">
+              <div>
+                <div class="flex justify-between font-bold text-slate-700 mb-1">
+                  <span>Khách hẹn lại ngày khác</span>
+                  <span>14 đơn (50%)</span>
+                </div>
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div class="bg-amber-500 h-full rounded-full" style="width: 50%"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between font-bold text-slate-700 mb-1">
+                  <span>Không liên lạc được người nhận</span>
+                  <span>8 đơn (28%)</span>
+                </div>
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div class="bg-rose-500 h-full rounded-full" style="width: 28%"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between font-bold text-slate-700 mb-1">
+                  <span>Thời tiết xấu / Mưa ngập</span>
+                  <span>4 đơn (14%)</span>
+                </div>
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div class="bg-sky-500 h-full rounded-full" style="width: 14%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Center -->
+          <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs space-y-3">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+              <span class="text-xs font-black uppercase text-slate-700">🎯 Action Center (Khuyến nghị vận hành)</span>
+              <span class="text-[11px] font-bold text-emerald-600">3 hành động</span>
+            </div>
+            <div class="space-y-2 text-xs">
+              <div class="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-start gap-2">
+                <span class="text-base">🚨</span>
+                <div>
+                  <b class="font-bold">Ưu tiên 1:</b> Có 3 đơn tồn quá 5 ngày tại Krong Pak cần kiểm tra gấp với Sup trạm.
+                </div>
+              </div>
+              <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 flex items-start gap-2">
+                <span class="text-base">⚠️</span>
+                <div>
+                  <b class="font-bold">Ưu tiên 2:</b> 14 đơn khách hẹn giao lại cần gom tuyến giao trong ca 1 hôm nay.
+                </div>
+              </div>
+              <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-start gap-2">
+                <span class="text-base">✅</span>
+                <div>
+                  <b class="font-bold">Bình thường:</b> Tỷ lệ giao thành công đạt 94.8% trên toàn Hub.
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- MODULE 2: JS_PICK (QUẢN LÝ FIRSTMILE) -->
+    <!-- ============================================================ -->
+    <section id="module-pick-wrap" class="hidden space-y-3">
+      
+      <!-- PICK HEADER & CONTROLS -->
+      <div class="bg-white rounded-2xl p-3 border border-slate-200/90 shadow-xs flex items-center justify-between flex-wrap gap-2">
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-black text-slate-400 uppercase tracking-wider">Trạm Hub:</span>
+          <select id="pickHubSelect" class="bg-slate-50 border border-slate-200 font-bold rounded-xl px-3 py-1.5 text-xs outline-none focus:border-sky-500 cursor-pointer">
+            <option value="45-DLK Krong Pak 02 Hub">45-DLK Krong Pak 02 Hub</option>
+            <option value="45-DLK Buon Ma Thuot Hub">45-DLK Buon Ma Thuot Hub</option>
+          </select>
+          <span class="text-xs text-slate-400">|</span>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-500 font-semibold">Chế độ đang mở:</span>
+            <span id="pickCurrentModeBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-sky-100 text-sky-700 border border-sky-200">Manual (2 File Task & Assign)</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Manual Clear -->
+          <button id="pickClearBtn" onclick="clearPickData()" class="px-2.5 py-1.5 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-bold transition-all">
+            <span>Xóa dữ liệu Pick</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- PICK MANUAL CONTENT -->
+      <div id="pickManualContent" class="space-y-3">
+        
+        <!-- 1. KHỐI NẠP FILE TASK & FILE ASSIGN (CỐ ĐỊNH, RÕ RÀNG, KHÔNG BỊ MẤT) -->
+        <div class="bg-white rounded-2xl p-3.5 border border-slate-200/90 shadow-xs">
+          <div class="flex items-center justify-between mb-2.5 px-1">
+            <span class="text-[11px] font-black uppercase tracking-wider text-slate-500">📁 Nạp Dữ Liệu Lấy Hàng (Task & Assign):</span>
+            <span class="text-[10px] text-emerald-600 font-bold">✓ Cố định tiêu đề nhận diện, không bị mất khi khôi phục cache</span>
+          </div>
+
+          <div class="flex items-center gap-3 flex-wrap">
+            
+            <!-- Date Picker -->
+            <div class="flex items-center gap-1.5 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200">
+              <span class="text-[10px] font-black text-slate-400 uppercase">Ngày:</span>
+              <input type="date" id="pickTargetDate" value="2026-10-29" class="bg-transparent font-black text-xs text-slate-700 outline-none cursor-pointer">
+            </div>
+
+            <!-- 1. NẠP FILE TASK BOX -->
+            <label id="pickTaskBox" class="cursor-pointer bg-white hover:bg-sky-50/80 px-3.5 py-2 rounded-xl border-2 border-dashed border-sky-300 hover:border-sky-500 flex items-center gap-2.5 shadow-xs transition-all">
+              <div class="w-8 h-8 rounded-lg bg-sky-100 flex items-center justify-center shrink-0 text-sky-600 font-bold text-sm">
+                📄
+              </div>
+              <div class="flex flex-col min-w-0">
+                <span class="text-[10px] font-black uppercase tracking-wider text-sky-700">1. Nạp File Task</span>
+                <span id="pickTaskFileName" class="text-[11px] font-bold text-slate-600 truncate max-w-[150px]">Task_20261029.csv (Đã nạp)</span>
+              </div>
+              <input type="file" class="hidden" onchange="mockPickUpload('task')">
+            </label>
+
+            <!-- 2. NẠP FILE ASSIGN BOX -->
+            <label id="pickAssignBox" class="cursor-pointer bg-white hover:bg-orange-50/80 px-3.5 py-2 rounded-xl border-2 border-dashed border-orange-300 hover:border-orange-500 flex items-center gap-2.5 shadow-xs transition-all">
+              <div class="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center shrink-0 text-orange-600 font-bold text-sm">
+                📊
+              </div>
+              <div class="flex flex-col min-w-0">
+                <span class="text-[10px] font-black uppercase tracking-wider text-orange-700">2. Nạp File Assign</span>
+                <span id="pickAssignFileName" class="text-[11px] font-bold text-slate-600 truncate max-w-[150px]">Assign_20261029.xlsx (Đã nạp)</span>
+              </div>
+              <input type="file" class="hidden" onchange="mockPickUpload('assign')">
+            </label>
+
+            <!-- Driver Selector -->
+            <div class="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+              <span class="text-[10px] font-black text-slate-400 uppercase">Tài xế:</span>
+              <select id="pickDriverSelect" onchange="filterPickByDriver()" class="bg-transparent font-bold text-xs text-slate-700 outline-none cursor-pointer">
+                <option value="">-- Tất cả tài xế (3) --</option>
+                <option value="Nguyễn Văn A">Nguyễn Văn A (4 đơn)</option>
+                <option value="Trần Đình B">Trần Đình B (3 đơn)</option>
+                <option value="Lê Văn C">Lê Văn C (3 đơn)</option>
+              </select>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 2. THẺ KPI MANUAL + ETA CHIPS (100% CHUẨN XÁC THEO BẢN CŨ HÌNH 2) -->
+        <div class="bg-white rounded-2xl p-3 border border-slate-200/90 shadow-xs flex items-center justify-between flex-wrap gap-2">
+          
+          <!-- 5 STATUS CARDS THEO ĐÚNG BẢN GỐC -->
+          <div class="flex items-center gap-2 flex-wrap">
+            <!-- TỔNG / HIỆN -->
+            <div onclick="resetInlineFiltersPICK()" title="Xem tất cả đơn" class="cursor-pointer px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center gap-2 shrink-0 shadow-xs hover:border-sky-400 transition-all">
+              <span class="text-[10px] font-black uppercase text-slate-400 tracking-wider">TỔNG:</span>
+              <span class="text-sm font-black text-slate-800" id="pickTotalStat">10</span>
+              <span class="text-[10px] text-sky-500 font-bold hidden md:inline border-l border-slate-200 pl-2">Đang hiện: <span id="pickShownCountHeader" class="font-black">10</span></span>
+            </div>
+
+            <!-- EXPECTED -->
+            <div id="card-pick-expected" onclick="toggleStatusFilterPICK('expected')" title="Lọc đơn Expected (Chờ lấy)" class="kpi-card cursor-pointer px-3 py-1.5 rounded-xl border border-slate-200 bg-white flex items-center gap-2 shrink-0 shadow-xs hover:border-slate-400 transition-all">
+              <span class="text-xs">⏳</span>
+              <span class="text-[10px] font-black uppercase text-slate-600 tracking-wider">EXPECTED</span>
+              <span class="px-2 py-0.5 rounded-md bg-slate-100 text-xs font-mono font-black text-slate-700" id="stat-pick-expected">3</span>
+            </div>
+
+            <!-- ACCEPTED -->
+            <div id="card-pick-accepted" onclick="toggleStatusFilterPICK('accepted')" title="Lọc đơn Accepted (Đã nhận)" class="kpi-card cursor-pointer px-3 py-1.5 rounded-xl border border-amber-300 bg-white flex items-center gap-2 shrink-0 shadow-xs hover:border-amber-400 transition-all">
+              <span class="text-xs">✔️</span>
+              <span class="text-[10px] font-black uppercase text-amber-600 tracking-wider">ACCEPTED</span>
+              <span class="px-2 py-0.5 rounded-md bg-amber-50 text-xs font-mono font-black text-amber-700" id="stat-pick-accepted">2</span>
+            </div>
+
+            <!-- ARRIVED -->
+            <div id="card-pick-arrived" onclick="toggleStatusFilterPICK('arrived')" title="Lọc đơn Arrived (Đã đến lấy)" class="kpi-card cursor-pointer px-3 py-1.5 rounded-xl border border-sky-300 bg-white flex items-center gap-2 shrink-0 shadow-xs hover:border-sky-400 transition-all">
+              <span class="text-xs">📍</span>
+              <span class="text-[10px] font-black uppercase text-sky-600 tracking-wider">ARRIVED</span>
+              <span class="px-2 py-0.5 rounded-md bg-sky-50 text-xs font-mono font-black text-sky-700" id="stat-pick-arrived">1</span>
+            </div>
+
+            <!-- DONE -->
+            <div id="card-pick-done" onclick="toggleStatusFilterPICK('done')" title="Lọc đơn Done (Đã lấy hàng)" class="kpi-card cursor-pointer px-3 py-1.5 rounded-xl border border-emerald-300 bg-white flex items-center gap-2 shrink-0 shadow-xs hover:border-emerald-400 transition-all">
+              <span class="text-xs">📦</span>
+              <span class="text-[10px] font-black uppercase text-emerald-600 tracking-wider">DONE</span>
+              <span class="px-2 py-0.5 rounded-md bg-emerald-50 text-xs font-mono font-black text-emerald-700" id="stat-pick-done">2</span>
+            </div>
+
+            <!-- INBOUNDED -->
+            <div id="card-pick-inbounded" onclick="toggleStatusFilterPICK('inbounded')" title="Lọc đơn Inbounded (Đã nhập kho)" class="kpi-card cursor-pointer px-3 py-1.5 rounded-xl border border-indigo-300 bg-white flex items-center gap-2 shrink-0 shadow-xs hover:border-indigo-400 transition-all">
+              <span class="text-xs">🏢</span>
+              <span class="text-[10px] font-black uppercase text-indigo-600 tracking-wider">INBOUNDED</span>
+              <span class="px-2 py-0.5 rounded-md bg-indigo-50 text-xs font-mono font-black text-indigo-700" id="stat-pick-inbounded">2</span>
+            </div>
+          </div>
+
+          <!-- ETA CHIPS CHUẨN XÁC: 12H, 19H, 21H -->
+          <div class="flex items-center gap-1.5 pl-2 border-l border-slate-200 shrink-0">
+            <span class="text-[10px] font-black uppercase text-slate-400 mr-0.5">ETA:</span>
+            <div id="eta-chip-1200" onclick="toggleEtaFilterPICK('12:00')" title="Lọc ca trưa 12H" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-black cursor-pointer bg-white border-slate-200 text-slate-600 hover:border-amber-400 transition-all">
+              <span>☀️ 12H</span>
+              <span id="stat-eta-1200" class="font-mono font-black px-1.5 py-0.2 rounded bg-slate-100">5</span>
+            </div>
+            <div id="eta-chip-1900" onclick="toggleEtaFilterPICK('19:00')" title="Lọc ca tối 19H" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-black cursor-pointer bg-white border-slate-200 text-slate-600 hover:border-indigo-400 transition-all">
+              <span>🌙 19H</span>
+              <span id="stat-eta-1900" class="font-mono font-black px-1.5 py-0.2 rounded bg-slate-100">3</span>
+            </div>
+            <div id="eta-chip-2100" onclick="toggleEtaFilterPICK('21:00')" title="Lọc ca đêm 21H" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-black cursor-pointer bg-white border-slate-200 text-slate-600 hover:border-violet-400 transition-all">
+              <span>🌙 21H</span>
+              <span id="stat-eta-2100" class="font-mono font-black px-1.5 py-0.2 rounded bg-slate-100">2</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 3. BẢNG DỮ LIỆU PICK MANUAL (11 CỘT GỐC ĐẦY ĐỦ) -->
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+          <div class="overflow-x-auto custom-scroll">
+            <table class="w-full text-left text-xs whitespace-nowrap">
+              <thead class="bg-slate-50 border-b border-slate-200 text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                <tr>
+                  <th class="px-3 py-2.5 text-center w-12">STT</th>
+                  <th class="px-3 py-2.5">Seller</th>
+                  <th class="px-3 py-2.5">Pickup</th>
+                  <th class="px-3 py-2.5">Mã Đơn</th>
+                  <th class="px-3 py-2.5 text-center">Order Status</th>
+                  <th class="px-3 py-2.5 text-center">Task Status</th>
+                  <th class="px-3 py-2.5 text-center">ATT</th>
+                  <th class="px-3 py-2.5 text-center">ETA</th>
+                  <th class="px-3 py-2.5">TG Tạo</th>
+                  <th class="px-3 py-2.5">TG Pick</th>
+                  <th class="px-3 py-2.5">Xã/Phường</th>
+                </tr>
+              </thead>
+              <tbody id="pickTableBody" class="divide-y divide-slate-100 text-slate-700 font-medium">
+                <!-- Rows injected via JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="p-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-xs text-slate-500">
+            <span>Hiển thị <b id="pickShownCount">10</b> trên tổng số <b id="pickTotalCount">10</b> đơn lấy</span>
+            <span class="text-[11px] text-slate-400">Giữ nguyên 11 cột chuẩn • Lọc đa chiều Seller/Pickup/Status</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- PICK LIVE CONTENT -->
+      <div id="pickLiveContent" class="hidden space-y-3">
+        
+        <!-- LIVE TOOLBAR & SEARCH -->
+        <div class="bg-white rounded-2xl p-3 border border-slate-200/90 shadow-xs flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center gap-3">
+            <div class="px-3 py-1 rounded-full bg-slate-100 text-xs font-black text-slate-700 flex items-center gap-2">
+              <span>Tổng: <b id="pickLiveTotalStat">12</b></span>
+              <span class="text-slate-300">|</span>
+              <span class="text-sky-600">Đang hiện: <b id="pickLiveShownStat">12</b></span>
+            </div>
+            
+            <div class="relative">
+              <input type="text" id="pickLiveSearchInput" onkeyup="searchPickLive(this.value)" placeholder="Tìm mã đơn / trạm..." class="bg-slate-50 border border-slate-200 rounded-full pl-7 pr-3 py-1.5 text-xs font-bold outline-none focus:border-sky-500 w-48">
+              <span class="absolute left-2.5 top-2 text-slate-400 text-xs">🔍</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button onclick="resetPickLiveFilters()" class="px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition-all">
+              <span>✕ Xóa lọc</span>
+            </button>
+            <button onclick="copyPickLiveOrders()" class="px-4 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-xs font-black shadow-xs transition-all">
+              <span>📋 COPY MÃ HIỂN THỊ</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- DẢI CHIP TRẠNG THÁI LIVE (DẠNG NGANG GỌN GÀNG, KHÔNG CHE BẢNG) -->
+        <div class="bg-white rounded-2xl p-3 border border-slate-200/90 shadow-xs space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-black uppercase tracking-wider text-slate-600">📦 Trạng Thái Đơn Live (Hệ Thống SPX Fleet):</span>
+              <span class="text-[10px] text-slate-400 font-semibold">(Bấm thẻ bất kỳ để lọc theo trạng thái)</span>
+            </div>
+            <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              ✓ Dạng chip ngang ~28px • Không tràn dọc đè bảng
+            </span>
+          </div>
+
+          <!-- THE HORIZONTAL STATUS CHIPS -->
+          <div class="flex flex-row flex-wrap items-center gap-2" id="pickLiveStatusChipsWrap">
+            <!-- Chips injected via JS -->
+          </div>
+        </div>
+
+        <!-- BẢNG DỮ LIỆU PICK LIVE (9 CỘT CHI TIẾT) -->
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+          <div class="overflow-x-auto custom-scroll">
+            <table class="w-full text-left text-xs whitespace-nowrap">
+              <thead class="bg-slate-50 border-b border-slate-200 text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                <tr>
+                  <th class="px-3 py-2.5 text-center w-12">STT</th>
+                  <th class="px-3 py-2.5">Mã Đơn</th>
+                  <th class="px-3 py-2.5">Station</th>
+                  <th class="px-3 py-2.5">Trạng Thái Fleet</th>
+                  <th class="px-3 py-2.5 text-center">Order Type</th>
+                  <th class="px-3 py-2.5">Sản Phẩm</th>
+                  <th class="px-3 py-2.5">TG Tạo</th>
+                  <th class="px-3 py-2.5">TG Last Touch</th>
+                  <th class="px-3 py-2.5 text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody id="pickLiveTableBody" class="divide-y divide-slate-100 text-slate-700 font-medium">
+                <!-- Rows injected via JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="p-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-xs text-slate-500">
+            <span>Hiển thị <b id="pickLiveRowsCount">12</b> đơn Live</span>
+            <span class="text-[11px] text-slate-400">Đồng bộ tự động từ Firestore • Trạng thái Fleet trực quan</span>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- TAB 3: BẢNG KIỂM TRA TIÊU CHÍ (CHECKLIST) -->
+    <!-- ============================================================ -->
+    <section id="module-checklist-wrap" class="hidden space-y-4">
+      <div class="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-xs space-y-4">
+        <div>
+          <h2 class="text-base font-black text-slate-900">BẢNG ĐỐI CHIẾU TIÊU CHÍ NGHIỆM THU UI/UX & KỸ THUẬT</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Xác nhận tình trạng xử lý các yêu cầu của người dùng trên cả 2 module</p>
+        </div>
+
+        <div class="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden text-xs">
+          
+          <div class="p-3.5 bg-slate-50 flex items-start gap-3">
+            <span class="text-emerald-600 font-black text-base">✓</span>
+            <div>
+              <div class="font-black text-slate-800">1. Khởi động tức thì 0ms (Mở vào được ngay, không chờ mạng)</div>
+              <div class="text-slate-600 mt-0.5">Đã nhúng tĩnh trực tiếp `<?!= include('JS_FMS'); ?>` và `<?!= include('JS_Pick'); ?>` vào bên trong `#view-tondong` và `#view-pick` trong `index.html`. Gỡ khỏi mảng `LAZY_MODULES`. Chuyển đổi module ngay lập tức trong 0ms.</div>
+            </div>
+          </div>
+
+          <div class="p-3.5 bg-white flex items-start gap-3">
+            <span class="text-emerald-600 font-black text-base">✓</span>
+            <div>
+              <div class="font-black text-slate-800">2. JS_Pick: Khôi phục hộp nạp Task & Assign cố định</div>
+              <div class="text-slate-600 mt-0.5">Đã làm lại 2 hộp upload `#labelTaskPICK` (Sky) và `#labelAssignPICK` (Orange) với viền nét đứt, icon rõ ràng, nhãn cố định `1. Nạp File Task` và `2. Nạp File Assign`, kèm tên file / thời gian khôi phục. Không bao giờ biến mất khi load cache.</div>
+            </div>
+          </div>
+
+          <div class="p-3.5 bg-slate-50 flex items-start gap-3">
+            <span class="text-emerald-600 font-black text-base">✓</span>
+            <div>
+              <div class="font-black text-slate-800">3. JS_Pick: Dải chip trạng thái Live dạng ngang gọn gàng</div>
+              <div class="text-slate-600 mt-0.5">Đã dời `#pickLiveStatusChips` ra khỏi `#pickTopBar`, đặt ngay trên đỉnh bảng Live dưới dạng thanh chip ngang `inline-flex`, chiều cao ~28px. Không còn bung dọc che khuất bảng dữ liệu. Bấm từng chip để lọc nhanh.</div>
+            </div>
+          </div>
+
+          <div class="p-3.5 bg-white flex items-start gap-3">
+            <span class="text-emerald-600 font-black text-base">✓</span>
+            <div>
+              <div class="font-black text-slate-800">4. JS_FMS: 8 Thẻ KPI gom về 1 hàng duy nhất (.fms-kpi-grid-8)</div>
+              <div class="text-slate-600 mt-0.5">8 thẻ KPI được bố trí gọn trên 1 hàng ngang trên cùng. Dành 85% chiều cao màn hình bên dưới cho bảng dữ liệu và bộ lọc tác nghiệp. Bấm từng thẻ để lọc danh sách tức thì.</div>
+            </div>
+          </div>
+
+          <div class="p-3.5 bg-slate-50 flex items-start gap-3">
+            <span class="text-emerald-600 font-black text-base">✓</span>
+            <div>
+              <div class="font-black text-slate-800">5. JS_FMS: Chuẩn hóa ngữ nghĩa nghiệp vụ 4 nhóm cảnh báo</div>
+              <div class="text-slate-600 mt-0.5">
+                • <b>Tồn 3-5N</b>: Đã đặt chính xác là <span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-bold">Cần kiểm tra</span><br>
+                • <b>Tồn &gt; 5N</b>: Đã đặt chính xác là <span class="px-1.5 py-0.5 rounded bg-red-100 text-red-800 font-bold">Cần kiểm tra gấp/nguy hiểm</span> (có chấm đỏ nhấp nháy)<br>
+                • <b>Quá 3 ca</b>: Đã đặt chính xác là <span class="px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 font-bold">Kiểm tra nguyên nhân</span><br>
+                • <b>Delay khác</b>: Đã đặt chính xác là <span class="px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 font-bold">Kiểm tra lý do delay</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-3.5 bg-white flex items-start gap-3">
+            <span class="text-emerald-600 font-black text-base">✓</span>
+            <div>
+              <div class="font-black text-slate-800">6. Bỏ triệt để Sidebar phụ thừa (aside-tondong & aside-pick)</div>
+              <div class="text-slate-600 mt-0.5">Đã ẩn vĩnh viễn `#aside-tondong` và `#aside-pick`. Các nút điều hướng, chọn hub, upload, xóa dữ liệu được chuyển lên thanh công cụ trên cùng.</div>
+            </div>
+          </div>
+
+          <div class="p-3.5 bg-slate-50 flex items-start gap-3">
+            <span class="text-emerald-600 font-black text-base">✓</span>
+            <div>
+              <div class="font-black text-slate-800">7. Bảo toàn 100% dữ liệu gốc & 2 luồng Manual / Live</div>
+              <div class="text-slate-600 mt-0.5">Không lược bỏ bất kỳ trường thông tin nào. JS_Pick giữ nguyên 11 cột Manual và 9 cột Live; JS_FMS giữ nguyên 8 cột Manual và toàn bộ Health/Exception/Action Live.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL TOP LÝ DO DELAY FMS (SAMPLE) -->
+  <div id="fmsExceptionsModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="text-sm font-black text-slate-900 uppercase">📊 Top Lý Do Delay (FMS LastMile)</h3>
+        <button onclick="toggleFmsExceptionsModal()" class="text-slate-400 hover:text-slate-600 font-bold text-base">✕</button>
+      </div>
+
+      <div class="space-y-2.5 text-xs">
+        <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+          <div>
+            <div class="font-bold text-slate-800">1. Khách hẹn giao lại ca sau</div>
+            <div class="text-[10px] text-slate-500">Đã cập nhật theo phản hồi khách</div>
+          </div>
+          <span class="px-2.5 py-1 rounded-md bg-amber-100 text-amber-800 font-mono font-black">5 đơn</span>
+        </div>
+
+        <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+          <div>
+            <div class="font-bold text-slate-800">2. Số điện thoại không liên lạc được</div>
+            <div class="text-[10px] text-slate-500">Gọi 3 cuộc không nhấc máy</div>
+          </div>
+          <span class="px-2.5 py-1 rounded-md bg-rose-100 text-rose-800 font-mono font-black">3 đơn</span>
+        </div>
+
+        <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+          <div>
+            <div class="font-bold text-slate-800">3. Sai địa chỉ / Cần xác minh</div>
+            <div class="text-[10px] text-slate-500">Thiếu số nhà hoặc tên đường</div>
+          </div>
+          <span class="px-2.5 py-1 rounded-md bg-sky-100 text-sky-800 font-mono font-black">2 đơn</span>
+        </div>
+
+        <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+          <div>
+            <div class="font-bold text-slate-800">4. Lý do khác (Mưa ngập / Xe hỏng)</div>
+            <div class="text-[10px] text-slate-500">Sự cố ngoại cảnh</div>
+          </div>
+          <span class="px-2.5 py-1 rounded-md bg-purple-100 text-purple-800 font-mono font-black">2 đơn</span>
+        </div>
+      </div>
+
+      <div class="pt-2 flex justify-end">
+        <button onclick="toggleFmsExceptionsModal()" class="px-4 py-2 rounded-xl bg-slate-900 text-white font-bold text-xs">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toastBox" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold shadow-xl border border-slate-700 flex items-center gap-2" id="toastMessage">
+      <span>Thông báo</span>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- JAVASCRIPT SIMULATION LOGIC -->
+  <!-- ============================================================== -->
+  <script>
+    // --- SAMPLE DATA GENERATOR ---
+    let currentMainModule = 'fms'; // 'fms' | 'pick' | 'checklist'
+    let currentSourceMode = 'manual'; // 'manual' | 'live'
+    let currentFmsCategory = -1; // -1: all, 0..6: categories
+    let currentPickFilter = 'all';
+
+    // 1. FMS SAMPLE ORDERS (12 orders)
+    const SAMPLE_FMS_ORDERS = [
+      { id: 'SPX_FMS_1001', cat: 0, catName: 'Đơn Mới', sub: 'Chưa phân ca', reason: 'Mới nhập kho ca sáng', shifts: 1, date: '2026-10-29', hub: '45-DLK Krong Pak 02 Hub' },
+      { id: 'SPX_FMS_1002', cat: 0, catName: 'Đơn Mới', sub: 'Chưa phân ca', reason: 'Chờ điều phối tuyến', shifts: 1, date: '2026-10-29', hub: '45-DLK Krong Pak 02 Hub' },
+      { id: 'SPX_FMS_1003', cat: 1, catName: 'Hẹn Giao', sub: 'Khách hẹn lại', reason: 'Khách hẹn giao sau 17h', shifts: 2, date: '2026-10-28', hub: '45-DLK Krong Pak 02 Hub' },
+      { id: 'SPX_FMS_1004', cat: 1, catName: 'Hẹn Giao', sub: 'Khách hẹn lại', reason: 'Khách đi công tác đến thứ 6', shifts: 2, date: '2026-10-28', hub: '45-DLK Krong Pak 02 Hub' },
+      { id: 'SPX_FMS_1005', cat: 2, catName: 'Delay Khác', sub: 'Kiểm tra lý do delay', reason: 'Mưa ngập đường liên thôn', shifts: 2, date: '2026-10-28', hub: '45-DLK Krong Pak 02 Hub' },
+      { id: 'SPX_FMS_1006', cat: 2, catName: 'Delay Khác', sub: 'Kiểm tra lý do delay', reason: 'Xe shipper gặp sự cố kỹ thuật', shifts: 2, date: '2026-10-28', hub: '45-DLK Krong Pak 02 Hub' },
+      { id: 'SPX_FMS_1007', cat: 3, catName: 'Quá 3 Ca', sub: 'Kiểm tra nguyên nhân', reason: 'Không liên lạc được thuê bao (3 lần)', shifts: 4, date: '2026-10-27', hub: '45-DLK Krong Pak 02 Hub' },
+      { id: 'SPX_FMS_1008', cat: 3, catName: 'Quá 3 Ca', sub: 'Kiểm tra nguyên nhân', reason: 'Sai số điện thoại / Đang xác minh', shifts: 4, date: '2026-10-27', hub: '45-DLK Krong Pak 02 Hub' },
+      { id: 'SPX_FMS_1009', cat: 4, catName: 'Hoàn Hàng', sub: 'Chờ trả về kho', reason: 'Khách từ chối nhận hàng', shifts: 3, date: '2026-10-27', hub: '45-DLK Krong Pak 02 Hub' },
+      { id: 'SPX_FMS_1010', cat: 5, catName: 'Tồn 3-5N', sub: 'Cần kiểm tra', reason: 'Chờ khách cung cấp địa chỉ mới', shifts: 7, date: '2026-10-25', hub: '45-DLK Krong Pak 02 Hub' },
+      { id: 'SPX_FMS_1011', cat: 5, catName: 'Tồn 3-5N', sub: 'Cần kiểm tra', reason: 'Đơn chuyển hoàn nhưng lỗi SOC', shifts: 8, date: '2026-10-25', hub: '45-DLK Krong Pak 02 Hub' },
+      { id: 'SPX_FMS_1012', cat: 6, catName: 'Tồn > 5N', sub: 'Cần kiểm tra gấp/nguy hiểm', reason: 'Đơn vướng khiếu nại bồi thường', shifts: 12, date: '2026-10-23', hub: '45-DLK Krong Pak 02 Hub' }
+    ];
+
+    // 2. PICK SAMPLE ORDERS (10 orders) — 100% Khớp ngữ nghĩa & các trường của bản gốc SPX
+    const SAMPLE_PICK_ORDERS = [
+      // 3 đơn y hệt trên ảnh thực tế của người dùng (Image 2)
+      { id: 'SPXVN06222984887A', seller: 'Đồ câu boilies việt nam', pickup: 'Chưa có Task', orderStatus: 'ASSIGNED', taskStatus: 'EXPECTED', att: '0', eta: '19:00', createTime: '12:42 27/10', pickTime: '—', ward: 'Xã Vụ Bổn', driver: 'Chưa gán' },
+      { id: 'SPXVN06867048513A', seller: 'Huệ Nguyễn', pickup: 'Chưa có Task', orderStatus: 'CREATED', taskStatus: 'EXPECTED', att: '0', eta: '12:00', createTime: '22:25 26/10', pickTime: '—', ward: 'Xã Ea Phê', driver: 'Chưa gán' },
+      { id: 'SPXVN06941828858A', seller: 'Trà Mãng Cầu Nguyễn Vy', pickup: 'Chưa có Task', orderStatus: 'CREATED', taskStatus: 'EXPECTED', att: '0', eta: '12:00', createTime: '14:41 27/10', pickTime: '—', ward: 'Xã Ea Kly', driver: 'Chưa gán' },
+      // Đơn gán tài xế & trạng thái ACCEPTED, ARRIVED, DONE, INBOUNDED
+      { id: 'SPXVN06331902847B', seller: 'Shop Mẹ & Bé Daklak', pickup: 'Krong Pak 01', orderStatus: 'ACCEPTED', taskStatus: 'ACCEPTED', att: '1', eta: '12:00', createTime: '08:15 28/10', pickTime: '—', ward: 'TT Phước An', driver: 'Nguyễn Văn A' },
+      { id: 'SPXVN06442013958C', seller: 'Gia Dụng Thông Minh', pickup: 'Krong Pak 02', orderStatus: 'ACCEPTED', taskStatus: 'ACCEPTED', att: '1', eta: '19:00', createTime: '08:30 28/10', pickTime: '—', ward: 'Xã Hòa An', driver: 'Nguyễn Văn A' },
+      { id: 'SPXVN06553124069D', seller: 'Thời Trang H&T Tây Nguyên', pickup: 'Krong Pak 03', orderStatus: 'ARRIVED', taskStatus: 'ARRIVED', att: '1', eta: '12:00', createTime: '09:00 28/10', pickTime: '—', ward: 'TT Phước An', driver: 'Trần Đình B' },
+      { id: 'SPXVN06664235170E', seller: 'Mỹ Phẩm Xứ Nẫu', pickup: 'Krong Pak 01', orderStatus: 'DONE', taskStatus: 'DONE', att: '1', eta: '12:00', createTime: '07:30 28/10', pickTime: '08:30 28/10', ward: 'TT Phước An', driver: 'Trần Đình B' },
+      { id: 'SPXVN06775346281F', seller: 'Nông Sản Ban Mê', pickup: 'Krong Pak 01', orderStatus: 'DONE', taskStatus: 'DONE', att: '1', eta: '19:00', createTime: '07:45 28/10', pickTime: '09:00 28/10', ward: 'Xã Ea Yông', driver: 'Trần Đình B' },
+      { id: 'SPXVN06886457392G', seller: 'Điện Máy Xanh Krong Pak', pickup: 'Krong Pak 02', orderStatus: 'INBOUNDED', taskStatus: 'INBOUNDED', att: '2', eta: '21:00', createTime: '08:50 28/10', pickTime: '11:00 28/10', ward: 'Xã Hòa Đông', driver: 'Lê Văn C' },
+      { id: 'SPXVN06997568403H', seller: 'Cà Phê Robusta Krong Pak', pickup: 'Krong Pak 01', orderStatus: 'INBOUNDED', taskStatus: 'INBOUNDED', att: '1', eta: '21:00', createTime: '09:15 28/10', pickTime: '11:45 28/10', ward: 'Xã Hòa An', driver: 'Lê Văn C' }
+    ];
+
+    // 3. PICK LIVE SAMPLE ORDERS (12 orders)
+    const SAMPLE_PICK_LIVE_ORDERS = [
+      { id: 'SPX_LV_8001', station: 'Krong Pak 02 Hub', status: 'CREATED', orderType: 'DROP-OFF', product: 'Áo phông nam Cotton (2)', createTime: '09:12 29/10', touchTime: '09:20 29/10', action: 'Chờ gán xe' },
+      { id: 'SPX_LV_8002', station: 'Krong Pak 02 Hub', status: 'CREATED', orderType: 'PICKUP', product: 'Bình giữ nhiệt Lock&Lock', createTime: '09:10 29/10', touchTime: '09:18 29/10', action: 'Chờ gán xe' },
+      { id: 'SPX_LV_8003', station: 'Krong Pak 02 Hub', status: 'FMHub_PICKUP_ASSIGNED', orderType: 'PICKUP', product: 'Tai nghe Bluetooth Pro', createTime: '08:45 29/10', touchTime: '09:05 29/10', action: 'Shipper đang đến' },
+      { id: 'SPX_LV_8004', station: 'Krong Pak 02 Hub', status: 'FMHub_PICKUP_ASSIGNED', orderType: 'PICKUP', product: 'Nồi chiên không dầu 5L', createTime: '08:50 29/10', touchTime: '09:12 29/10', action: 'Shipper đang đến' },
+      { id: 'SPX_LV_8005', station: 'Krong Pak 02 Hub', status: 'FMHub_PICKUP_ASSIGNED', orderType: 'DROP-OFF', product: 'Bộ ga gối cotton Tencel', createTime: '08:35 29/10', touchTime: '09:00 29/10', action: 'Shipper đang đến' },
+      { id: 'SPX_LV_8006', station: 'Krong Pak 02 Hub', status: 'FMHub_PICKUP_FAILED', orderType: 'PICKUP', product: 'Tủ vải để đồ đa năng', createTime: '08:00 29/10', touchTime: '09:15 29/10', action: 'Shop hẹn lại 14h' },
+      { id: 'SPX_LV_8007', station: 'Krong Pak 02 Hub', status: 'FMHub_PICKUP_FAILED', orderType: 'PICKUP', product: 'Set son dưỡng môi', createTime: '07:55 29/10', touchTime: '08:50 29/10', action: 'Không liên lạc được shop' },
+      { id: 'SPX_LV_8008', station: 'Krong Pak 02 Hub', status: 'FMHub_PACKED', orderType: 'DROP-OFF', product: 'Combo 5 cuốn vở ô ly', createTime: '07:30 29/10', touchTime: '08:40 29/10', action: 'Chờ xe tải SOC' },
+      { id: 'SPX_LV_8009', station: 'Krong Pak 02 Hub', status: 'FMHub_PACKED', orderType: 'DROP-OFF', product: 'Đèn bàn học chống cận', createTime: '07:20 29/10', touchTime: '08:30 29/10', action: 'Chờ xe tải SOC' },
+      { id: 'SPX_LV_8010', station: 'Krong Pak 02 Hub', status: 'FMHub_PACKED', orderType: 'PICKUP', product: 'Thùng mì tôm Omachi', createTime: '07:15 29/10', touchTime: '08:25 29/10', action: 'Chờ xe tải SOC' },
+      { id: 'SPX_LV_8011', station: 'Krong Pak 02 Hub', status: 'FMHub_DONE', orderType: 'PICKUP', product: 'Cà phê nguyên chất 500g', createTime: '06:50 29/10', touchTime: '08:10 29/10', action: 'Đã hoàn tất lấy' },
+      { id: 'SPX_LV_8012', station: 'Krong Pak 02 Hub', status: 'FMHub_DONE', orderType: 'PICKUP', product: 'Đồng hồ thông minh Fit', createTime: '06:40 29/10', touchTime: '08:05 29/10', action: 'Đã hoàn tất lấy' }
+    ];
+
+    let activeLiveStatuses = new Set();
+    let currentFmsData = [...SAMPLE_FMS_ORDERS];
+    let currentPickData = [...SAMPLE_PICK_ORDERS];
+    let currentPickLiveData = [...SAMPLE_PICK_LIVE_ORDERS];
+
+    // --- INITIALIZATION ---
+    function init() {
+      renderFmsTable();
+      renderPickTable();
+      renderPickLiveChips();
+      renderPickLiveTable();
+    }
+
+    // --- NAVIGATION TABS ---
+    function switchMainModule(mod) {
+      currentMainModule = mod;
+      ['fms', 'pick', 'checklist'].forEach(m => {
+        const wrap = document.getElementById(`module-${m}-wrap`);
+        const btn = document.getElementById(`tab-btn-${m}`);
+        if (wrap) wrap.classList.toggle('hidden', m !== mod);
+        if (btn) {
+          if (m === mod) {
+            btn.className = (m === 'fms')
+              ? 'px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 bg-orange-500 text-white shadow-md shadow-orange-500/20'
+              : (m === 'pick')
+              ? 'px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 bg-sky-500 text-white shadow-md shadow-sky-500/20'
+              : 'px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 bg-slate-800 text-white shadow-md shadow-slate-800/20';
+          } else {
+            btn.className = 'px-4 py-2 rounded-xl text-xs font-black text-slate-600 hover:bg-slate-100 transition-all flex items-center gap-2';
+          }
+        }
+      });
+
+      const switcher = document.getElementById('sourceSwitcher');
+      if (switcher) switcher.classList.toggle('hidden', mod === 'checklist');
+      showToast(`Đã chuyển sang module: ${mod.toUpperCase()} (Tức thì 0ms)`);
+    }
+
+    function switchSourceMode(mode) {
+      currentSourceMode = mode;
+      const isLive = mode === 'live';
+      
+      const btnManual = document.getElementById('btnSrcManual');
+      const btnLive = document.getElementById('btnSrcLive');
+      if (btnManual && btnLive) {
+        btnManual.className = !isLive ? 'px-3 py-1.5 rounded-lg bg-white text-orange-600 shadow-sm transition-all flex items-center gap-1.5' : 'px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1.5';
+        btnLive.className = isLive ? 'px-3 py-1.5 rounded-lg bg-white text-orange-600 shadow-sm transition-all flex items-center gap-1.5' : 'px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1.5';
+      }
+
+      // FMS Panels
+      const fmsManual = document.getElementById('fmsManualContent');
+      const fmsLive = document.getElementById('fmsLiveContent');
+      const fmsManBtns = document.getElementById('fmsManualHeaderBtns');
+      const fmsLivBtns = document.getElementById('fmsLiveHeaderBtns');
+      const fmsBadge = document.getElementById('fmsCurrentModeBadge');
+      if (fmsManual) fmsManual.classList.toggle('hidden', isLive);
+      if (fmsLive) fmsLive.classList.toggle('hidden', !isLive);
+      if (fmsManBtns) fmsManBtns.classList.toggle('hidden', isLive);
+      if (fmsLivBtns) fmsLivBtns.classList.toggle('hidden', !isLive);
+      if (fmsBadge) {
+        fmsBadge.textContent = isLive ? 'Live Snapshot (Realtime)' : 'Manual (File CSV)';
+        fmsBadge.className = isLive ? 'px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200' : 'px-2.5 py-0.5 rounded-full text-[11px] font-black bg-orange-100 text-orange-700 border border-orange-200';
+      }
+
+      // Pick Panels
+      const pickManual = document.getElementById('pickManualContent');
+      const pickLive = document.getElementById('pickLiveContent');
+      const pickBadge = document.getElementById('pickCurrentModeBadge');
+      const pickClear = document.getElementById('pickClearBtn');
+      if (pickManual) pickManual.classList.toggle('hidden', isLive);
+      if (pickLive) pickLive.classList.toggle('hidden', !isLive);
+      if (pickClear) pickClear.classList.toggle('hidden', isLive);
+      if (pickBadge) {
+        pickBadge.textContent = isLive ? 'Live SPX Fleet (Realtime)' : 'Manual (2 File Task & Assign)';
+        pickBadge.className = isLive ? 'px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200' : 'px-2.5 py-0.5 rounded-full text-[11px] font-black bg-sky-100 text-sky-700 border border-sky-200';
+      }
+
+      showToast(`Chuyển sang luồng: ${isLive ? 'LIVE REALTIME' : 'MANUAL'}`);
+    }
+
+    // --- FMS FUNCTIONS ---
+    function selectFmsCategory(catIndex) {
+      currentFmsCategory = catIndex;
+      
+      // Update Active Card Styling
+      const allCards = ['all', '0', '1', '2', '3', '4', '5', '6'];
+      allCards.forEach(c => {
+        const el = document.getElementById(`fms-card-${c}`);
+        if (el) el.classList.remove('kpi-active');
+      });
+
+      const activeKey = catIndex === -1 ? 'all' : String(catIndex);
+      const activeEl = document.getElementById(`fms-card-${activeKey}`);
+      if (activeEl) activeEl.classList.add('kpi-active');
+
+      renderFmsTable();
+    }
+
+    function renderFmsTable() {
+      const tbody = document.getElementById('fmsTableBody');
+      const badge = document.getElementById('fmsFilterStatusBadge');
+      const shownEl = document.getElementById('fmsShownCount');
+      const totalEl = document.getElementById('fmsTotalCount');
+      const copyEl = document.getElementById('fmsCopyCount');
+      if (!tbody) return;
+
+      let filtered = currentFmsData;
+      if (currentFmsCategory !== -1) {
+        filtered = currentFmsData.filter(item => item.cat === currentFmsCategory);
+      }
+
+      const catNames = ['Đơn Mới', 'Hẹn Giao', 'Delay Khác (KT lý do)', 'Quá 3 Ca (KT nguyên nhân)', 'Hoàn Hàng', 'Tồn 3-5N (Cần KT)', 'Tồn > 5N (Nguy hiểm)'];
+      const activeText = currentFmsCategory === -1 ? 'Tất cả' : catNames[currentFmsCategory];
+      if (badge) badge.innerText = `Đang xem: ${activeText} (${filtered.length} đơn)`;
+      if (shownEl) shownEl.innerText = filtered.length;
+      if (totalEl) totalEl.innerText = currentFmsData.length;
+      if (copyEl) copyEl.innerText = filtered.length;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-12 text-slate-400 font-semibold"><div class="text-2xl mb-1">📭</div>Không có đơn hàng nào trong nhóm này</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map((row, idx) => {
+        let badgeColor = 'bg-slate-100 text-slate-700';
+        if (row.cat === 0) badgeColor = 'bg-blue-100 text-blue-800';
+        else if (row.cat === 1) badgeColor = 'bg-amber-100 text-amber-800';
+        else if (row.cat === 2) badgeColor = 'bg-sky-100 text-sky-800';
+        else if (row.cat === 3) badgeColor = 'bg-rose-100 text-rose-800';
+        else if (row.cat === 4) badgeColor = 'bg-purple-100 text-purple-800';
+        else if (row.cat === 5) badgeColor = 'bg-amber-100 text-amber-800';
+        else if (row.cat === 6) badgeColor = 'bg-red-100 text-red-800 font-bold';
+
+        return `
+          <tr class="hover:bg-slate-50/80 transition-colors">
+            <td class="px-3 py-2 text-center text-slate-400 font-mono text-[11px]">${idx + 1}</td>
+            <td class="px-3 py-2 font-mono font-bold text-orange-600">${row.id}</td>
+            <td class="px-3 py-2">
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-black ${badgeColor}">${row.catName}</span>
+            </td>
+            <td class="px-3 py-2 text-slate-600 max-w-[220px] truncate" title="${row.reason}">${row.reason}</td>
+            <td class="px-3 py-2 text-center font-mono font-bold ${row.shifts > 3 ? 'text-rose-600' : 'text-slate-600'}">${row.shifts} ca</td>
+            <td class="px-3 py-2 text-slate-500 font-mono text-[11px]">${row.date}</td>
+            <td class="px-3 py-2 text-slate-600 truncate max-w-[150px]">${row.hub}</td>
+            <td class="px-3 py-2 text-center">
+              <button onclick="showToast('Chi tiết đơn: ${row.id}')" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold">Xem</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function toggleFmsExceptionsModal() {
+      const modal = document.getElementById('fmsExceptionsModal');
+      if (modal) modal.classList.toggle('hidden');
+    }
+
+    function copyFmsOrders() {
+      let filtered = (currentFmsCategory === -1) ? currentFmsData : currentFmsData.filter(i => i.cat === currentFmsCategory);
+      showToast(`✓ Đã copy ${filtered.length} mã đơn FMS vào clipboard!`);
+    }
+
+    function clearFmsManual() {
+      currentFmsData = [];
+      ['all', '0', '1', '2', '3', '4', '5', '6'].forEach(c => {
+        const el = document.getElementById(`fms-stat-${c}`);
+        if (el) el.innerText = '0';
+      });
+      renderFmsTable();
+      showToast('Đã xóa bộ nhớ đệm FMS!');
+    }
+
+    function refreshFmsLive() {
+      const timeEl = document.getElementById('fmsLiveSyncTime');
+      if (timeEl) timeEl.innerText = new Date().toLocaleTimeString('vi-VN');
+      showToast('Đã đồng bộ Live Snapshot từ Firestore!');
+    }
+
+    // --- PICK MANUAL FUNCTIONS (100% Khớp Logic & Bản Gốc Hình 2) ---
+    let activeStatusesPICK = new Set();
+    let activeEtaPICK = new Set();
+
+    function getRankPICK(str) {
+      const s = (str || '').toString().toLowerCase();
+      if (s.includes("inbound")) return 5;
+      if (s.includes("done") || s.includes("complet") || s.includes("pick") || s.includes("hand")) return 4;
+      if (s.includes("arriv") || s.includes("start")) return 3;
+      if (s.includes("accept")) return 2;
+      if (s.includes("expect") || s.includes("creat") || s.includes("assign") || s.includes("pending")) return 1;
+      return 1;
+    }
+
+    function toggleStatusFilterPICK(status) {
+      if (activeStatusesPICK.has(status)) activeStatusesPICK.delete(status);
+      else activeStatusesPICK.add(status);
+      updateCardUIPICK();
+      renderPickTable();
+      showToast(`Lọc theo trạng thái: ${status.toUpperCase()}`);
+    }
+
+    function toggleEtaFilterPICK(etaKey) {
+      if (activeEtaPICK.has(etaKey)) activeEtaPICK.delete(etaKey);
+      else activeEtaPICK.add(etaKey);
+      updateEtaChipUIPICK();
+      renderPickTable();
+      showToast(`Lọc theo ca ETA: ${etaKey}`);
+    }
+
+    function resetInlineFiltersPICK() {
+      activeStatusesPICK.clear();
+      activeEtaPICK.clear();
+      const driverSel = document.getElementById('pickDriverSelect');
+      if (driverSel) driverSel.value = '';
+      updateCardUIPICK();
+      updateEtaChipUIPICK();
+      renderPickTable();
+      showToast('Đã xóa toàn bộ bộ lọc Pick!');
+    }
+
+    function updateCardUIPICK() {
+      const cards = ['expected', 'accepted', 'arrived', 'done', 'inbounded'];
+      cards.forEach(c => {
+        const el = document.getElementById('card-pick-' + c);
+        if (!el) return;
+        if (activeStatusesPICK.size === 0) {
+          el.classList.remove('kpi-active', 'opacity-40');
+        } else if (activeStatusesPICK.has(c)) {
+          el.classList.add('kpi-active');
+          el.classList.remove('opacity-40');
+        } else {
+          el.classList.remove('kpi-active');
+          el.classList.add('opacity-40');
+        }
+      });
+    }
+
+    function updateEtaChipUIPICK() {
+      const etas = ['12:00', '19:00', '21:00'];
+      etas.forEach(e => {
+        const id = 'eta-chip-' + (e === '12:00' ? '1200' : e === '19:00' ? '1900' : '2100');
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (activeEtaPICK.size === 0) {
+          el.classList.remove('ring-2', 'ring-amber-400', 'bg-amber-50', 'opacity-40');
+        } else if (activeEtaPICK.has(e)) {
+          el.classList.add('ring-2', 'ring-amber-400', 'bg-amber-50');
+          el.classList.remove('opacity-40');
+        } else {
+          el.classList.remove('ring-2', 'ring-amber-400', 'bg-amber-50');
+          el.classList.add('opacity-40');
+        }
+      });
+    }
+
+    function filterPickByDriver() {
+      renderPickTable();
+    }
+
+    function renderPickTable() {
+      const tbody = document.getElementById('pickTableBody');
+      const shownEl = document.getElementById('pickShownCount');
+      const totalEl = document.getElementById('pickTotalCount');
+      const headerShown = document.getElementById('pickShownCountHeader');
+      const driverSel = document.getElementById('pickDriverSelect');
+      if (!tbody) return;
+
+      const driver = driverSel ? driverSel.value : '';
+
+      // Compute bucket for each order using exact getRankPICK logic
+      let processed = currentPickData.map(r => {
+        const rank = Math.max(getRankPICK(r.orderStatus), getRankPICK(r.taskStatus)) || 1;
+        const bucket = rank === 5 ? 'inbounded' : rank === 4 ? 'done' : rank === 3 ? 'arrived' : rank === 2 ? 'accepted' : 'expected';
+        return { ...r, bucket, rank };
+      });
+
+      // Update counts for each card
+      const stCount = { expected: 0, accepted: 0, arrived: 0, done: 0, inbounded: 0 };
+      const etaCount = { '12:00': 0, '19:00': 0, '21:00': 0 };
+
+      // Base driver filter for counts
+      let driverFiltered = driver ? processed.filter(item => item.driver === driver) : processed;
+      driverFiltered.forEach(item => {
+        if (stCount.hasOwnProperty(item.bucket)) stCount[item.bucket]++;
+        if (etaCount.hasOwnProperty(item.eta)) etaCount[item.eta]++;
+      });
+
+      // Update badges
+      ['expected', 'accepted', 'arrived', 'done', 'inbounded'].forEach(b => {
+        const el = document.getElementById('stat-pick-' + b);
+        if (el) el.innerText = stCount[b];
+      });
+      const eta12 = document.getElementById('stat-eta-1200');
+      const eta19 = document.getElementById('stat-eta-1900');
+      const eta21 = document.getElementById('stat-eta-2100');
+      const totalStat = document.getElementById('pickTotalStat');
+      if (eta12) eta12.innerText = etaCount['12:00'];
+      if (eta19) eta19.innerText = etaCount['19:00'];
+      if (eta21) eta21.innerText = etaCount['21:00'];
+      if (totalStat) totalStat.innerText = driverFiltered.length;
+
+      // Filter matches to render
+      let finalMatches = driverFiltered.filter(item => {
+        const statusOk = activeStatusesPICK.size === 0 || activeStatusesPICK.has(item.bucket);
+        const etaOk = activeEtaPICK.size === 0 || activeEtaPICK.has(item.eta);
+        return statusOk && etaOk;
+      });
+
+      if (shownEl) shownEl.innerText = finalMatches.length;
+      if (headerShown) headerShown.innerText = finalMatches.length;
+      if (totalEl) totalEl.innerText = currentPickData.length;
+
+      if (finalMatches.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-12 text-slate-400 font-semibold"><div class="text-2xl mb-1">📭</div>Không có đơn hàng nào phù hợp với bộ lọc</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = finalMatches.map((row, idx) => {
+        let orderBadge = 'bg-slate-100 text-slate-700';
+        if (row.orderStatus === 'CREATED') orderBadge = 'bg-slate-100 text-slate-600 font-bold';
+        else if (row.orderStatus === 'ASSIGNED') orderBadge = 'bg-amber-100 text-amber-700 font-bold';
+        else if (row.orderStatus === 'ACCEPTED') orderBadge = 'bg-amber-100 text-amber-700 font-bold';
+        else if (row.orderStatus === 'ARRIVED') orderBadge = 'bg-sky-100 text-sky-700 font-bold';
+        else if (row.orderStatus === 'DONE') orderBadge = 'bg-emerald-100 text-emerald-700 font-bold';
+        else if (row.orderStatus === 'INBOUNDED') orderBadge = 'bg-indigo-100 text-indigo-700 font-bold';
+
+        let taskBadge = 'bg-slate-100 text-slate-600';
+        if (row.taskStatus === 'EXPECTED') taskBadge = 'bg-slate-100 text-slate-600 font-bold';
+        else if (row.taskStatus === 'ASSIGNED') taskBadge = 'bg-amber-50 text-amber-600 font-bold';
+        else if (row.taskStatus === 'ARRIVED') taskBadge = 'bg-sky-50 text-sky-600 font-bold';
+        else if (row.taskStatus === 'DONE') taskBadge = 'bg-emerald-50 text-emerald-600 font-bold';
+        else if (row.taskStatus === 'INBOUNDED') taskBadge = 'bg-indigo-50 text-indigo-600 font-bold';
+
+        let etaColor = row.eta === '12:00' ? 'text-amber-600 bg-amber-50 border-amber-200' : (row.eta === '19:00' ? 'text-indigo-600 bg-indigo-50 border-indigo-200' : 'text-violet-600 bg-violet-50 border-violet-200');
+
+        return `
+          <tr class="hover:bg-slate-50/80 transition-colors">
+            <td class="px-3 py-2 text-center text-slate-400 font-mono text-[11px]">${idx + 1}</td>
+            <td class="px-3 py-2 font-bold text-slate-800 truncate max-w-[150px]" title="${row.seller}">${row.seller}</td>
+            <td class="px-3 py-2 text-slate-500 truncate max-w-[120px]">${row.pickup}</td>
+            <td class="px-3 py-2 font-mono font-bold text-slate-800">
+              <span class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer" onclick="showToast('Copy mã: ${row.id}')">${row.id}</span>
+            </td>
+            <td class="px-3 py-2 text-center">
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-black ${orderBadge}">${row.orderStatus}</span>
+            </td>
+            <td class="px-3 py-2 text-center">
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-black ${taskBadge}">${row.taskStatus}</span>
+            </td>
+            <td class="px-3 py-2 text-center font-mono font-bold text-slate-600">${row.att}</td>
+            <td class="px-3 py-2 text-center font-mono text-[11px]">
+              <span class="px-2 py-0.5 rounded-md border ${etaColor} font-black">${row.eta === '12:00' ? '☀️ 12:00' : (row.eta === '19:00' ? '🌙 19:00' : '🌙 21:00')}</span>
+            </td>
+            <td class="px-3 py-2 text-slate-500 font-mono text-[11px]">${row.createTime}</td>
+            <td class="px-3 py-2 text-slate-500 font-mono text-[11px]">${row.pickTime}</td>
+            <td class="px-3 py-2 text-slate-600 truncate max-w-[140px]">${row.ward}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function clearPickData() {
+      currentPickData = [];
+      const totalStat = document.getElementById('pickTotalStat');
+      if (totalStat) totalStat.innerText = '0';
+      const taskFile = document.getElementById('pickTaskFileName');
+      const assignFile = document.getElementById('pickAssignFileName');
+      if (taskFile) taskFile.innerText = 'Chưa nạp file';
+      if (assignFile) assignFile.innerText = 'Chưa nạp file';
+      renderPickTable();
+      showToast('Đã xóa dữ liệu Pick Manual!');
+    }
+
+    // --- PICK LIVE FUNCTIONS ---
+    function renderPickLiveChips() {
+      const container = document.getElementById('pickLiveStatusChipsWrap');
+      if (!container) return;
+
+      const counts = {};
+      SAMPLE_PICK_LIVE_ORDERS.forEach(r => {
+        counts[r.status] = (counts[r.status] || 0) + 1;
+      });
+
+      const statuses = Object.keys(counts).sort();
+      container.innerHTML = statuses.map(st => {
+        const active = activeLiveStatuses.has(st);
+        let badgeColor = 'bg-slate-100 text-slate-700';
+        let dotColor = 'bg-slate-400';
+        if (st.includes('FAILED')) { badgeColor = 'bg-rose-100 text-rose-700'; dotColor = 'bg-rose-500'; }
+        else if (st.includes('DONE')) { badgeColor = 'bg-emerald-100 text-emerald-700'; dotColor = 'bg-emerald-500'; }
+        else if (st.includes('ASSIGNED')) { badgeColor = 'bg-sky-100 text-sky-700'; dotColor = 'bg-sky-500'; }
+        else if (st.includes('PACKED')) { badgeColor = 'bg-purple-100 text-purple-700'; dotColor = 'bg-purple-500'; }
+        else if (st.includes('CREATED')) { badgeColor = 'bg-amber-100 text-amber-700'; dotColor = 'bg-amber-500'; }
+
+        const activeClass = active
+          ? 'ring-2 ring-sky-400 bg-sky-50 border-sky-400 text-sky-800 shadow-sm'
+          : 'border-slate-200 bg-white hover:border-slate-300 text-slate-700';
+
+        return `
+          <div onclick="togglePickLiveStatusFilter('${st}')" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl cursor-pointer border font-black text-[10px] uppercase transition-all shadow-xs shrink-0 select-none ${activeClass}">
+            <span class="w-2 h-2 rounded-full ${dotColor}"></span>
+            <span class="truncate max-w-[190px]">${st}</span>
+            <span class="px-1.5 py-0.2 rounded-md ${badgeColor} font-mono text-[10px]">${counts[st]}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function togglePickLiveStatusFilter(st) {
+      if (activeLiveStatuses.has(st)) activeLiveStatuses.delete(st);
+      else activeLiveStatuses.add(st);
+      renderPickLiveChips();
+      renderPickLiveTable();
+    }
+
+    function searchPickLive(val) {
+      renderPickLiveTable();
+    }
+
+    function resetPickLiveFilters() {
+      activeLiveStatuses.clear();
+      const s = document.getElementById('pickLiveSearchInput');
+      if (s) s.value = '';
+      renderPickLiveChips();
+      renderPickLiveTable();
+      showToast('Đã xóa bộ lọc Pick Live!');
+    }
+
+    function renderPickLiveTable() {
+      const tbody = document.getElementById('pickLiveTableBody');
+      const countEl = document.getElementById('pickLiveRowsCount');
+      const shownStat = document.getElementById('pickLiveShownStat');
+      const searchInput = document.getElementById('pickLiveSearchInput');
+      if (!tbody) return;
+
+      const q = (searchInput ? searchInput.value : '').toLowerCase().trim();
+      let filtered = SAMPLE_PICK_LIVE_ORDERS;
+
+      if (activeLiveStatuses.size > 0) {
+        filtered = filtered.filter(item => activeLiveStatuses.has(item.status));
+      }
+      if (q) {
+        filtered = filtered.filter(item => item.id.toLowerCase().includes(q) || item.product.toLowerCase().includes(q) || item.station.toLowerCase().includes(q));
+      }
+
+      if (countEl) countEl.innerText = filtered.length;
+      if (shownStat) shownStat.innerText = filtered.length;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-12 text-slate-400 font-semibold"><div class="text-2xl mb-1">📭</div>Không có đơn hàng nào khớp điều kiện Live</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map((row, idx) => {
+        let badgeColor = 'bg-slate-100 text-slate-700';
+        if (row.status.includes('FAILED')) badgeColor = 'bg-rose-100 text-rose-700 font-bold';
+        else if (row.status.includes('DONE')) badgeColor = 'bg-emerald-100 text-emerald-700 font-bold';
+        else if (row.status.includes('ASSIGNED')) badgeColor = 'bg-sky-100 text-sky-700 font-bold';
+        else if (row.status.includes('PACKED')) badgeColor = 'bg-purple-100 text-purple-700 font-bold';
+        else if (row.status.includes('CREATED')) badgeColor = 'bg-amber-100 text-amber-700 font-bold';
+
+        return `
+          <tr class="hover:bg-slate-50/80 transition-colors">
+            <td class="px-3 py-2 text-center text-slate-400 font-mono text-[11px]">${idx + 1}</td>
+            <td class="px-3 py-2 font-mono font-bold text-sky-600">${row.id}</td>
+            <td class="px-3 py-2 text-slate-600 truncate max-w-[140px]">${row.station}</td>
+            <td class="px-3 py-2">
+              <span class="px-2 py-0.5 rounded-md text-[10px] ${badgeColor}">${row.status}</span>
+            </td>
+            <td class="px-3 py-2 text-center font-mono text-[11px] text-slate-500">${row.orderType}</td>
+            <td class="px-3 py-2 text-slate-700 truncate max-w-[200px]" title="${row.product}">${row.product}</td>
+            <td class="px-3 py-2 text-slate-500 font-mono text-[11px]">${row.createTime}</td>
+            <td class="px-3 py-2 text-slate-500 font-mono text-[11px]">${row.touchTime}</td>
+            <td class="px-3 py-2 text-center">
+              <span class="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">${row.action}</span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function copyPickLiveOrders() {
+      let filtered = (activeLiveStatuses.size > 0) ? SAMPLE_PICK_LIVE_ORDERS.filter(i => activeLiveStatuses.has(i.status)) : SAMPLE_PICK_LIVE_ORDERS;
+      showToast(`✓ Đã copy ${filtered.length} mã đơn Pick Live!`);
+    }
+
+    // --- RE-LOAD SAMPLE DATA ---
+    function loadSampleData() {
+      currentFmsData = [...SAMPLE_FMS_ORDERS];
+      currentPickData = [...SAMPLE_PICK_ORDERS];
+      currentPickLiveData = [...SAMPLE_PICK_LIVE_ORDERS];
+
+      // Reset counts FMS
+      const counts = [2, 2, 2, 2, 1, 2, 1];
+      counts.forEach((c, idx) => {
+        const el = document.getElementById(`fms-stat-${idx}`);
+        if (el) el.innerText = c;
+      });
+      const allEl = document.getElementById(`fms-stat-all`);
+      if (allEl) allEl.innerText = '12';
+
+      // Reset counts Pick
+      const totalStat = document.getElementById('pickTotalStat');
+      if (totalStat) totalStat.innerText = '10';
+      const taskFile = document.getElementById('pickTaskFileName');
+      const assignFile = document.getElementById('pickAssignFileName');
+      if (taskFile) taskFile.innerText = 'Task_20261029.csv (Đã nạp)';
+      if (assignFile) assignFile.innerText = 'Assign_20261029.xlsx (Đã nạp)';
+
+      selectFmsCategory(-1);
+      renderPickTable();
+      resetPickLiveFilters();
+
+      showToast('✓ Đã nạp lại toàn bộ dữ liệu mẫu cho FMS & Pick!');
+    }
+
+    function clearAllData() {
+      clearFmsManual();
+      clearPickData();
+      showToast('Đã xóa rỗng dữ liệu của cả 2 module để kiểm tra Empty State!');
+    }
+
+    // --- TOAST HELPER ---
+    let toastTimeout;
+    function showToast(msg) {
+      const box = document.getElementById('toastBox');
+      const text = document.getElementById('toastMessage');
+      if (!box || !text) return;
+
+      text.innerHTML = `<span>${msg}</span>`;
+      box.classList.remove('translate-y-20', 'opacity-0');
+      box.classList.add('translate-y-0', 'opacity-100');
+
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        box.classList.add('translate-y-20', 'opacity-0');
+        box.classList.remove('translate-y-0', 'opacity-100');
+      }, 2500);
+    }
+
+    // Start on page ready
+    init();
+  </script>
+</body>
+</html>

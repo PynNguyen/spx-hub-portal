@@ -1,0 +1,2033 @@
+<style>
+/* [FIX — rà soát toàn bộ class Tailwind "mồ côi" theo yêu cầu phòng ngừa bug
+   trước khi deploy] Xem giải thích đầy đủ ở index.html/JS_Quahan.html. */
+.grid-cols-4 { grid-template-columns: repeat(4,minmax(0,1fr)); }
+.h-24 { height: 6rem; }
+.h-28 { height: 7rem; }
+.h-32 { height: 8rem; }
+.h-40 { height: 10rem; }
+.hover\:bg-rose-500:hover { background-color: rgb(244 63 94); }
+.hover\:border-orange-100:hover { border-color: rgb(255 237 213); }
+.inset-2 { inset: .5rem; }
+.max-h-28 { max-height: 7rem; }
+.max-w-\[180px\] { max-width: 180px; }
+.max-w-\[190px\] { max-width: 190px; }
+.max-w-\[70\%\] { max-width: 70%; }
+.pl-7 { padding-left: 1.75rem; }
+.rounded-t-md { border-top-left-radius: .375rem; border-top-right-radius: .375rem; }
+.shadow-\[4px_0_24px_rgba\(0\,0\,0\,0\.02\)\] { box-shadow: 4px 0 24px rgba(0,0,0,.02); }
+.text-white\/70 { color: hsla(0,0%,100%,.7); }
+@media (min-width:640px) {
+  .sm\:grid-cols-3 { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .sm\:inset-6 { inset: 1.5rem; }
+}
+
+/* ── FMS KPI GRID 8 CỘT CHUẨN XÁC THEO BẢN DEMO (HÌNH 2) ── */
+.fms-kpi-grid-8 {
+  display: grid !important;
+  grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  width: 100% !important;
+}
+@media (max-width: 1280px) {
+  .fms-kpi-grid-8 {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+@media (max-width: 640px) {
+  .fms-kpi-grid-8 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+.fms-card {
+  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+.fms-card:hover {
+  transform: translateY(-2px) !important;
+}
+</style>
+
+<!-- [UI/UX 2.0] ĐÃ BỎ HOÀN TOÀN SIDEBAR: Toàn bộ điều hướng & nạp file đưa lên thanh công cụ trên cùng -->
+<div id="fms-root" class="flex-1 flex flex-col w-full h-full min-w-0 overflow-hidden bg-white dark:bg-[#0b1121]" style="width:100%;height:100%;min-width:0;flex:1 1 0%;">
+
+<div id="fmsTopBar" class="w-full px-4 py-2 bg-white dark:bg-[#0b1121] border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0 shadow-xs z-30">
+  <div class="flex items-center gap-3 flex-wrap">
+    <!-- NGUỒN: Manual / Live / Compare -->
+    <div id="fmsSourceSelector" class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl" role="tablist">
+      <button type="button" role="tab" aria-selected="true" id="fmsSrcTabManual" onclick="switchSourceFMS('manual')" class="fms-src-tab active text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg transition-all">Manual</button>
+      <button type="button" role="tab" aria-selected="false" id="fmsSrcTabLive" onclick="switchSourceFMS('live')" class="fms-src-tab text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg transition-all">Live</button>
+      <button type="button" role="tab" aria-selected="false" id="fmsSrcTabCompare" onclick="switchSourceFMS('compare')" class="fms-src-tab text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg transition-all">Compare</button>
+    </div>
+
+    <!-- OPERATION: ALL / LM / FM -->
+    <div id="fmsOpSelector" role="tablist" class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/60 p-1 rounded-xl text-[10px] font-black uppercase tracking-wider">
+      <span class="text-slate-400 px-1 text-[9px]">Op:</span>
+      <button type="button" role="tab" aria-selected="true" onclick="switchOpFMS('ALL')" id="fmsOpAll" class="fms-op-btn active px-2 py-1 rounded-lg">ALL</button>
+      <button type="button" role="tab" aria-selected="false" onclick="switchOpFMS('LM')" id="fmsOpLM" class="fms-op-btn px-2 py-1 rounded-lg" disabled>LM</button>
+      <button type="button" role="tab" aria-selected="false" onclick="switchOpFMS('FM')" id="fmsOpFM" class="fms-op-btn px-2 py-1 rounded-lg" disabled>FM</button>
+    </div>
+
+    <!-- KHỐI LIVE (khi chọn Live) -->
+    <div id="fmsAsideLiveBlock" style="display:none" class="flex items-center gap-2">
+      <div class="relative hidden" id="fmsLiveHubPicker">
+        <select id="hubSelectFMSLive" onchange="fmsLiveOnHubChange()" class="hidden"></select>
+        <input type="text" id="fmsLiveHubSearch" class="hidden" />
+        <div id="fmsLiveHubDropList" class="hidden"></div>
+      </div>
+      <span id="fmsLiveConnStatus" class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg bg-slate-100 text-slate-400 dark:bg-slate-800 whitespace-nowrap"><i class="fas fa-circle-notch fa-spin"></i> <span>Đang tải...</span></span>
+      <span id="fmsLiveLastSync" class="text-[9px] font-bold text-slate-400"></span>
+      <label class="flex items-center gap-1 text-[9px] font-black uppercase text-slate-400 cursor-pointer select-none">
+        <input type="checkbox" id="fmsLiveAutoRefreshChk" checked onchange="fmsLiveToggleAutoRefresh(this.checked)" /> Auto
+      </label>
+    </div>
+  </div>
+
+  <!-- NẠP FILE & XÓA DỮ LIỆU -->
+  <div class="flex items-center gap-2 shrink-0">
+    <div id="fmsAsideManualBlock" class="flex items-center gap-2">
+      <input type="file" id="csvFileFMS" accept=".csv" class="hidden" />
+      <label for="csvFileFMS" class="cursor-pointer bg-slate-900 dark:bg-slate-700 hover:bg-[#ee4d2d] text-white px-3.5 py-1.5 rounded-xl text-xs font-black shadow-xs flex items-center gap-1.5 transition-all uppercase tracking-wider">
+        <i class="fas fa-cloud-upload-alt text-orange-400"></i> <span data-i18n-ui="NẠP FILE FMS">NẠP FILE FMS</span>
+      </label>
+      <select id="hubSelectFMS" onchange="switchHubFMS()" class="bg-slate-50 dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer hover:border-orange-400 transition-all max-w-[220px]">
+        <option value="">-- Dữ liệu trống --</option>
+      </select>
+    </div>
+
+    <button onclick="clearCacheFMS()" class="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-colors border border-rose-200 dark:border-rose-900/50 flex items-center gap-1" title="Xóa dữ liệu bộ nhớ đệm">
+      <i class="fas fa-trash-alt text-xs"></i> <span class="hidden sm:inline">Xóa dữ liệu</span>
+    </button>
+  </div>
+</div>
+
+<!-- Stubs ẩn để đảm bảo tương thích 100% không lỗi JS -->
+<div id="aside-tondong" class="hidden"></div>
+<div class="hidden" id="fmsAsideStatsHidden">
+  <span id="fmsAsideTotalLabel"></span>
+  <span id="totalOrdersDisplayFMS">0</span>
+  <div id="categoryListFMS"></div>
+</div>
+
+<main class="flex-1 min-w-0 flex flex-col h-full bg-white dark:bg-[#0b1121] relative">
+<div id="fmsPanelManual" class="flex-1 min-w-0 w-full flex flex-col h-full overflow-hidden">
+
+<!-- 1. HÀNG 8 THẺ KPI TRỰC QUAN TRÊN ĐỈNH (100% GIỐNG BẢN DEMO HÌNH 2) -->
+<div id="fmsTopKpiBarManual" class="p-4 pb-2 shrink-0"></div>
+
+<!-- 2. KHỐI ĐIỀU KHIỂN & BỘ LỌC TÁC NGHIỆP (100% GIỐNG BẢN DEMO HÌNH 2) -->
+<div class="px-4 pb-3 shrink-0">
+  <div class="bg-white dark:bg-[#151e2f] rounded-2xl border border-slate-200/80 dark:border-slate-800 p-3.5 shadow-xs space-y-3">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <span class="font-black text-xs uppercase tracking-wider text-slate-700 dark:text-slate-200">Bộ Lọc Tác Nghiệp:</span>
+        <span id="fms-active-filter-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300 border border-orange-200 dark:border-orange-800">Tất cả (0 đơn)</span>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="flex items-center gap-2 text-xs flex-wrap">
+        <button type="button" onclick="fmsManualToggleExceptions()" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 transition-colors">
+          <span>📊 Xem Top Lý Do Delay <span id="fms-delay-count-badge"></span></span>
+        </button>
+        <button type="button" id="copyBtnFMS" onclick="copyFilteredIDsFMS()" class="px-3.5 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 text-white font-bold flex items-center gap-1.5 shadow-xs transition-colors">
+          <i class="fas fa-copy text-xs" id="copyIconFMS"></i> <span id="copyTextFMS">Copy Mã Đang Lọc</span>
+        </button>
+        <button type="button" onclick="resetFiltersFMS()" class="px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 font-bold flex items-center gap-1 transition-colors" title="Xóa Lọc">
+          <i class="fas fa-filter-circle-xmark text-xs"></i> <span>Xóa Lọc</span>
+        </button>
+        
+      </div>
+    </div>
+
+    <!-- Top Delay Drawer (Thu gọn mặc định, mở khi bấm Xem Top Lý Do Delay) -->
+    <div id="fms-delay-drawer" class="hidden pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-1 md:grid-cols-3 gap-3"></div>
+
+    <!-- Quick Search box -->
+    <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
+      <div class="relative w-80 group">
+        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs group-focus-within:text-orange-500 transition-colors"></i>
+        <input type="text" data-col="0" placeholder="🔍 Tìm mã đơn nhanh..." data-i18n-placeholder="🔍 Tìm mã đơn nhanh..." class="filter-input-fms w-full bg-slate-50 dark:bg-[#0b1121] hover:bg-slate-100 dark:hover:bg-[#151e2f] focus:bg-white border border-slate-200 dark:border-slate-700 focus:border-orange-500 rounded-xl pl-9 pr-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none transition-all shadow-inner" />
+      </div>
+      <span class="text-[11px] text-slate-400 font-medium">Bấm vào bất kỳ thẻ chỉ số phía trên để lọc danh sách tức thì</span>
+    </div>
+  </div>
+</div>
+
+<!-- [2026-07-24 v3] REVERT về flex-1 — xem giải thích ở scrollContainerQH. -->
+<div class="overflow-auto bg-slate-50/50 dark:bg-[#0b1121] relative flex-1" id="scrollContainerFMS" data-scroll-root="true">
+
+<table class="w-full text-left text-xs whitespace-nowrap data-table min-w-[1100px]">
+
+<colgroup>
+<col style="width:18%;min-width:180px" /><!-- MÃ ĐƠN HÀNG -->
+<col style="width:10%;min-width:110px" /><!-- ZONE ID -->
+<col style="width:14%;min-width:140px" /><!-- KHU VỰC / PHƯỜNG -->
+<col style="width:13%;min-width:130px" /><!-- TÀI KHOẢN -->
+<col style="width:22%;min-width:210px" /><!-- LÝ DO DELAY -->
+<col style="width:7%;min-width:75px" /><!-- SỐ LƯỢT GIAO -->
+<col style="width:8%;min-width:95px" /><!-- HẸN / AGING -->
+<col style="width:8%;min-width:95px" /><!-- NGÀY NHẬP KHO -->
+</colgroup>
+
+<thead>
+
+<tr class="text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 dark:bg-[#151e2f] border-b border-slate-200 dark:border-slate-700">
+
+<th class="px-4 py-3 border-r dark:border-slate-700 border-slate-200" data-i18n-ui="MÃ ĐƠN HÀNG">MÃ ĐƠN HÀNG</th>
+
+<th class="px-2 py-3 border-r dark:border-slate-700 border-slate-200"><div class="flex flex-col gap-1"><span class="text-orange-600 dark:text-orange-400 truncate"><i class="fas fa-filter text-orange-500 dark:text-orange-400"></i> ZONE ID</span><select data-col="1" class="filter-input-fms w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded px-1 py-1 text-[11px] text-slate-700 dark:text-slate-200 outline-none focus:border-orange-500 cursor-pointer transition-colors"><option value="" data-i18n-ui="-- Tất cả --">-- Tất cả --</option></select></div></th>
+
+<th class="px-2 py-3 border-r dark:border-slate-700 border-slate-200"><div class="flex flex-col gap-1"><span class="text-orange-600 dark:text-orange-400 truncate"><i class="fas fa-filter text-orange-500 dark:text-orange-400"></i> <span data-i18n-ui="KHU VỰC / PHƯỜNG">KHU VỰC / PHƯỜNG</span></span><select data-col="2" class="filter-input-fms w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded px-1 py-1 text-[11px] text-slate-700 dark:text-slate-200 outline-none focus:border-orange-500 cursor-pointer transition-colors"><option value="" data-i18n-ui="-- Tất cả --">-- Tất cả --</option></select></div></th>
+
+<th class="px-2 py-3 border-r dark:border-slate-700 border-slate-200"><div class="flex flex-col gap-1"><span class="text-orange-600 dark:text-orange-400 truncate"><i class="fas fa-filter text-orange-500 dark:text-orange-400"></i> <span data-i18n-ui="TÀI KHOẢN">TÀI KHOẢN</span></span><select data-col="3" class="filter-input-fms w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded px-1 py-1 text-[11px] text-slate-700 dark:text-slate-200 outline-none focus:border-orange-500 cursor-pointer transition-colors"><option value="" data-i18n-ui="-- Tất cả --">-- Tất cả --</option></select></div></th>
+
+<th class="px-2 py-3 border-r dark:border-slate-700 border-slate-200"><div class="flex flex-col gap-1"><span class="text-orange-600 dark:text-orange-400 truncate"><i class="fas fa-filter text-orange-500 dark:text-orange-400"></i> <span data-i18n-ui="LÝ DO DELAY">LÝ DO DELAY</span></span><select data-col="4" class="filter-input-fms w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded px-1 py-1 text-[11px] text-slate-700 dark:text-slate-200 outline-none focus:border-orange-500 cursor-pointer transition-colors"><option value="" data-i18n-ui="-- Tất cả --">-- Tất cả --</option></select></div></th>
+<th class="px-2 py-3 border-r dark:border-slate-700 border-slate-200 text-center"><div class="flex flex-col gap-1"><span class="text-orange-600 dark:text-orange-400 truncate" title="Tổng số lượt đã đi giao đơn này"><i class="fas fa-rotate-right text-orange-500 dark:text-orange-400"></i> <span data-i18n-ui="LƯỢT GIAO">LƯỢT GIAO</span></span><select data-col="7" class="filter-input-fms w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded px-1 py-1 text-[11px] text-slate-700 dark:text-slate-200 outline-none focus:border-orange-500 cursor-pointer transition-colors"><option value="" data-i18n-ui="-- Tất cả --">-- Tất cả --</option></select></div></th>
+
+<th class="px-2 py-3 border-r dark:border-slate-700 border-slate-200 text-center"><div class="flex flex-col gap-1"><span class="text-orange-600 dark:text-orange-400 truncate"><i class="fas fa-filter text-orange-500 dark:text-orange-400"></i> <span data-i18n-ui="HẸN / AGING">HẸN / AGING</span></span><select data-col="5" class="filter-input-fms w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded px-1 py-1 text-[11px] text-slate-700 dark:text-slate-200 outline-none focus:border-orange-500 cursor-pointer transition-colors"><option value="" data-i18n-ui="Hẹn/Ngày">Hẹn/Ngày</option></select></div></th>
+
+<th class="px-2 py-3 text-center border-none"><div class="flex flex-col gap-1"><span class="text-orange-600 dark:text-orange-400 truncate"><i class="fas fa-filter text-orange-500 dark:text-orange-400"></i> <span data-i18n-ui="NGÀY NHẬP KHO">NGÀY NHẬP KHO</span></span><select data-col="6" class="filter-input-fms w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded px-1 py-1 text-[11px] text-slate-700 dark:text-slate-200 outline-none focus:border-orange-500 cursor-pointer transition-colors"><option value="" data-i18n-ui="Tất cả Ngày Nhập Kho">Tất cả Ngày Nhập Kho</option></select></div></th>
+
+</tr>
+
+</thead>
+
+<tbody class="text-slate-600 dark:text-slate-300 font-medium text-[11px] divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-[#0b1121]" id="tableBodyFMS">
+  <tr>
+    <td colspan="8" class="px-6 py-20 text-center text-slate-400">
+      <div class="w-14 h-14 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3 border border-slate-100 dark:border-slate-700 shadow-xs">
+        <i class="fas fa-file-csv text-2xl text-slate-300 dark:text-slate-600"></i>
+      </div>
+      <p class="font-bold text-sm text-slate-500 dark:text-slate-400">Chưa nạp dữ liệu Tồn Đọng FMS</p>
+      <p class="text-xs text-slate-400 mt-1">Bấm nút <span class="text-orange-500 font-bold">NẠP FILE FMS</span> phía trên để tải dữ liệu CSV hoặc chuyển sang tab <span class="text-sky-500 font-bold">Live</span></p>
+    </td>
+  </tr>
+</tbody>
+
+</table>
+
+</div>
+
+</div><!-- end fmsPanelManual -->
+
+<div id="fmsPanelLive" class="w-full flex-col h-full overflow-hidden" style="display:none">
+<!-- [GỘP GIAO DIỆN 2026-07] Hub-select / trạng thái kết nối / nút làm mới /
+Auto-refresh đã CHUYỂN LÊN aside (khối fmsAsideLiveBlock) để dùng chung 1
+khung UI với Manual thay vì lặp lại 2 nơi. Panel này giờ chỉ còn nội dung
+Live (health/KPI/exception/action/timeline) — logic fetch/render
+(fmsLiveFetchSnapshot, fmsLiveRenderBody...) giữ nguyên 100%, không đổi. -->
+<!-- [2026-07-24 v3] REVERT về flex-1 — xem giải thích ở scrollContainerQH. -->
+<div class="overflow-auto p-4 flex flex-col gap-4 flex-1" id="fmsLiveBody">
+<!-- [FIX 2026-07-15 — theo phản hồi Xuân: màn chờ quá thô, user không biết
+     đang lag hay hệ thống chậm] Thay dòng chữ tĩnh "Đang tải dữ liệu Live..."
+     (đứng yên suốt cả lúc load, dữ liệu nặng/lâu dễ gây cảm giác treo máy)
+     bằng khung skeleton mô phỏng trước hình hài dashboard (KPI card + danh
+     sách) + câu trạng thái tự đổi mỗi ~2s -> cảm giác có việc đang diễn ra
+     thay vì đứng hình. Script tự dọn dẹp (clearInterval) ngay khi
+     fmsLiveRenderBody thay #fmsLiveBody bằng dữ liệu thật (span mất đi ->
+     vòng lặp tự dừng, không chạy ngầm mãi). Tự chứa (không gọi hàm nào từ
+     JS_FMS.html) vì JS_FMS.html được include SAU vị trí này trong tài liệu. -->
+<div class="flex flex-col gap-4 p-2">
+    <div class="grid grid-cols-4 gap-3">
+        <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3 border border-slate-100 dark:border-slate-700"><div class="animate-pulse bg-slate-200 dark:bg-slate-700 rounded" style="height:8px;width:55%;margin-bottom:8px;"></div><div class="animate-pulse bg-slate-200 dark:bg-slate-700 rounded" style="height:16px;width:35%;"></div></div>
+        <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3 border border-slate-100 dark:border-slate-700"><div class="animate-pulse bg-slate-200 dark:bg-slate-700 rounded" style="height:8px;width:65%;margin-bottom:8px;"></div><div class="animate-pulse bg-slate-200 dark:bg-slate-700 rounded" style="height:16px;width:45%;"></div></div>
+        <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3 border border-slate-100 dark:border-slate-700"><div class="animate-pulse bg-slate-200 dark:bg-slate-700 rounded" style="height:8px;width:50%;margin-bottom:8px;"></div><div class="animate-pulse bg-slate-200 dark:bg-slate-700 rounded" style="height:16px;width:30%;"></div></div>
+        <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3 border border-slate-100 dark:border-slate-700"><div class="animate-pulse bg-slate-200 dark:bg-slate-700 rounded" style="height:8px;width:60%;margin-bottom:8px;"></div><div class="animate-pulse bg-slate-200 dark:bg-slate-700 rounded" style="height:16px;width:40%;"></div></div>
+        <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3 border border-slate-100 dark:border-slate-700"><div class="animate-pulse bg-slate-200 dark:bg-slate-700 rounded" style="height:8px;width:45%;margin-bottom:8px;"></div><div class="animate-pulse bg-slate-200 dark:bg-slate-700 rounded" style="height:16px;width:32%;"></div></div>
+        <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3 border border-slate-100 dark:border-slate-700"><div class="animate-pulse bg-slate-200 dark:bg-slate-700 rounded" style="height:8px;width:58%;margin-bottom:8px;"></div><div class="animate-pulse bg-slate-200 dark:bg-slate-700 rounded" style="height:16px;width:38%;"></div></div>
+        <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3 border border-slate-100 dark:border-slate-700"><div class="animate-pulse bg-slate-200 dark:bg-slate-700 rounded" style="height:8px;width:52%;margin-bottom:8px;"></div><div class="animate-pulse bg-slate-200 dark:bg-slate-700 rounded" style="height:16px;width:36%;"></div></div>
+        <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3 border border-slate-100 dark:border-slate-700"><div class="animate-pulse bg-slate-200 dark:bg-slate-700 rounded" style="height:8px;width:48%;margin-bottom:8px;"></div><div class="animate-pulse bg-slate-200 dark:bg-slate-700 rounded" style="height:16px;width:33%;"></div></div>
+    </div>
+    <div class="rounded-xl bg-slate-50 dark:bg-slate-800/40 p-4 space-y-3">
+        <div class="animate-pulse bg-slate-200 dark:bg-slate-700 rounded" style="height:12px;width:92%;"></div>
+        <div class="animate-pulse bg-slate-200 dark:bg-slate-700 rounded" style="height:12px;width:75%;"></div>
+        <div class="animate-pulse bg-slate-200 dark:bg-slate-700 rounded" style="height:12px;width:88%;"></div>
+        <div class="animate-pulse bg-slate-200 dark:bg-slate-700 rounded" style="height:12px;width:60%;"></div>
+        <div class="animate-pulse bg-slate-200 dark:bg-slate-700 rounded" style="height:12px;width:80%;"></div>
+    </div>
+    <div class="text-center text-slate-400 text-xs font-bold py-2">
+        <i class="fas fa-circle-notch fa-spin mr-2"></i><span id="fmsLiveInitialLoadMsg" style="transition:opacity .25s;" data-i18n-ui="Đang kết nối tới kho dữ liệu Live...">Đang kết nối tới kho dữ liệu Live...</span>
+    </div>
+</div>
+<script>
+(function() {
+    // [FIX ReferenceError: fmsT is not defined] Khối script NÀY chạy NGAY khi
+    // module nạp, TRƯỚC khối dưới (nơi định nghĩa fmsT toàn cục) -> gọi thẳng
+    // fmsT ở đây là lỗi. Dùng alias cục bộ trong phạm vi hàm tự chạy này, uỷ
+    // quyền spxUiLabel() (đã có sẵn từ index.html, luôn nạp trước module).
+    var fmsT = function(s){ return (typeof spxUiLabel === 'function') ? spxUiLabel(s) : s; };
+    var msgs = [
+        fmsT('Đang kết nối tới kho dữ liệu Live...'),
+        fmsT('Đang tải danh sách đơn từ các hub...'),
+        fmsT('Đang phân loại theo trạng thái & lý do delay...'),
+        fmsT('Dữ liệu khá nặng, ráng chờ thêm chút xíu nha...'),
+        fmsT('Sắp xong rồi, cảm ơn bạn đã kiên nhẫn chờ!')
+    ];
+    var i = 0;
+    var timer = setInterval(function() {
+        var el = document.getElementById('fmsLiveInitialLoadMsg');
+        if (!el) { clearInterval(timer); return; } // dữ liệu đã tải xong (DOM đã bị thay) -> tự dọn dẹp, không chạy ngầm mãi
+        i = (i + 1) % msgs.length;
+        el.style.opacity = '0';
+        setTimeout(function() {
+            var el2 = document.getElementById('fmsLiveInitialLoadMsg');
+            if (el2) { el2.textContent = msgs[i]; el2.style.opacity = '1'; }
+        }, 250);
+    }, 2000);
+})();
+</script>
+</div>
+</div><!-- end fmsPanelLive -->
+
+<div id="fmsPanelCompare" class="w-full flex-col h-full overflow-hidden" style="display:none">
+<div class="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#0b1121] shrink-0 shadow-sm">
+<div class="flex items-center gap-3 flex-wrap">
+<select id="hubSelectFMSCompare" onchange="fmsCompareRun()" class="bg-slate-50 dark:bg-[#1e293b] border border-transparent dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"><option value="" data-i18n-ui="-- Chọn Hub để so sánh --">-- Chọn Hub để so sánh --</option></select>
+</div>
+<button onclick="fmsCompareRun()" class="px-3 py-2 rounded-xl bg-slate-900 dark:bg-slate-700 hover:bg-orange-500 text-white text-[10px] font-black uppercase transition-colors"><i class="fas fa-code-compare"></i> <span data-i18n-ui="So Sánh">So Sánh</span></button>
+</div>
+<!-- [2026-07-24 v3] REVERT về flex-1 — xem giải thích ở scrollContainerQH. -->
+<div class="overflow-auto p-4 flex-1" id="fmsCompareBody">
+<div class="text-center text-slate-400 text-xs font-bold py-20" data-i18n-ui="Chọn Hub và bấm &quot;So Sánh&quot; để xem chênh lệch Manual vs Live.">Chọn Hub và bấm "So Sánh" để xem chênh lệch Manual vs Live.</div>
+</div>
+</div><!-- end fmsPanelCompare -->
+
+</main>
+</div><!-- end fms-root -->
+
+<script>
+// =====================================
+// MODULE TỒN ĐỌNG FMS (ISOLATION)
+// =====================================
+var dataFMS = window.dataFMS || null;
+var currentHubFMS = window.currentHubFMS || "";
+var currentCategoryFMS = window.currentCategoryFMS !== undefined ? window.currentCategoryFMS : 0;
+var FMS_ACCESS = window.FMS_ACCESS || null;
+
+// [SECURITY FIX 2026-08] Trước đây bảng tồn đọng (renderTableFMS) chèn thẳng dữ
+// liệu đơn hàng (mã đơn, địa chỉ, lý do onhold...) vào innerHTML KHÔNG escape —
+// nếu 1 trong các trường này (đặc biệt địa chỉ/ghi chú, vốn có thể chứa ký tự do
+// người nhập tay) từng chứa ký tự "<"/">" thì sẽ chạy như HTML/JS thật trong trình
+// duyệt của mọi Hub/SUP/AOM/admin xem bảng — stored/reflected XSS. Thêm hàm escape
+// riêng cho module này (độc lập, không phụ thuộc escapeHtml() ở index.html để module
+// vẫn an toàn kể cả khi được tải/patch riêng lẻ sau này).
+function _fmsEsc(s) {
+  if (typeof spxEscHtml === 'function') return spxEscHtml(s);
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+// Dùng riêng cho giá trị chèn vào bên trong onclick="fn('...')" — khác _fmsEsc()
+// vì ở đây giá trị nằm trong 2 lớp lồng nhau: (1) chuỗi JS single-quote bên trong
+// onclick, (2) chính thuộc tính HTML onclick="..." bọc ngoài. Escape dấu nháy đơn
+// bằng &#39; KHÔNG đủ an toàn cho lớp (1) vì trình duyệt giải mã HTML entity trong
+// giá trị thuộc tính TRƯỚC KHI biên dịch nó thành mã JS của event handler — tức là
+// &#39; sẽ quay lại thành ký tự ' thật trong mã JS, vẫn thoát được khỏi chuỗi. Nên
+// escape \ và ' theo cú pháp JS (\\, \') trước, rồi mới escape " theo HTML sau cùng.
+// [MỚI] Wrapper i18n module-scoped — cùng pattern qhT()/kfT()/vpT()/rqT().
+// KHÔNG bọc chuỗi dùng làm khoá gom nhóm dữ liệu.
+function fmsT(viText){ return (typeof spxUiLabel === 'function') ? spxUiLabel(viText) : viText; }
+// [MỚI — theo yêu cầu trực tiếp "thêm trường tổng số lượt giao hàng"]
+// Dựng nhãn số lượt giao, TÔ MÀU THEO MỨC ĐỘ để nhìn là thấy ngay đơn nào
+// đang đi giao lại nhiều lần mà vẫn chưa xong — đó mới là mục đích theo dõi,
+// nếu chỉ in con số trần thì phải tự đọc từng dòng.
+//   0 lượt  : xám  — chưa đi giao lần nào
+//   1 lượt  : xanh — bình thường
+//   2 lượt  : cam  — bắt đầu đáng chú ý
+//   3+ lượt : đỏ   — đã quá 3 ca, cần can thiệp
+function _fmsHoldBadge(v) {
+  var n = parseInt(v, 10);
+  if (isNaN(n)) return '<span class="text-slate-300 dark:text-slate-600 text-[11px]">—</span>';
+  var cls, title;
+  if (n <= 0) {
+    cls = 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700';
+    title = 'Chưa đi giao lần nào';
+  } else if (n === 1) {
+    cls = 'bg-emerald-50 dark:bg-emerald-900/25 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800';
+    title = 'Đã đi giao 1 lượt';
+  } else if (n === 2) {
+    cls = 'bg-amber-50 dark:bg-amber-900/25 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800';
+    title = 'Đã đi giao 2 lượt — cần theo dõi';
+  } else {
+    cls = 'bg-rose-50 dark:bg-rose-900/25 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800';
+    title = 'Đã đi giao ' + n + ' lượt — quá 3 ca, cần can thiệp';
+  }
+  return '<span title="' + _fmsEsc(title) + '" class="inline-flex items-center justify-center min-w-[24px] px-1.5 py-1 ' +
+         'rounded-md border text-[11px] font-black ' + cls + '">' + n + '</span>';
+}
+
+function _fmsEscJsAttr(s) {
+  // [DỌN TRÙNG LẶP] Uỷ quyền spxEscJsAttr() dùng chung (index.html).
+  return (typeof spxEscJsAttr === 'function') ? spxEscJsAttr(s) : String(s == null ? '' : s);
+}
+
+// ── Phân quyền UI — nhận cùng 1 object access do index.html lấy 1 lần duy nhất
+// (qua aging_getMasterData), KHÔNG tự gọi getModuleAccess() riêng để tránh thêm
+// một nguồn sự thật thứ 3 (đã có Quá hạn dùng access này, KPI Fail tự fetch riêng
+// phía backend mỗi lần gọi — đây là việc cần dọn tiếp ở các module khác sau).
+//
+// [FIX 2026-06] RACE CONDITION: fmsApplyAccessUI() chỉ được gọi 1 lần lúc trang
+// load xong dữ liệu lõi. Nhưng initHubSelectorFMS() (nơi áp dụng lọc theo quyền)
+// lại chạy ngay khi user bấm "Nạp file FMS" — một thao tác độc lập, không đợi
+// trang load xong. Nếu user (đặc biệt role 'station', hay vào thẳng module và nạp
+// file ngay) bấm nạp file TRƯỚC KHI fmsApplyAccessUI() kịp chạy, lúc đó FMS_ACCESS
+// vẫn null → điều kiện lọc trong initHubSelectorFMS bị bỏ qua → hiện hết mọi hub
+// trong file, không khoá. Khi access tới SAU, phải tự động áp lại lọc/khoá ngay
+// (không chờ user thao tác gì thêm) nếu dữ liệu CSV đã có sẵn từ trước.
+function fmsApplyAccessUI(access) {
+  FMS_ACCESS = access;
+  if (dataFMS && typeof initHubSelectorFMS === 'function') {
+    initHubSelectorFMS(); // re-áp dụng lọc/khoá ngay cho dữ liệu đã nạp trước đó
+  }
+}
+
+var categoriesFMS = window.categoriesFMS || [
+    { n: "Đơn Mới", i: "fa-paper-plane", text: "text-sky-600", bg: "bg-sky-100 dark:bg-sky-900/30 dark:text-sky-400" },
+    { n: "Hẹn Giao", i: "fa-calendar-check", text: "text-amber-600", bg: "bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400" },
+    { n: "Delay Khác", i: "fa-clock", text: "text-slate-600 dark:text-slate-400", bg: "bg-slate-200 dark:bg-slate-700" },
+    { n: "Quá 3 Ca", i: "fa-layer-group", text: "text-orange-600", bg: "bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400" },
+    { n: "Hoàn Hàng", i: "fa-undo", text: "text-rose-600", bg: "bg-rose-100 dark:bg-rose-900/30 dark:text-rose-400" },
+    { n: "Tồn 3-5N", i: "fa-box-archive", text: "text-fuchsia-600", bg: "bg-fuchsia-100 dark:bg-fuchsia-900/30 dark:text-fuchsia-400" },
+    { n: "Tồn > 5N", i: "fa-radiation", text: "text-red-600", bg: "bg-red-100 dark:bg-red-900/30 dark:text-red-400" }
+];
+window.categoriesFMS = categoriesFMS;
+
+// ── [BỔ SUNG 2026-07-14] Category thứ 8 CHỈ tồn tại ở nhánh Live (Delivery_
+// Holding/Exception_Reason_Added/Pending Intercept — xem FMS_Live_Backend.gs).
+// KHÔNG được thêm thẳng vào categoriesFMS ở trên vì mảng đó dùng CHUNG với
+// Manual (renderUIFMS đọc data.stats[i] theo đúng index của categoriesFMS,
+// và data.stats[7] bên Manual đã có nghĩa khác — là TỔNG số đơn, không phải
+// 1 category). Thêm vào categoriesFMS sẽ khiến Manual hiển thị nhầm tổng
+// đơn thành số liệu của "Cần kiểm tra". Vì vậy tách riêng hằng số này,
+// dùng fmsLiveCatMeta(i) bên dưới để tra đúng theo nhánh Live.
+var FMS_LIVE_REVIEW_CAT = window.FMS_LIVE_REVIEW_CAT || { n: "Cần kiểm tra", i: "fa-magnifying-glass", text: "text-violet-600", bg: "bg-violet-100 dark:bg-violet-900/30 dark:text-violet-400" };
+window.FMS_LIVE_REVIEW_CAT = FMS_LIVE_REVIEW_CAT;
+function fmsLiveCatMeta(i) { return (i === 7) ? FMS_LIVE_REVIEW_CAT : (categoriesFMS[i] || { n: 'Cat ' + i, i: 'fa-box', text: 'text-slate-600', bg: 'bg-slate-100' }); }
+
+function clearCacheFMS() {
+    localStorage.removeItem('SPX_Onhold_Data'); dataFMS = null; currentHubFMS = ""; currentCategoryFMS = 0; RUNTIME_CACHE.fmsData = [];
+    document.getElementById('csvFileFMS').value = '';
+    document.getElementById('hubSelectFMS').innerHTML = '<option value="" data-i18n-ui="-- Dữ liệu trống --">-- Dữ liệu trống --</option>';
+    document.getElementById('totalOrdersDisplayFMS').innerText = '0';
+    renderEmptyCategoriesFMS();
+    document.getElementById('tableBodyFMS').innerHTML = `<tr><td colspan="8" class="px-6 py-32 text-center text-slate-400"><div class="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-slate-700 shadow-sm"><i class="fas fa-trash-can text-2xl text-slate-300"></i></div><p class="font-bold text-sm text-slate-500">Đã xóa bộ nhớ đệm!</p><p class="text-[11px] mt-1">Vui lòng nạp file FMS mới để tiếp tục.</p></td></tr>`;
+    showToast(fmsT("Đã xóa dữ liệu FMS cũ!"), "success","fms"); resetFiltersFMS();
+}
+
+function renderEmptyCategoriesFMS() {
+    let html = categoriesFMS.map(cat => `<div class="flex justify-between items-center px-4 py-3 rounded-xl text-slate-400 dark:text-slate-500 font-bold text-xs uppercase tracking-wider opacity-50"><div class="flex items-center gap-3"><i class="fas ${cat.i} w-4 text-center text-slate-300 dark:text-slate-600"></i> ${cat.n}</div><span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px]">0</span></div>`).join('');
+    const listEl = document.getElementById('categoryListFMS');
+    if (listEl) listEl.innerHTML = html;
+    if (typeof fmsRenderTopKpiBarManual === 'function') {
+      fmsRenderTopKpiBarManual({ stats: [0, 0, 0, 0, 0, 0, 0, 0] });
+    }
+}
+
+function resetFiltersFMS() {
+    document.querySelectorAll('.filter-input-fms').forEach(inp => { if(inp.tagName === 'SELECT') inp.selectedIndex = 0; else inp.value = ""; });
+    document.querySelectorAll("#tableBodyFMS tr").forEach(row => row.classList.remove('hidden'));
+}
+
+function copyFilteredIDsFMS() {
+    const rows = Array.from(document.querySelectorAll("#tableBodyFMS tr:not(.hidden)"));
+    const ids = rows.map(r => r.querySelector('.copy-id-cell')?.innerText?.replace("✅ Copy thành công!", "").replace(/\n/g, "").trim()).filter(id => id && id.length > 5);
+    if (!ids.length) { showToast(fmsT("Không có mã hiển thị!"), "error","fms"); return; }
+    navigator.clipboard.writeText(ids.join(" ")).then(() => {
+        const btn = document.getElementById("copyBtnFMS"); const btnText = document.getElementById("copyTextFMS");
+        btn.classList.replace("bg-slate-900", "bg-emerald-600"); btn.classList.replace("hover:bg-[#ee4d2d]", "hover:bg-emerald-700");
+        btnText.innerText = `ĐÃ COPY ${ids.length} MÃ!`; showToast(fmsT("Copy thành công!"), "success","fms");
+        setTimeout(() => { btn.classList.replace("bg-emerald-600", "bg-slate-900"); btn.classList.replace("hover:bg-emerald-700", "hover:bg-[#ee4d2d]"); btnText.innerText = "COPY MÃ ĐANG HIỂN THỊ"; }, 2000);
+    });
+}
+
+function _bindCsvFileFMS_() {
+    var el = document.getElementById('csvFileFMS');
+    if (!el) return; // phần tử chưa render (vd: ngoài quyền truy cập) → bỏ qua, không crash
+    el.onchange = function(e) {
+    const file = e.target.files[0]; if(!file) return;
+    showToast(fmsT("Đang phân tích dữ liệu FMS..."), "loading","fms");
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        // [FIX LỖI THẬT — phát hiện qua báo cáo trực tiếp "nạp file mãi không trả
+        // về kết quả"] TRƯỚC ĐÂY thiếu hẳn withFailureHandler — nếu backend lỗi
+        // (throw exception, timeout, hoặc response không serialize được) thì
+        // KHÔNG CÓ CALLBACK NÀO chạy cả, toast "Đang phân tích..." treo VÔ HẠN,
+        // người dùng không biết chuyện gì xảy ra. Đây là lỗi đã tồn tại từ trước
+        // (không phải mới phát sinh trong các lần sửa FMS trong phiên này — xác
+        // nhận qua rà lại lịch sử, luồng upload này chưa từng bị động tới).
+        google.script.run.withFailureHandler(err => {
+            showToast(fmsT("Lỗi xử lý file FMS: ") + (err && err.message ? err.message : err), "error", "fms");
+            console.error('[FMS upload] onhold_processFMSInMemory lỗi:', err);
+        }).withSuccessHandler(res => {
+            if (res && res.error) {
+                showToast(fmsT("Lỗi: ") + res.error, "error", "fms");
+                return;
+            }
+            dataFMS = res; localStorage.setItem('SPX_Onhold_Data', JSON.stringify(res));
+            // Cập nhật vào Radar tổng
+            let allFmsItems = []; Object.keys(res.data).forEach(h => { res.data[h].details.forEach(catArr => { catArr.forEach(r => { allFmsItems.push({ shipmentId: r[0], processStatus: r[4], hubName: h }); }); }); });
+            RUNTIME_CACHE.fmsData = allFmsItems;
+            initHubSelectorFMS(true); showToast(fmsT("Tải dữ liệu FMS hoàn tất!"), "success","fms");
+        }).onhold_processFMSInMemory(evt.target.result);
+    };
+    reader.readAsText(file); e.target.value = '';
+    };
+}
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _bindCsvFileFMS_);
+} else {
+    _bindCsvFileFMS_(); // DOM đã sẵn sàng (script load sau khi parse xong) → gắn ngay
+}
+
+function initHubSelectorFMS(autoSelectMax = false) {
+    const sel = document.getElementById('hubSelectFMS');
+    if (!sel) return; // [FIX 2026-06] phòng thủ gốc: hàm này được gọi từ nhiều nơi
+                       // (window.load khôi phục cache, fmsApplyAccessUI khi access tới
+                       // sau) — nếu phần tử chưa có trong DOM lúc đó thì bỏ qua, không crash.
+    let hubStats = [];
+    dataFMS.hubs.forEach(hub => { hubStats.push({ name: hub, total: dataFMS.data[hub].stats[7] || 0 }); });
+
+    // ── KHOÁ THEO PHÂN QUYỀN: chỉ giữ hub thuộc access.hubs của user (vai trò station/sup/aom) ──
+    // Dùng chung normStationKey() (định nghĩa trong index.html) để khớp đúng tên trạm
+    // dù viết hoa/dấu khác nhau, tránh tự viết thêm 1 cách so khớp riêng cho FMS.
+    if (FMS_ACCESS && FMS_ACCESS.role !== 'admin' && FMS_ACCESS.hubs && FMS_ACCESS.hubs.length > 0 && typeof normStationKey === 'function') {
+        const allowedNorm = FMS_ACCESS.hubs.map(h => normStationKey(h));
+        const beforeCount = hubStats.length;
+        hubStats = hubStats.filter(h => allowedNorm.includes(normStationKey(h.name)));
+        // Hub nào trong file CSV không thuộc quyền của user → âm thầm loại khỏi dropdown,
+        // không hiện ra để tránh chọn nhầm trạm không được giao quản lý.
+        if (beforeCount > hubStats.length) {
+            console.warn('[FMS] Đã loại ' + (beforeCount - hubStats.length) + ' hub ngoài phạm vi phân quyền khỏi dropdown.');
+        }
+        // [FIX 2026-06] Nếu hub đang được chọn (currentHubFMS) lại KHÔNG nằm trong danh
+        // sách vừa lọc (vd: access tới SAU khi user đã chọn 1 hub ngoài quyền lúc access
+        // còn null) → phải bỏ chọn ngay, không được tiếp tục hiển thị data hub đó.
+        if (currentHubFMS && !hubStats.some(h => h.name === currentHubFMS)) {
+            currentHubFMS = hubStats.length > 0 ? hubStats[0].name : '';
+        }
+    }
+
+    hubStats.sort((a, b) => b.total - a.total);
+    sel.innerHTML = '<option value="">-- Chọn Hub phân tích --</option>' + hubStats.map(h => `<option value="${h.name}">${h.name} (${h.total})</option>`).join('');
+    if ((autoSelectMax || !currentHubFMS) && hubStats.length > 0) currentHubFMS = hubStats[0].name;
+
+    // ── KHOÁ CỨNG CHO VAI TRÒ "STATION" (1 trạm duy nhất) — không cho chọn hub khác,
+    // kể cả khi file CSV lỡ chứa lẫn dữ liệu trạm khác (đã lọc ở trên, nhưng khoá UI
+    // thêm 1 lớp phòng thủ, đồng bộ với cách Quá hạn đang khoá hubInputQH).
+    if (FMS_ACCESS && FMS_ACCESS.role === 'station' && FMS_ACCESS.hubs && FMS_ACCESS.hubs.length > 0) {
+        sel.disabled = hubStats.length > 0;
+        sel.style.cssText += hubStats.length > 0 ? ';cursor:not-allowed;opacity:0.75;' : '';
+    }
+
+    if (currentHubFMS) { sel.value = currentHubFMS; renderUIFMS(); }
+}
+
+function switchHubFMS() { currentHubFMS = document.getElementById('hubSelectFMS').value; if(currentHubFMS) { resetFiltersFMS(); renderUIFMS(); } }
+
+/**
+ * fmsApplyPreviewLevel(level)
+ * [MỚI — Bước 5 cho FMS, cùng lớp phòng vệ như Quá Hạn/KPI Fail/Rider Plan/
+ * Pick] Gọi từ openModule() mỗi khi vào module.
+ *
+ * ROM/AOM/SUP: không cần thêm gì — dropdown Hub (cả Manual lẫn Live) chỉ chứa
+ * đúng những Hub CÓ TRONG file đã upload (Manual) hoặc trong phạm vi quyền
+ * thật (Live), không phải toàn bộ Hub hệ thống — không thể "thu hẹp" theo
+ * kiểu Rider Plan's dropdown SUP (Admin vẫn có quyền thật đầy đủ khi xem thử).
+ * Chỉ Lead/Staff có ý nghĩa thật (đúng 1 Hub cố định) — tự động chọn đúng Hub
+ * đó ở ĐÚNG chế độ đang mở (Manual/Live), tái dùng nguyên hàm switchHubFMS()/
+ * fmsLiveOnHubChange() đã có sẵn, không viết logic tải lại riêng.
+ */
+function fmsApplyPreviewLevel(level) {
+  var isRealAdmin = !!(window.SPX_ACCESS && window.SPX_ACCESS.role === 'admin');
+  if (!isRealAdmin || !level || level === 'admin') return;
+  if (level !== 'lead' && level !== 'staff') return;
+
+  var hub = (localStorage.getItem('spx_default_hub') || '').trim();
+  if (!hub || hub.toUpperCase() === 'ALL') return; // chưa chọn Hub cụ thể ở header — không có gì để tự chọn
+
+  if (typeof FMS_SOURCE !== 'undefined' && FMS_SOURCE === 'live') {
+    var fmsLiveSel = document.getElementById('hubSelectFMSLive');
+    if (fmsLiveSel && typeof fmsLiveOnHubChange === 'function') {
+      var hasLiveOpt = Array.prototype.some.call(fmsLiveSel.options, function (o) { return o.value === hub; });
+      if (hasLiveOpt) { fmsLiveSel.value = hub; fmsLiveOnHubChange(); }
+    }
+  } else {
+    var fmsSel = document.getElementById('hubSelectFMS');
+    if (fmsSel && typeof switchHubFMS === 'function') {
+      var hasOpt = Array.prototype.some.call(fmsSel.options, function (o) { return o.value === hub; });
+      if (hasOpt) { fmsSel.value = hub; switchHubFMS(); }
+    }
+  }
+}
+
+function fmsRenderTopKpiBarManual(data) {
+    const bar = document.getElementById('fmsTopKpiBarManual');
+    if (!bar) return;
+    const stats = (data && data.stats) ? data.stats : [0, 0, 0, 0, 0, 0, 0, 0];
+    const tot = stats[7] || 0;
+    const isAllActive = currentCategoryFMS === -1;
+
+    // [NGỮ NGHĨA VẬN HÀNH CHUẨN XÁC THEO YÊU CẦU]
+    // 0: Đơn Mới        -> Chưa phân ca
+    // 1: Hẹn Giao       -> Khách hẹn lại
+    // 2: Delay Khác     -> Kiểm tra lý do delay
+    // 3: Quá 3 Ca       -> Kiểm tra nguyên nhân
+    // 4: Hoàn Hàng      -> Chờ trả về kho
+    // 5: Tồn 3-5N       -> Cần kiểm tra
+    // 6: Tồn > 5N       -> Cần kiểm tra gấp/nguy hiểm
+    const subTitles = [
+      "Chưa phân ca",
+      "Khách hẹn lại",
+      "Kiểm tra lý do delay",
+      "Kiểm tra nguyên nhân",
+      "Chờ trả về kho",
+      "Cần kiểm tra",
+      "Cần kiểm tra gấp/nguy hiểm"
+    ];
+    const dotColors = [
+      "bg-blue-500",
+      "bg-amber-500",
+      "bg-sky-500",
+      "bg-rose-500",
+      "bg-purple-500",
+      "bg-amber-500",
+      "bg-red-600 animate-pulse"
+    ];
+    const countColors = [
+      "text-blue-600 dark:text-blue-400",
+      "text-amber-600 dark:text-amber-400",
+      "text-sky-600 dark:text-sky-400",
+      "text-rose-600 dark:text-rose-400",
+      "text-purple-600 dark:text-purple-400",
+      "text-amber-600 dark:text-amber-400",
+      "text-red-600 dark:text-red-400"
+    ];
+
+    let kpiHtml = `<div class="fms-kpi-grid-8">
+      <!-- Thẻ 0: Tổng Tồn Hub -->
+      <div onclick="switchCategoryFMS(-1)" id="fms-card-all" class="fms-card cursor-pointer p-2.5 rounded-xl bg-white dark:bg-[#151e2f] transition-all hover:-translate-y-0.5 ${isAllActive ? 'border-2 border-orange-500 shadow-sm ring-2 ring-orange-500/20' : 'border border-slate-200 dark:border-slate-800 shadow-xs hover:border-orange-400'}">
+        <div class="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+          <span class="truncate">Tổng tồn Hub</span>
+          <span class="w-2 h-2 rounded-full bg-orange-500 shrink-0"></span>
+        </div>
+        <div class="text-lg font-black text-slate-900 dark:text-white mt-0.5">${tot}</div>
+        <div class="text-[9.5px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 truncate" title="Toàn bộ đơn">Toàn bộ đơn</div>
+      </div>
+    `;
+
+    categoriesFMS.forEach((cat, i) => {
+        const isActive = currentCategoryFMS === i;
+        const count = stats[i] || 0;
+        const dot = dotColors[i] || "bg-slate-400";
+        const sub = subTitles[i] || "Đơn hàng";
+        const countCol = countColors[i] || cat.text;
+        kpiHtml += `
+          <div onclick="switchCategoryFMS(${i})" id="fms-card-${i}" class="fms-card cursor-pointer p-2.5 rounded-xl bg-white dark:bg-[#151e2f] transition-all hover:-translate-y-0.5 ${isActive ? 'border-2 border-orange-500 shadow-sm ring-2 ring-orange-500/20' : 'border border-slate-200 dark:border-slate-800 shadow-xs hover:border-orange-400'}">
+            <div class="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+              <span class="truncate">${cat.n}</span>
+              <span class="w-2 h-2 rounded-full ${dot} shrink-0"></span>
+            </div>
+            <div class="text-lg font-black ${countCol} mt-0.5">${count}</div>
+            <div class="text-[9.5px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 truncate" title="${sub}">${sub}</div>
+          </div>
+        `;
+    });
+
+    kpiHtml += `</div>`;
+    bar.innerHTML = kpiHtml;
+
+    // Cập nhật Badge "Bộ Lọc Tác Nghiệp: [Tên nhóm (Số đơn)]"
+    const filterBadge = document.getElementById('fms-active-filter-badge');
+    if (filterBadge) {
+      if (currentCategoryFMS === -1) {
+        filterBadge.innerText = `Tất cả (${tot} đơn)`;
+      } else {
+        const catName = categoriesFMS[currentCategoryFMS] ? categoriesFMS[currentCategoryFMS].n : 'Nhóm ' + currentCategoryFMS;
+        const catCount = stats[currentCategoryFMS] || 0;
+        filterBadge.innerText = `${catName} (${catCount} đơn)`;
+      }
+    }
+}
+
+function renderUIFMS() {
+    if (!dataFMS || !dataFMS.data || !currentHubFMS || !dataFMS.data[currentHubFMS]) {
+        renderEmptyCategoriesFMS();
+        return;
+    }
+    const data = dataFMS.data[currentHubFMS];
+    const totalOrdersEl = document.getElementById('totalOrdersDisplayFMS');
+    if (totalOrdersEl) totalOrdersEl.innerText = data.stats[7] || 0;
+    let html = categoriesFMS.map((cat, i) => {
+        const isActive = currentCategoryFMS === i;
+        const activeContainer = isActive ? `bg-orange-50/80 dark:bg-orange-900/30 text-[#ee4d2d] dark:text-orange-400 shadow-sm ring-1 ring-orange-200 dark:ring-orange-800` : `text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50`;
+        const iconColor = isActive ? `text-[#ee4d2d] dark:text-orange-400` : `text-slate-400 dark:text-slate-500`;
+        const badgeClass = isActive ? `bg-[#ee4d2d] dark:bg-orange-500 text-white` : `bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300`;
+        return `<div onclick="switchCategoryFMS(${i})" class="flex justify-between items-center px-4 py-3 rounded-xl cursor-pointer transition-all ${activeContainer} font-bold text-xs uppercase tracking-wider mb-1"><div class="flex items-center gap-3"><i class="fas ${cat.i} ${iconColor} w-4 text-center text-sm"></i> ${cat.n}</div><span class="px-2 py-0.5 rounded-md ${badgeClass} text-[10px] shadow-sm">${data.stats[i]}</span></div>`;
+    }).join('');
+    const catListEl = document.getElementById('categoryListFMS');
+    if (catListEl) catListEl.innerHTML = html;
+    if (typeof fmsRenderTopKpiBarManual === 'function') fmsRenderTopKpiBarManual(data);
+    renderTableFMS();
+    if (typeof fmsManualRenderExceptionCenter === 'function') fmsManualRenderExceptionCenter(data);
+}
+
+// [MỚI — "Top On-hold Reason" cho Manual, đồng bộ với Live] Vẽ lại đúng phong
+// cách "Exception Center" của Live (reasonBars) — dùng dữ liệu THẬT
+// hd.reasonTop đã tính ở backend.gs (onhold_processFMSInMemory(), tái dùng
+// đúng logic Live: chỉ đếm reason ở nhóm Hẹn giao/Delay khác/Quá 3 ca/Hoàn
+// hàng/Tồn >5N, KHÔNG tính Đơn mới bình thường/Tồn 3-5N).
+
+function fmsManualToggleExceptions() {
+    var d = document.getElementById('fms-delay-drawer');
+    if (d) d.classList.toggle('hidden');
+}
+
+function fmsManualRenderExceptionCenter(hubData) {
+    const drawer = document.getElementById('fms-delay-drawer');
+    const badge = document.getElementById('fms-delay-count-badge');
+    if (!drawer) return;
+    const list = (hubData && hubData.reasonTop) || [];
+    if (badge) badge.innerText = list.length ? `(${list.length})` : '';
+    if (!list.length) { drawer.innerHTML = ''; return; }
+    const max = Math.max(1, ...list.map(x => x.count));
+    const toneStyles = [
+      { bg: 'bg-orange-50/60 dark:bg-orange-950/20', border: 'border-orange-100 dark:border-orange-900/40', bar: 'bg-orange-500', text: 'text-orange-600 dark:text-orange-400' },
+      { bg: 'bg-amber-50/60 dark:bg-amber-950/20', border: 'border-amber-100 dark:border-amber-900/40', bar: 'bg-amber-500', text: 'text-amber-600 dark:text-amber-400' },
+      { bg: 'bg-rose-50/60 dark:bg-rose-950/20', border: 'border-rose-100 dark:border-rose-900/40', bar: 'bg-rose-500', text: 'text-rose-600 dark:text-rose-400' }
+    ];
+
+    drawer.innerHTML = list.slice(0, 6).map((r, idx) => {
+        const pct = Math.round((r.count / max) * 100);
+        const style = toneStyles[idx % toneStyles.length];
+        return `<div class="p-2.5 rounded-xl ${style.bg} border ${style.border} text-xs shadow-xs">
+          <div class="flex justify-between font-bold text-slate-700 dark:text-slate-300 mb-1">
+            <span class="truncate max-w-[70%]" title="${_fmsEsc(r.reason || 'N/A')}">${idx + 1}. ${_fmsEsc(r.reason || 'N/A')}</span>
+            <span class="${style.text} font-black">${r.count} đơn (${pct}%)</span>
+          </div>
+          <div class="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+            <div class="${style.bar} h-2 rounded-full" style="width: ${pct}%"></div>
+          </div>
+        </div>`;
+    }).join('');
+}
+
+function renderTableFMS() {
+    let rows;
+    const details = dataFMS.data[currentHubFMS].details;
+    if (currentCategoryFMS === -1) {
+        rows = (details.flat ? details.flat() : [].concat(...details));
+    } else {
+        rows = [...(details[currentCategoryFMS] || [])];
+    }
+    rows.sort((a, b) => (a[2] || "").toString().trim().toLowerCase().localeCompare((b[2] || "").toString().trim().toLowerCase(), 'vi'));
+    const tbody = document.getElementById('tableBodyFMS');
+    if(!rows.length) { tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-32 text-center text-emerald-500 dark:text-emerald-400"><div class="w-16 h-16 bg-emerald-50 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-100 dark:border-emerald-800 shadow-sm"><i class="fas fa-check-double text-2xl text-emerald-400 dark:text-emerald-300"></i></div><p class="font-black text-sm uppercase tracking-widest">SẠCH BÓNG TỒN ĐỌNG!</p></td></tr>`; return; }
+    
+    const catColor = currentCategoryFMS >= 0 ? categoriesFMS[currentCategoryFMS].text : 'text-orange-600';
+    const catBg = currentCategoryFMS >= 0 ? categoriesFMS[currentCategoryFMS].bg : 'bg-orange-100 text-orange-700';
+    tbody.innerHTML = rows.map(r => `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors" data-received="${_fmsEsc(r[6] || '')}"><td class="px-4 py-2 font-mono"><div class="copy-id-cell bg-slate-50 dark:bg-slate-800 hover:bg-slate-800 hover:text-white dark:hover:bg-slate-600 px-3 py-1.5 rounded-lg text-slate-700 dark:text-slate-200 font-black text-xs transition-all border border-slate-200 dark:border-slate-700 cursor-pointer relative inline-flex items-center gap-1.5" title="${_fmsEsc(r[0])}" onclick="copyIdQH('${_fmsEscJsAttr(r[0])}', this)"><i class="fas fa-copy text-slate-400 opacity-60"></i> ${_fmsEsc(r[0])}<span class="id-tooltip">✅ Copy thành công!</span></div></td><td class="px-3 py-2 text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider" title="${_fmsEsc(r[1] || '')}">${_fmsEsc(r[1] || 'N/A')}</td><td class="px-3 py-2 text-[11px] font-bold text-slate-700 dark:text-slate-300" title="${_fmsEsc(r[2])}"><i class="fas fa-map-marker-alt text-slate-300 dark:text-slate-600 mr-1.5"></i>${_fmsEsc(r[2])}</td><td class="px-3 py-2" title="${_fmsEsc(r[3])}"><span class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-1 rounded text-[10px] font-black border border-slate-200 dark:border-slate-700 uppercase tracking-wider block">${_fmsEsc(r[3])}</span></td><td class="px-3 py-2 text-[11px] text-slate-600 dark:text-slate-400 font-semibold" title="${_fmsEsc(r[4])}">${_fmsEsc(r[4])}</td><td class="px-2 py-2 text-center">${_fmsHoldBadge(r[7])}</td><td class="px-3 py-2 text-center font-black text-[11px]"><span class="px-2 py-1 rounded-md ${catBg}">${_fmsEsc(r[5] || '/')}</span></td><td class="px-3 py-2 text-center text-[10px] font-bold text-slate-500 dark:text-slate-400">${_fmsEsc(r[6] ? r[6].split('-').reverse().join('/') : '—')}</td></tr>`).join('');
+    updateFiltersFMS(rows);
+    if (typeof spxFitScrollContainer === 'function') spxFitScrollContainer('scrollContainerFMS');
+}
+
+function switchCategoryFMS(i) {
+    currentCategoryFMS = (currentCategoryFMS === i && i !== -1) ? -1 : i;
+    resetFiltersFMS();
+    if (dataFMS && dataFMS.data && currentHubFMS && dataFMS.data[currentHubFMS]) {
+        renderUIFMS();
+    } else {
+        if (typeof fmsRenderTopKpiBarManual === 'function') {
+            fmsRenderTopKpiBarManual({ stats: [0, 0, 0, 0, 0, 0, 0, 0] });
+        }
+    }
+}
+
+function updateFiltersFMS(rows) {
+    // [SỬA — thêm cột "Lượt giao"] TRƯỚC ĐÂY mảng uniqueVals khai báo CỨNG 6
+    // phần tử và ánh xạ theo chỉ số (i-1), nên chèn thêm 1 cột ở GIỮA sẽ làm
+    // lệch toàn bộ bộ lọc phía sau. Nay tạo theo đúng số ô lọc thực tế.
+    const filterInputs = document.querySelectorAll('.filter-input-fms');
+    const uniqueVals = Array.from({ length: Math.max(0, filterInputs.length - 1) }, () => new Set());
+    // [SỬA LỖI THẬT — báo cáo kèm ảnh: bộ lọc "Lượt giao" lại liệt kê NGÀY, còn
+    // "Hẹn/Ngày" lại liệt kê 1/2] uniqueVals phải khớp ĐÚNG THỨ TỰ CỘT TRÊN
+    // BẢNG, không phải thứ tự trong mảng dữ liệu (2 thứ này KHÁC nhau sau khi
+    // chèn cột "Lượt giao" vào giữa).
+    // Thứ tự cột thật:  Zone(r1) · Phường(r2) · Tài khoản(r3) · Lý do(r4) ·
+    //                   LƯỢT GIAO(r7) · Hẹn/Aging(r5) · Ngày nhập kho(r6)
+    rows.forEach(r => { uniqueVals[0].add(r[1]); uniqueVals[1].add(r[2]); uniqueVals[2].add(r[3]); uniqueVals[3].add(r[4]); uniqueVals[4].add(String(parseInt(r[7],10) || 0)); uniqueVals[5].add(r[5] || '/'); if(r[6]) uniqueVals[6].add(r[6]); });
+    const labels = ['Zone', fmsT('Phường/Xã'), fmsT('Tài khoản'), fmsT('Lý do'), fmsT('Lượt giao'), fmsT('Hẹn/Ngày'), fmsT('Ngày Nhập Kho')];
+    filterInputs.forEach((inp, i) => {
+        if(i === 0) return; const oldVal = inp.value; let html = `<option value="">Tất cả ${labels[i-1]}</option>`;
+        if (i - 1 === 6) {   // [SỬA] Ngày Nhập Kho dịch từ 5 -> 6 do thêm cột Lượt giao
+            // Cột Ngày Nhập Kho: sắp xếp theo chuỗi ISO gốc (yyyy-mm-dd) để đúng thứ tự
+            // thời gian, nhưng value/label hiển thị dạng dd/mm/yyyy để khớp với ô bảng.
+            Array.from(uniqueVals[6]).sort().forEach(iso => { const disp = iso.split('-').reverse().join('/'); html += `<option value="${disp}">${disp}</option>`; });
+        } else if (i - 1 === 4) {
+            // [SỬA] Cột "Lượt giao" là SỐ — sort() mặc định so theo chữ nên khi
+            // có 2 chữ số sẽ ra thứ tự sai (0,1,10,2,3...). Sắp theo giá trị số.
+            // Cũng KHÔNG bỏ giá trị 0 (nhánh dưới lọc `if(v)` sẽ loại mất "0",
+            // trong khi 0 lượt là thông tin có ý nghĩa: chưa đi giao lần nào).
+            Array.from(uniqueVals[4]).sort((a, b) => Number(a) - Number(b))
+              .forEach(v => { html += `<option value="${v}">${v}</option>`; });
+        } else {
+            Array.from(uniqueVals[i-1]).sort().forEach(v => { if(v) html += `<option value="${v}">${v}</option>`; });
+        }
+        inp.innerHTML = html; inp.value = oldVal;
+    });
+}
+
+function applyFiltersFMS() {
+    // [FIX LỖI THẬT — phát hiện qua báo cáo trực tiếp "lọc Marketplace ra cả NS
+    // Marketplace Standard"] TRƯỚC ĐÂY mọi cột filter (kể cả dropdown <select>)
+    // đều dùng .includes() (so khớp MỘT PHẦN) — với dropdown, người dùng chọn
+    // ĐÚNG 1 giá trị cụ thể từ danh sách đóng, nên phải so khớp CHÍNH XÁC tuyệt
+    // đối, không phải "chứa". "marketplace" là substring của "ns marketplace
+    // standard" nên bị dính nhầm. Chỉ ô "Tìm Mã Đơn" (index 0, input tự do) mới
+    // giữ .includes() — đúng hành vi mong đợi khi gõ 1 phần mã đơn.
+    const filterEls = Array.from(document.querySelectorAll('.filter-input-fms'));
+    const filters = filterEls.map(i => i.value.toLowerCase());
+    const isExactMatch = filterEls.map(i => i.tagName === 'SELECT');
+    document.querySelectorAll("#tableBodyFMS tr").forEach(row => {
+        if(row.cells.length < 8) return;   // [SỬA] 8 cột sau khi thêm "Lượt giao"
+        const matches = filters.every((f, i) => {
+            if (f === "") return true;
+            const cellVal = row.cells[i].innerText.toLowerCase();
+            return isExactMatch[i] ? cellVal === f : cellVal.includes(f);
+        });
+        row.classList.toggle('hidden', !matches);
+    });
+}
+document.querySelectorAll('.filter-input-fms').forEach(inp => { inp.onchange = inp.onkeyup = applyFiltersFMS; });
+
+// Khôi phục FMS khi load trang hoặc khi module được nạp động
+function fmsInitStartup() {
+    try {
+        renderEmptyCategoriesFMS();
+        const cachedFMS = localStorage.getItem('SPX_Onhold_Data');
+        if (cachedFMS) { 
+            dataFMS = JSON.parse(cachedFMS); 
+            if (dataFMS && dataFMS.data) {
+                initHubSelectorFMS(true); 
+                let allFmsItems = [];
+                Object.keys(dataFMS.data).forEach(h => {
+                    if (dataFMS.data[h] && dataFMS.data[h].details) {
+                        dataFMS.data[h].details.forEach(catArr => {
+                            if (Array.isArray(catArr)) {
+                                catArr.forEach(r => {
+                                    allFmsItems.push({ shipmentId: r[0], processStatus: r[4], hubName: h });
+                                });
+                            }
+                        });
+                    }
+                });
+                if (typeof RUNTIME_CACHE !== 'undefined' && RUNTIME_CACHE) {
+                    RUNTIME_CACHE.fmsData = allFmsItems;
+                }
+                if (currentHubFMS && dataFMS.data[currentHubFMS]) {
+                    fmsRenderTopKpiBarManual(dataFMS.data[currentHubFMS]);
+                }
+            }
+        }
+    } catch(e) {
+        console.error("Lỗi khôi phục cache FMS:", e);
+    }
+}
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', fmsInitStartup);
+} else {
+    fmsInitStartup();
+}
+
+// [FIX 2026-07-26] Đo lại khung khi đổi kích thước cửa sổ, cùng cơ chế debounce
+// đã dùng cho pickScrollArea/pickLiveScrollArea (xem định nghĩa spxFitScrollContainer).
+let _fmsFitResizeTimer = null;
+window.addEventListener('resize', () => {
+    clearTimeout(_fmsFitResizeTimer);
+    _fmsFitResizeTimer = setTimeout(() => {
+        if (typeof spxFitScrollContainer !== 'function') return;
+        spxFitScrollContainer('scrollContainerFMS');
+        if (document.getElementById('fmsLiveTableArea')) spxFitScrollContainer('fmsLiveTableArea');
+    }, 200);
+});
+
+// HÀM 2: CẬP NHẬT INDEX (XÓA CHỨC NĂNG CHÈN VÀO GREETING)
+// THAY THẾ TOÀN BỘ HÀM NÀY ĐỂ MASCOT BÁO CÁO 4 TRƯỜNG HỢP
+function renderDashboardStats() {
+    const hub = localStorage.getItem('spx_default_hub') || "ALL"; 
+    // [2026-06] Trước đây chỉ strip " hub" cuối chuỗi, không bỏ dấu tiếng Việt
+    // → "Krông Pắk" và "krong pak" không khớp. Nay dùng chung normStationKey().
+    const safeHub = (typeof normStationKey === 'function') ? normStationKey(hub) : hub.toLowerCase().trim();
+    const filtered = (allData || []).filter(d => { 
+        const h = (typeof normStationKey === 'function')
+          ? normStationKey(d.hubName || d.Hub || d.station || "")
+          : (d.hubName || d.Hub || d.station || "").toString().toLowerCase().trim();
+        return hub === "ALL" || h === safeHub; 
+    });
+    
+    const arrLostToday = filtered.filter(d => !d.isChotLost && ((d.lostToday || d.aging || '').toString().toLowerCase().includes('today')));
+    const arrLost = filtered.filter(d => d.isChotLost === true || String(d.isChotLost).toLowerCase() === 'true');
+    const dangXuLy = filtered.length > 0 ? (filtered.length - arrLostToday.length - arrLost.length) : 0;
+
+    const createStat = (lbl, val, icn, clr, bg) => { if(val<=0 && lbl!==fmsT('Quá Hạn') && lbl!==fmsT('Đã Chốt')) return ''; return `<div class="flex items-center gap-2.5 fms-stat-${clr} px-3 py-1.5 rounded-xl shrink-0"><div class="fms-stat-icon text-base"><i class="${icn}"></i></div><div class="flex flex-col"><span class="fms-stat-lbl text-[9px] font-black uppercase">${lbl}</span><span class="fms-stat-val text-lg font-black leading-none">${val}</span></div></div>`; };
+    
+    const _statsBox = document.getElementById('dynamic-stats-container');
+    if (_statsBox) {
+        _statsBox.innerHTML = createStat(fmsT('Quá Hạn'), arrLostToday.length, 'fas fa-exclamation-triangle', 'orange', 'bg-orange-50') + createStat(fmsT('Đã Chốt'), arrLost.length, 'fas fa-times-circle', 'rose', 'bg-rose-50') + createStat(fmsT('Đang Xử Lý'), dangXuLy, 'fas fa-spinner', 'blue', 'bg-blue-50') + `<div class="flex items-center gap-2.5 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0"><div class="text-emerald-500 dark:text-emerald-400"><i class="fas fa-check-circle"></i></div><div class="flex flex-col"><span class="text-[9px] font-black text-slate-500 uppercase">Hệ Thống</span><span class="text-sm font-black text-emerald-500 dark:text-emerald-400 flex items-center gap-1.5 leading-none">Mượt mà <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div></span></div></div>`;
+    }
+    
+    // [ĐÃ XOÁ — theo yêu cầu "mascot chỉ giữ đúng 1 tác vụ AI trả lời câu hỏi"]
+    // Khối cảnh báo qua mascot quote (dùng getRandomGreeting/triggerMascotAction
+    // — cả 2 đã bị xoá khỏi index.html) — đây chính là nguyên nhân lỗi
+    // "triggerMascotAction is not defined" khi mở Tổng quan (view-index thoáng
+    // qua ở trạng thái hiện trong lúc openModule('index') chạy nội bộ). Phần
+    // tính toán số liệu THẬT (stat chips dynamic-stats-container) phía TRÊN vẫn
+    // giữ nguyên 100%, không đụng vào. Đã xoá TOÀN BỘ phần copy-danh-sách/msg
+    // /state/triggerMascotAction bên dưới — không còn dùng vì mascot không còn
+    // hiện quote cảnh báo nữa.
+}
+
+// =====================================================================
+// EPIC 1 — LIVE BACKLOG INTEGRATION (JS_FMS)
+// ---------------------------------------------------------------------
+// Toàn bộ code dưới đây là PHẦN MỞ RỘNG — không sửa bất kỳ hàm Manual nào
+// ở trên. Manual (dataFMS, initHubSelectorFMS, renderUIFMS, renderTableFMS...)
+// giữ nguyên 100% hành vi cũ.
+//
+// Source Manager  : switchSourceFMS() — chuyển Manual / Live / Compare
+// Live Engine     : fmsLive*()        — health/KPI/exception/action/timeline
+// Explorer Engine : fmsDrawer*()      — danh sách phân trang + chi tiết đơn
+// Compare Engine  : fmsCompare*()     — Manual snapshot vs Live snapshot
+//                   (không bao giờ tự đọc lại Google Sheet — chỉ dùng
+//                   dataFMS đã có trong bộ nhớ + cache Live phía backend)
+// =====================================================================
+
+let FMS_SOURCE = 'manual';        // 'manual' | 'live' | 'compare'
+let FMS_OP = 'ALL';               // 'ALL' | 'LM' | 'FM' — xem ghi chú switchOpFMS()
+let dataFMSLive = null;           // response mới nhất của fms_live_getSnapshot()
+// [FIX 2026-07-14] Đồng bộ với trạm đang chọn ở header (badge cam trên
+// cùng) — GIỐNG pattern KPI/Quá Hạn đang dùng (localStorage.getItem
+// ('spx_default_hub')). Trước đây hardcode 'ALL' nên tab Live luôn mở
+// full toàn hệ thống bất kể user đang đứng ở trạm nào.
+let fmsLiveCurrentHub = (function() {
+    // [FIX 2026-07-14 PHÂN QUYỀN] Đọc từ localStorage nhưng chưa validate quyền —
+    // validation thật sự xảy ra trong _fmsLivePopulateHubSelectWith_() sau khi
+    // snapshot về. Nếu hub lưu trong cache không còn thuộc quyền → sẽ bị reset về 'ALL'.
+    try { return localStorage.getItem('spx_default_hub') || localStorage.getItem('SPX_selectedHub') || 'ALL'; }
+    catch (e) { return 'ALL'; }
+})();
+let fmsLiveAutoTimer = null;      // fallback: làm mới TOÀN BỘ dù không phát hiện gì đổi
+let fmsLiveMetaTimer = null;      // poll SIÊU NHẸ mỗi 30s để phát hiện có đổi hay không
+// [FIX 2026-07-14 v3 — theo yêu cầu Xuân] 30s làm mới TOÀN BỘ (kể cả khi user
+// đang xem dở 1 bảng chi tiết) là quá nhanh, gây "trắng xóa" giữa chừng lúc
+// đang đọc số liệu (đúng ảnh chụp). Đổi chiến lược 2 tầng:
+//  1) fmsLiveCheckForUpdates() poll fms_live_getSyncMeta() mỗi 30s — CỰC NHẸ
+//     (chỉ đọc 1 timestamp, không kéo cả snapshot) để biết dữ liệu backend có
+//     đổi hay chưa, KHÔNG tự ý vẽ lại gì cả.
+//  2) Chỉ khi phát hiện ĐỔI: nếu user đang ở dashboard tổng quan (không mở
+//     bảng chi tiết nào) -> tự làm mới ngay (an toàn, không phá gì). Nếu user
+//     đang xem 1 category/Explorer/Drawer -> KHÔNG tự làm mới, chỉ hiện banner
+//     nhỏ "Có dữ liệu mới" để họ tự quyết định lúc nào bấm cập nhật.
+// FMS_LIVE_AUTO_MS giờ là lưới an toàn dự phòng (10 phút) — nếu vì lý do gì
+// mà cơ chế poll ở trên bị lỡ, vẫn có 1 lần làm mới đầy đủ định kỳ.
+const FMS_LIVE_AUTO_MS = 10 * 60 * 1000;   // 10 phút — fallback đầy đủ
+const FMS_LIVE_META_POLL_MS = 30000;       // 30s — poll nhẹ, không phá giao diện
+
+// ── [FIX 2026-07-14] Chống race-condition khi có nhiều request Live chồng
+// nhau (auto-refresh 30s + bấm nút Làm mới thủ công + chuyển hub liên tục).
+// TRƯỚC ĐÂY không có gì ngăn 2 request chạy song song — request cũ (chậm
+// hơn, vd cold-start GAS) có thể trả về SAU và đè lên dữ liệu mới hơn,
+// hoặc khiến badge kẹt ở "Đang tải..." dù nội dung chính đã hiện xong
+// (đúng bug trong ảnh Xuân gửi — tổng đơn đã hiện "4" nhưng badge vẫn
+// quay). fmsLiveFetchToken tăng dần mỗi lần gọi mới; response nào không
+// khớp token mới nhất tại thời điểm trả về sẽ bị coi là "cũ" và bỏ qua. ──
+let fmsLiveFetchToken = 0;
+let fmsLiveFetchInFlight = false;
+
+// ── SOURCE MANAGER ───────────────────────────────────────────────────
+function switchSourceFMS(mode) {
+    FMS_SOURCE = mode;
+    ['manual', 'live', 'compare'].forEach(m => {
+        const tab = document.getElementById('fmsSrcTab' + m.charAt(0).toUpperCase() + m.slice(1));
+        if (tab) { tab.classList.toggle('active', m === mode); tab.setAttribute('aria-selected', m === mode ? 'true' : 'false'); }
+    });
+    const panelManual = document.getElementById('fmsPanelManual');
+    const panelLive = document.getElementById('fmsPanelLive');
+    const panelCompare = document.getElementById('fmsPanelCompare');
+    if (panelManual) panelManual.style.display = (mode === 'manual') ? 'flex' : 'none';
+    if (panelLive) panelLive.style.display = (mode === 'live') ? 'flex' : 'none';
+    if (panelCompare) panelCompare.style.display = (mode === 'compare') ? 'flex' : 'none';
+
+    // ── [GỘP GIAO DIỆN 2026-07] Aside dùng CHUNG 1 khung UI (hub-select/
+    // tổng đơn/category) cho cả Manual lẫn Live — chỉ đổi khối nào hiển thị
+    // + nguồn dữ liệu đổ vào, KHÔNG đổi cách 2 luồng dữ liệu (dataFMS vs
+    // dataFMSLive) được fetch/cache/lọc quyền (vẫn 100% tách biệt ở tầng
+    // logic/backend như cũ). Compare vẫn dùng khối Manual làm tham chiếu
+    // hub (vì Compare cần dataFMS đã nạp sẵn), Live có khối riêng.
+    const asideManual = document.getElementById('fmsAsideManualBlock');
+    const asideLive = document.getElementById('fmsAsideLiveBlock');
+    const totalLabel = document.getElementById('fmsAsideTotalLabel');
+    if (asideManual) asideManual.style.display = (mode === 'live') ? 'none' : '';
+    if (asideLive) asideLive.style.display = (mode === 'live') ? '' : 'none';
+    if (totalLabel) totalLabel.textContent = (mode === 'live') ? fmsT('TỔNG ĐƠN TỒN (LIVE)') : fmsT('TỔNG ĐƠN TỒN TẠI HUB');
+
+    // [FIX 2026-07-14] LM/FM chỉ có ý nghĩa ở Live (Manual/Compare không có
+    // dữ liệu tách LM/FM) — trước đây 2 nút này bấm được ở mọi tab, set
+    // .active bình thường rồi mới hiện toast giải thích SAU khi đã bấm.
+    // Giờ khoá disabled ngay khi rời Live, nhìn là biết không bấm được.
+    ['fmsOpLM', 'fmsOpFM'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.disabled = (mode !== 'live');
+    });
+
+    if (mode === 'live') {
+        if (!dataFMSLive) fmsLiveFetchSnapshot(false);
+        else { fmsLiveCurrentCat = null; fmsLiveRenderForOp(dataFMSLive); } // đã có dữ liệu (vd quay lại tab) -> render ngay, khỏi đợi fetch
+        const chk = document.getElementById('fmsLiveAutoRefreshChk');
+        fmsLiveToggleAutoRefresh(chk ? chk.checked : true);
+    } else {
+        fmsLiveToggleAutoRefresh(false); // rời khỏi tab Live -> ngưng polling, tránh gọi ngầm không cần thiết
+        if (mode === 'manual') {
+            if (dataFMS && currentHubFMS) {
+                renderUIFMS(); // khôi phục đúng số liệu Manual trên khối aside dùng chung
+            } else {
+                // [FIX 2026-07-14] Chưa nạp file Manual (hoặc vừa xoá cache) —
+                // PHẢI reset khối aside dùng chung về rỗng, KHÔNG được giữ
+                // nguyên số liệu còn sót lại từ lần render Live trước đó.
+                // (trước đây điều kiện dataFMS && currentHubFMS = false thì bỏ
+                // qua hoàn toàn, khiến #categoryListFMS/#totalOrdersDisplayFMS
+                // vẫn hiển thị số của Live dù đang đứng ở tab Manual trống.)
+                renderEmptyCategoriesFMS();
+                const totalEl = document.getElementById('totalOrdersDisplayFMS');
+                if (totalEl) totalEl.innerText = '0';
+            }
+        }
+    }
+
+    if (mode === 'compare') fmsPopulateCompareHubSelect();
+}
+
+// ── OPERATION SELECTOR (LM / FM) ─────────────────────────────────────
+// [FIX 2026-07-15 v13 — ĐỔI HƯỚNG] Backend giờ dùng CHUNG 1 cấu trúc
+// 8-category cho cả LM và FM (xem _fmsLive_buildRawSnapshot_ + Backlog__3.xlsx
+// — "Detail orders" đã LÀ dữ liệu tồn đọng sẵn, action là trục phân loại
+// thật), KHÔNG còn `res.fmPickupOnHold` (nhánh riêng, khác cấu trúc) như
+// bản trước — nên KHÔNG cần 2 bộ hàm render riêng (fmsLiveRenderFmView vs
+// fmsLiveRenderBody) nữa, dùng CHUNG fmsLiveRenderAsideStats/fmsLiveRenderBody
+// cho cả LM/FM/ALL. Khác biệt duy nhất: "ALL" giờ là backend TỰ CỘNG
+// LM+FM (số thật), không còn là "chỉ LM" như trước — nên đổi Operation
+// PHẢI fetch lại từ backend (không tái dùng fmsLiveLastRes của op cũ được
+// nữa, vì mỗi op giờ ứng với 1 response khác nhau, không còn 1 response
+// chứa sẵn cả 2 nhánh như bản fmOnHold cũ).
+function switchOpFMS(op) {
+    if (FMS_SOURCE !== 'live' && op !== 'ALL') return;
+    if (FMS_OP === op && fmsLiveLastRes) return; // đã đúng op và đã có dữ liệu -> khỏi fetch lại
+
+    FMS_OP = op;
+    const btnIdMap = { ALL: 'fmsOpAll', LM: 'fmsOpLM', FM: 'fmsOpFM' };
+    Object.keys(btnIdMap).forEach(o => {
+        const btn = document.getElementById(btnIdMap[o]);
+        if (btn) { btn.classList.toggle('active', o === op); btn.setAttribute('aria-selected', o === op ? 'true' : 'false'); }
+    });
+    if (FMS_SOURCE === 'live') {
+        fmsLiveCurrentCat = null;
+        const bodyEl = document.getElementById('fmsLiveBody');
+        if (bodyEl) bodyEl.innerHTML = fmsLiveSkeletonHtml_();
+        fmsLiveFetchSnapshot(false); // luôn fetch lại — xem giải thích ở trên
+    }
+}
+
+// Dashboard Live — DÙNG CHUNG cho ALL/LM/FM (backend đã tự tính đúng số theo
+// op gửi lên trong request, xem fmsLiveFetchSnapshot). Không còn dispatch
+// riêng cho FM nữa (xem ghi chú switchOpFMS).
+function fmsLiveRenderForOp(res) {
+    try {
+        fmsLiveRenderAsideStats(res);
+        fmsLiveRenderBody(res);
+    } catch (e) {
+        // [FIX 2026-07-14 v2] Trước đây lỗi ở đây (vd hàm chưa tồn tại do đang
+        // chạy bản JS_FMS.html cũ chưa cập nhật) sẽ im lặng dừng giữa chừng —
+        // sidebar/body đứng nguyên nội dung cũ/placeholder tĩnh, trông như bị
+        // đứng hình mà không rõ vì sao (đúng triệu chứng trong ảnh Xuân gửi).
+        // Giờ báo lỗi rõ ràng ra toast + console để dễ chẩn đoán.
+        console.error('fmsLiveRenderForOp error:', e);
+        showToast(fmsT('Lỗi hiển thị Live') + ' (' + FMS_OP + '): ' + (e && e.message || e), 'error', 'fms');
+        // [FIX 2026-07-15 — theo ảnh Xuân gửi: màn trắng xóa] Toast tự biến
+        // mất sau vài giây — nếu sidebar đã render (zeros/số liệu) NHƯNG body
+        // lỗi giữa chừng, trước đây body vẫn đứng NGUYÊN TRẠNG THÁI TRƯỚC ĐÓ
+        // (có thể là skeleton/trống) MÃI MÃI vì không có gì thay nó — người
+        // dùng nhìn thấy trắng xóa, không rõ lỗi hay đứng máy vì toast đã
+        // biến mất từ lâu. Giờ luôn in rõ thông báo lỗi NGAY TRONG #fmsLiveBody,
+        // đứng yên tới khi user thử lại — không bao giờ để trắng xóa im lặng.
+        const bodyEl = document.getElementById('fmsLiveBody');
+        if (bodyEl) {
+            bodyEl.innerHTML = `<div class="text-center py-16 px-4">
+                <i class="fas fa-triangle-exclamation text-rose-400 dark:text-rose-300 text-3xl mb-3 block"></i>
+                <p class="text-rose-500 dark:text-rose-400 text-xs font-bold mb-1">Có lỗi khi hiển thị dữ liệu Live.</p>
+                <p class="text-slate-400 text-[11px] font-semibold mb-4">${((e && e.message) || e || '').toString().replace(/</g, '&lt;')}</p>
+                <button onclick="fmsLiveFetchSnapshot(true)" class="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-[11px] font-black uppercase transition-colors"><i class="fas fa-rotate mr-1.5"></i>Thử tải lại</button>
+            </div>`;
+        }
+    }
+}
+
+// ── LIVE ENGINE ───────────────────────────────────────────────────────
+let fmsLiveLoadingTicker = null;
+let fmsLiveLoadingStartTs = null;
+
+// [BỔ SUNG 2026-07-15 — theo yêu cầu Xuân: "user không phân biệt hệ thống có
+// đang làm gì hay không"] Sheet Live thật có thể mất VÀI PHÚT cho lần build
+// đầu tiên (không phải lỗi/đứng máy) — nhưng google.script.run KHÔNG có
+// callback báo tiến độ giữa chừng, nên không thể hiện % thật. Thay vào đó:
+// đếm số giây thực tế đã trôi qua ngay trên badge, kèm lời nhắn trung thực
+// tăng dần theo thời gian chờ — số giây tự chạy chính là bằng chứng hệ thống
+// CHƯA treo, thay vì để nguyên 1 dòng chữ tĩnh suốt nhiều phút như trước.
+function fmsLiveSetConnStatus(state, text) {
+    const el = document.getElementById('fmsLiveConnStatus');
+    if (!el) return;
+    el.classList.remove('ok', 'err');
+    if (state === 'ok') el.classList.add('ok');
+    else if (state === 'err') el.classList.add('err');
+    const icon = state === 'ok' ? 'fa-circle-check' : (state === 'err' ? 'fa-triangle-exclamation' : 'fa-circle-notch fa-spin');
+
+    if (state === 'loading') {
+        if (!fmsLiveLoadingStartTs) fmsLiveLoadingStartTs = Date.now();
+        if (!fmsLiveLoadingTicker) {
+            fmsLiveLoadingTicker = setInterval(() => {
+                const el2 = document.getElementById('fmsLiveConnStatus');
+                if (!el2) return;
+                const secs = Math.floor((Date.now() - fmsLiveLoadingStartTs) / 1000);
+                let msg = text;
+                if (secs >= 90) msg = `Dữ liệu lớn, đang xử lý (${secs}s) — có thể mất vài phút, không cần tải lại trang`;
+                else if (secs >= 15) msg = `${text} (${secs}s)`;
+                el2.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> ${msg}`;
+            }, 1000);
+        }
+    } else {
+        if (fmsLiveLoadingTicker) { clearInterval(fmsLiveLoadingTicker); fmsLiveLoadingTicker = null; }
+        fmsLiveLoadingStartTs = null;
+    }
+
+    el.innerHTML = `<i class="fas ${icon}"></i> ${text}`;
+}
+
+// [FIX 2026-07-14] Chuẩn hoá tên trạm phía client — bản rút gọn của
+// _normStationKey_() (backend1.gs), CHỈ dùng để so khớp allowlist ở đây,
+// không thay thế bản gốc server-side (server vẫn là nguồn chân lý cuối
+// cùng qua _fmsLive_allowedHubs_() — patch này chỉ để UI không hiển thị
+// nhầm lựa chọn mà user không có quyền).
+function _fmsLiveNormHubClient_(s) {
+    if (!s) return '';
+    return s.toString().toUpperCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/Đ/g, 'D')
+        .replace(/[^A-Z0-9]/g, '')
+        .replace(/(LMHUB|FMHUB|HUB|SOC|STATION|LM|FM)$/, '');
+}
+
+// ── Danh sách hub đầy đủ (sau khi lọc quyền) để custom picker dùng
+let _fmsLiveHubList_ = [];   // [{ value, label }]
+let _fmsLiveHubLocked_ = false; // true khi vai trò station (1 trạm, khoá)
+
+// Cache toàn bộ hub list từ snapshot mới nhất để fmsApplyAccessLive() có thể
+// re-filter khi SPX_ACCESS tới muộn hơn snapshot (giải quyết race-condition).
+let _fmsLiveLastHubListRaw_ = [];
+
+function fmsLivePopulateHubSelect(hubs) {
+    _fmsLiveLastHubListRaw_ = (hubs || []).slice(); // cache để re-filter khi access tới sau
+    _fmsLivePopulateHubSelectWith_(hubs, window.SPX_ACCESS || null);
+}
+
+// [FIX 2026-07-14 PHÂN QUYỀN] Tương đương fmsApplyAccessUI() bên Manual:
+// nếu SPX_ACCESS chưa sẵn khi snapshot về, index.html gọi hàm này sau khi
+// access đã có → re-filter dropdown, validate currentHub, không cần user thao tác gì thêm.
+function fmsApplyAccessLive(access) {
+    if (_fmsLiveLastHubListRaw_.length > 0) {
+        _fmsLivePopulateHubSelectWith_(_fmsLiveLastHubListRaw_, access);
+    }
+}
+
+function _fmsLivePopulateHubSelectWith_(hubs, access) {
+    const sel = document.getElementById('hubSelectFMSLive');
+    if (!sel) return;
+    const oldVal = fmsLiveCurrentHub || sel.value || 'ALL';
+
+    // ── PHÂN QUYỀN: lọc + khoá hub list theo access — GIỐNG HỆT
+    // initHubSelectorFMS() của Manual. Backend (_fmsLive_allowedHubs_)
+    // đã chặn đúng ở server, đây là lớp UI để không hiện tên hub ngoài quyền.
+    const isAdmin = !access || access.role === 'admin';
+    const isSingleStation = !!(access && access.role === 'station' && (access.hubs || []).length <= 1);
+
+    let list = (hubs || []).slice().sort();
+    if (access && !isAdmin && (access.hubs || []).length > 0) {
+        const allowedNorm = access.hubs.map(_fmsLiveNormHubClient_);
+        const before = list.length;
+        list = list.filter(h => allowedNorm.indexOf(_fmsLiveNormHubClient_(h)) !== -1);
+        if (before > list.length) {
+            console.warn('[FMS Live] Đã loại ' + (before - list.length) + ' hub ngoài phạm vi phân quyền khỏi dropdown Live.');
+        }
+    }
+
+    // Build items for custom picker
+    _fmsLiveHubList_ = [];
+    if (!isSingleStation) _fmsLiveHubList_.push({ value: 'ALL', label: fmsT('Tất cả Hub (được phép)') });
+    list.forEach(h => _fmsLiveHubList_.push({ value: h, label: h }));
+    _fmsLiveHubLocked_ = isSingleStation;
+
+    // Sync hidden <select>
+    let html = '';
+    if (!isSingleStation) html += '<option value="ALL">Tất cả Hub (được phép)</option>';
+    list.forEach(h => { html += `<option value="${h}">${h}</option>`; });
+    sel.innerHTML = html || '<option value="ALL">Tất cả Hub (được phép)</option>';
+
+    // [FIX 2026-07-14 PHÂN QUYỀN] Validate currentHub — giống Manual:
+    // nếu hub đang chọn không còn trong list (bị lọc mất do đổi quyền), reset về mục đầu.
+    let nextVal = oldVal;
+    if (isSingleStation) {
+        nextVal = (access && access.hubs && access.hubs[0]) || list[0] || 'ALL';
+    } else if (!_fmsLiveHubList_.some(x => x.value === nextVal)) {
+        nextVal = 'ALL'; // hub cũ bị lọc ra → reset, không giữ lại hub ngoài quyền
+        console.warn('[FMS Live] Hub "' + oldVal + '" không còn trong danh sách được phép — reset về ALL.');
+    }
+    sel.value = nextVal;
+    sel.disabled = isSingleStation;
+    fmsLiveCurrentHub = nextVal;
+
+    // Sync visible input label
+    fmsLiveHubPickerSetLabel(nextVal);
+}
+
+// ── CUSTOM SEARCHABLE HUB PICKER (Live) ──────────────────────────────
+function fmsLiveHubPickerSetLabel(val) {
+    const inp = document.getElementById('fmsLiveHubSearch');
+    if (!inp) return;
+    const item = _fmsLiveHubList_.find(x => x.value === val);
+    inp.value = item ? item.label : (val || '');
+    inp.disabled = _fmsLiveHubLocked_;
+    if (_fmsLiveHubLocked_) inp.style.cssText += ';cursor:not-allowed;opacity:0.75;';
+}
+
+function fmsLiveHubDropdown(show) {
+    const drop = document.getElementById('fmsLiveHubDropList');
+    if (!drop) return;
+    if (show) {
+        fmsLiveHubRenderList('');
+        drop.classList.remove('hidden');
+    } else {
+        // Delay để click item kịp fire trước khi ẩn
+        setTimeout(() => drop.classList.add('hidden'), 180);
+    }
+}
+
+function fmsLiveHubFilter() {
+    const inp = document.getElementById('fmsLiveHubSearch');
+    const q = inp ? inp.value.trim() : '';
+    fmsLiveHubRenderList(q);
+    const drop = document.getElementById('fmsLiveHubDropList');
+    if (drop) drop.classList.remove('hidden');
+}
+
+function fmsLiveHubRenderList(query) {
+    const drop = document.getElementById('fmsLiveHubDropList');
+    if (!drop) return;
+    const q = (query || '').toLowerCase().replace(/\s+/g, '');
+    const filtered = q
+        ? _fmsLiveHubList_.filter(x => x.label.toLowerCase().replace(/\s+/g, '').includes(q))
+        : _fmsLiveHubList_;
+
+    if (!filtered.length) {
+        drop.innerHTML = '<div class="px-4 py-3 text-[11px] text-slate-400 font-bold">Không tìm thấy hub nào.</div>';
+        return;
+    }
+    const currentVal = fmsLiveCurrentHub || 'ALL';
+    drop.innerHTML = filtered.map(item => {
+        const isActive = item.value === currentVal;
+        return `<div
+            class="px-4 py-2.5 text-xs font-bold cursor-pointer transition-colors ${isActive ?'bg-orange-50 dark:bg-orange-900/30 text-[#ee4d2d]' : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'}"
+            onmousedown="fmsLiveHubSelect('${_fmsEscJsAttr(item.value)}', '${_fmsEscJsAttr(item.label)}')"
+        >${item.label}</div>`;
+    }).join('');
+}
+
+function fmsLiveHubSelect(val, label) {
+    const sel = document.getElementById('hubSelectFMSLive');
+    if (sel) sel.value = val;
+    fmsLiveCurrentHub = val;
+    const inp = document.getElementById('fmsLiveHubSearch');
+    if (inp) inp.value = label;
+    const drop = document.getElementById('fmsLiveHubDropList');
+    if (drop) drop.classList.add('hidden');
+    fmsLiveFetchSnapshot(true);
+}
+
+// Đóng dropdown khi click ra ngoài
+document.addEventListener('click', function(e) {
+    const picker = document.getElementById('fmsLiveHubPicker');
+    if (picker && !picker.contains(e.target)) {
+        const drop = document.getElementById('fmsLiveHubDropList');
+        if (drop) drop.classList.add('hidden');
+        // Nếu user gõ dở mà không chọn → khôi phục label đúng
+        fmsLiveHubPickerSetLabel(fmsLiveCurrentHub || 'ALL');
+    }
+});
+
+function fmsLiveOnHubChange() {
+    const sel = document.getElementById('hubSelectFMSLive');
+    fmsLiveCurrentHub = sel ? sel.value : 'ALL';
+    fmsLiveFetchSnapshot(true);
+}
+
+// Skeleton loading (yêu cầu Xuân 2026-07-14: thay "Đang tải..." thô cứng)
+// Dùng animate-pulse + bg-slate-100/dark:bg-slate-800 — TOÀN literal string
+// tĩnh (không ghép biến động), an toàn với Tailwind build tĩnh (tránh đúng
+// lỗi "chữ trắng chìm" đã gặp ở health card trước đây).
+function fmsLiveSkeletonHtml_() {
+    return `
+    <div class="text-center text-slate-400 text-[11px] font-bold mb-3"><i class="fas fa-circle-notch fa-spin mr-1.5"></i>Đang tải dữ liệu Live — lần đầu có thể mất tới vài phút với dữ liệu lớn, vui lòng đợi...</div>
+    <div class="animate-pulse rounded-2xl h-28 bg-slate-100 dark:bg-slate-800/60 mb-4"></div>
+    <div class="animate-pulse rounded-2xl h-40 bg-slate-100 dark:bg-slate-800/60 mb-4"></div>
+    <div class="animate-pulse rounded-2xl h-32 bg-slate-100 dark:bg-slate-800/60 mb-4"></div>
+    <div class="animate-pulse rounded-2xl h-24 bg-slate-100 dark:bg-slate-800/60"></div>`;
+}
+
+function fmsLiveFetchSnapshot(manual, isRetry) {
+    if (FMS_SOURCE !== 'live') return;
+
+    // [FIX 2026-07-14] Nếu đã có 1 request đang bay và đây KHÔNG phải thao
+    // tác thủ công của user (tức là auto-refresh nền) → bỏ qua, không xếp
+    // chồng thêm request mới (nguyên nhân chính gây kẹt trạng thái/badge).
+    // Nếu là thao tác thủ công (bấm nút Làm mới / đổi Hub) → vẫn cho phép
+    // gọi, để user luôn thấy phản hồi ngay khi họ chủ động bấm.
+    if (fmsLiveFetchInFlight && !manual) return;
+    fmsLiveFetchInFlight = true;
+
+    const myToken = ++fmsLiveFetchToken;
+    const hadDataBefore = !!dataFMSLive;
+    const bodyEl = document.getElementById('fmsLiveBody');
+    // [FIX 2026-07-15 — theo ảnh Xuân gửi: màn trắng xóa khi load] TRƯỚC ĐÂY
+    // chỉ dựa vào biến `dataFMSLive` để quyết định có hiện skeleton hay
+    // không — nếu vì lý do gì đó #fmsLiveBody đang THỰC SỰ trống rỗng (VD
+    // lần render trước lỗi giữa chừng, hoặc đang ở trạng thái chuyển tiếp)
+    // trong khi `dataFMSLive` vẫn còn giá trị cũ, code cũ bỏ qua skeleton ->
+    // để nguyên khoảng trắng suốt lúc chờ, chỉ đổi badge "Đang làm mới..."
+    // mà không có gì hiện trên màn hình chính -> đúng triệu chứng "trắng
+    // xóa" trong ảnh. Giờ kiểm tra THẲNG nội dung DOM hiện tại — trống thì
+    // LUÔN hiện skeleton, bất kể dataFMSLive nói gì.
+    const bodyCurrentlyEmpty = !bodyEl || !bodyEl.innerHTML.trim();
+    if (!hadDataBefore || bodyCurrentlyEmpty) {
+        if (bodyEl) bodyEl.innerHTML = fmsLiveSkeletonHtml_();
+    }
+    fmsLiveSetConnStatus('loading', hadDataBefore ? fmsT('Đang làm mới...') : fmsT('Đang tải...'));
+
+    google.script.run
+        .withSuccessHandler(resStr => {
+            fmsLiveFetchInFlight = false;
+            // Response của 1 request CŨ hơn trả về sau 1 request MỚI hơn đã
+            // hoàn tất → bỏ qua, tránh đè dữ liệu mới bằng dữ liệu cũ.
+            if (myToken !== fmsLiveFetchToken) return;
+
+            let res; try { res = JSON.parse(resStr); } catch (e) { res = { success: false, error: fmsT('Phản hồi không hợp lệ.') }; }
+            if (!res || !res.success) {
+                // [FIX 2026-07-15 v11 — đổi kiến trúc] Trước đây "đang bận" nghĩa là
+                // có tiến trình KHÁC đang build (do request user tự kích hoạt), nên
+                // tự thử lại sau 6s là hợp lý. GIỜ chỉ có trigger nền (mỗi 5 phút)
+                // mới được build — "chưa sẵn sàng" nghĩa là phải đợi tới chu kỳ đó,
+                // tự thử lại sau 6s vô nghĩa (chưa thể xong). Hiện thông báo TRUNG
+                // THỰC + nút thử lại thủ công, KHÔNG tự động lặp lại để tránh đúng
+                // cảm giác "báo lỗi rồi tự động tải lại" gây khó hiểu Xuân từng gặp.
+                fmsLiveSetConnStatus('err', res && res.notReady ? fmsT('Chưa sẵn sàng') : fmsT('Lỗi tải dữ liệu'));
+                if (manual) showToast((res && res.error) || fmsT('Không tải được dữ liệu Live'), 'error', 'fms');
+                // [FIX 2026-07-15 — theo ảnh Xuân gửi: màn trắng xóa/kẹt loading]
+                // TRƯỚC ĐÂY lỗi thật (không phải "đang bận") chỉ đổi badge +
+                // toast (tự biến mất sau vài giây) — nếu body đang là skeleton
+                // (mới thêm ở trên) thì nó cứ pulse MÃI MÃI vì không có gì thay
+                // thế, trông y hệt đứng máy. Giờ luôn thay bằng thông báo lỗi +
+                // nút thử lại NGAY TRONG BODY nếu hiện chưa có dữ liệu gì để hiện.
+                if (!dataFMSLive) {
+                    const bodyEl2 = document.getElementById('fmsLiveBody');
+                    if (bodyEl2) {
+                        const isNotReady = res && res.notReady;
+                        bodyEl2.innerHTML = `<div class="text-center py-16 px-4">
+                            <i class="fas fa-${isNotReady ?'clock' : 'triangle-exclamation'} text-${isNotReady ? 'sky' : 'rose'}-400 text-3xl mb-3 block"></i>
+                            <p class="text-${isNotReady ?'sky' : 'rose'}-500 text-xs font-bold mb-1">${isNotReady ? fmsT('Dữ liệu Live chưa sẵn sàng') : fmsT('Không tải được dữ liệu Live')}</p>
+                            <p class="text-slate-400 text-[11px] font-semibold mb-4">${((res && res.error) || fmsT('Vui lòng thử lại.')).toString().replace(/</g, '&lt;')}</p>
+                            <button onclick="fmsLiveFetchSnapshot(true)" class="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-[11px] font-black uppercase transition-colors"><i class="fas fa-rotate mr-1.5"></i>Thử tải lại</button>
+                        </div>`;
+                    }
+                }
+                return;
+            }
+
+            // [FIX 2026-07-14 v3] Trước đây MỌI lần fetch (kể cả auto-refresh nền,
+            // vd timer fallback 10 phút) đều reset fmsLiveCurrentCat=null + vẽ lại
+            // dashboard — nếu user đang xem dở 1 bảng chi tiết (category/Explorer),
+            // màn hình bị "giật" về dashboard giữa chừng (đúng ảnh Xuân gửi). Giờ:
+            // nếu đây là refresh NỀN (không phải user chủ động bấm) VÀ user đang
+            // xem 1 bảng chi tiết -> chỉ cập nhật dữ liệu NGẦM, không vẽ lại gì,
+            // và báo bằng banner để user tự chọn lúc nào cập nhật.
+            const userInDetailView = fmsLiveCurrentCat !== null;
+            dataFMSLive = res;
+            fmsLiveLastRes = res;
+            fmsLivePopulateHubSelect(res.hubs);
+            fmsLiveSetConnStatus('ok', fmsT('Đã kết nối'));
+
+            if (!manual && userInDetailView) {
+                fmsLiveShowUpdateBanner();
+                return;
+            }
+
+            fmsLiveCurrentCat = null;
+            fmsLiveHideUpdateBanner();
+            fmsLiveRenderForOp(res);
+            if (manual) showToast(fmsT('Đã làm mới dữ liệu Live!'), 'success', 'fms');
+        })
+        .withFailureHandler(err => {
+            fmsLiveFetchInFlight = false;
+            if (myToken !== fmsLiveFetchToken) return;
+            fmsLiveSetConnStatus('err', fmsT('Mất kết nối'));
+            if (manual) showToast(fmsT('Lỗi kết nối Live') + ': ' + ((err && err.message) || err), 'error', 'fms');
+            // [FIX 2026-07-15] Xem giải thích ở nhánh lỗi app-level phía trên —
+            // không để skeleton pulse mãi mãi khi mất kết nối thật.
+            if (!dataFMSLive) {
+                const bodyEl3 = document.getElementById('fmsLiveBody');
+                if (bodyEl3) {
+                    bodyEl3.innerHTML = `<div class="text-center py-16 px-4">
+                        <i class="fas fa-plug-circle-xmark text-rose-400 dark:text-rose-300 text-3xl mb-3 block"></i>
+                        <p class="text-rose-500 dark:text-rose-400 text-xs font-bold mb-1">Mất kết nối tới máy chủ.</p>
+                        <p class="text-slate-400 text-[11px] font-semibold mb-4">${((err && err.message) || err || '').toString().replace(/</g, '&lt;')}</p>
+                        <button onclick="fmsLiveFetchSnapshot(true)" class="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-[11px] font-black uppercase transition-colors"><i class="fas fa-rotate mr-1.5"></i>Thử tải lại</button>
+                    </div>`;
+                }
+            }
+        })
+        .fms_live_getSnapshot(JSON.stringify({ hubName: fmsLiveCurrentHub || 'ALL', op: FMS_OP }));
+}
+
+function fmsLiveToggleAutoRefresh(enabled) {
+    if (fmsLiveAutoTimer) { clearInterval(fmsLiveAutoTimer); fmsLiveAutoTimer = null; }
+    if (fmsLiveMetaTimer) { clearInterval(fmsLiveMetaTimer); fmsLiveMetaTimer = null; }
+    if (enabled && FMS_SOURCE === 'live') {
+        fmsLiveAutoTimer = setInterval(() => fmsLiveFetchSnapshot(false), FMS_LIVE_AUTO_MS);
+        fmsLiveMetaTimer = setInterval(fmsLiveCheckForUpdates, FMS_LIVE_META_POLL_MS);
+    }
+}
+
+// Poll nhẹ: chỉ đọc timestamp, không kéo dữ liệu. Xem giải thích đầy đủ ở
+// khai báo FMS_LIVE_META_POLL_MS phía trên.
+function fmsLiveCheckForUpdates() {
+    if (FMS_SOURCE !== 'live' || !dataFMSLive) return;
+    google.script.run
+        .withSuccessHandler(resStr => {
+            let res; try { res = JSON.parse(resStr); } catch (e) { return; }
+            if (!res || !res.success || !res.lastSync) return;
+            if (res.lastSync === dataFMSLive.lastSync) return; // không đổi gì -> im lặng
+            if (fmsLiveCurrentCat === null) {
+                fmsLiveFetchSnapshot(false); // đang ở dashboard -> an toàn, tự làm mới luôn
+            } else {
+                fmsLiveShowUpdateBanner(); // đang xem bảng chi tiết -> để user tự quyết định
+            }
+        })
+        .withFailureHandler(() => {}) // poll nhẹ lỗi vặt -> im lặng, không làm phiền user
+        .fms_live_getSyncMeta();
+}
+
+// Banner "có dữ liệu mới" — tạo động (không cần sửa index.html), chỉ hiện khi
+// user đang xem dở 1 bảng chi tiết và backend đã có dữ liệu mới hơn.
+function fmsEnsureUpdateBanner_() {
+    if (document.getElementById('fmsLiveUpdateBanner')) return;
+    const bar = document.createElement('div');
+    bar.id = 'fmsLiveUpdateBanner';
+    bar.style.cssText = 'display:none;position:sticky;top:0;z-index:20;';
+    bar.className = 'bg-sky-500 text-white text-[11px] font-black uppercase tracking-wider px-4 py-2 flex items-center justify-between gap-3 shadow-md';
+    bar.innerHTML = `<span><i class="fas fa-circle-info mr-1.5"></i>Có dữ liệu Live mới hơn</span>
+        <div class="flex items-center gap-2">
+            <button onclick="fmsLiveApplyPendingUpdate()" class="bg-white text-sky-600 dark:text-sky-400 px-2.5 py-1 rounded-lg hover:bg-sky-50 transition-colors">Cập nhật ngay</button>
+            <button onclick="fmsLiveHideUpdateBanner()" class="text-white/80 hover:text-white"><i class="fas fa-times"></i></button>
+        </div>`;
+    const body = document.getElementById('fmsLiveBody');
+    if (body && body.parentElement) body.parentElement.insertBefore(bar, body);
+}
+function fmsLiveShowUpdateBanner() {
+    fmsEnsureUpdateBanner_();
+    const bar = document.getElementById('fmsLiveUpdateBanner');
+    if (bar) bar.style.display = 'flex';
+}
+function fmsLiveHideUpdateBanner() {
+    const bar = document.getElementById('fmsLiveUpdateBanner');
+    if (bar) bar.style.display = 'none';
+}
+// User chủ động bấm "Cập nhật ngay" trên banner -> giờ mới thực sự làm mới +
+// quay về dashboard (chấp nhận rời bảng chi tiết vì user TỰ CHỌN, không phải
+// bị auto-refresh ép rời như trước).
+function fmsLiveApplyPendingUpdate() {
+    fmsLiveHideUpdateBanner();
+    fmsLiveCurrentCat = null;
+    fmsLiveFetchSnapshot(false);
+}
+
+// ── [GỘP GIAO DIỆN 2026-07] Đổ dữ liệu Live vào ĐÚNG khung UI mà Manual
+// đang dùng (#totalOrdersDisplayFMS, #categoryListFMS) — tái dùng nguyên
+// style categoriesFMS, chỉ khác nguồn số (res.health.total / res.kpi thay
+// vì dataFMS.data[hub].stats). Không đụng renderUIFMS()/renderTableFMS()
+// của Manual — hàm này độc lập, chỉ gọi khi FMS_SOURCE === 'live'. ──
+//
+// [FIX 2026-07-14] ĐỒNG BỘ GIAO DIỆN: Click category Live giờ hiển thị
+// bảng TRỰC TIẾP trong main panel (fmsLiveBody) — GIỐNG hệt Manual —
+// thay vì mở popup/drawer riêng. Dữ liệu vẫn lấy từ Live backend
+// (fms_live_getExplorerPage), không đụng dataFMS của Manual.
+let fmsLiveCurrentCat = null; // null = đang xem dashboard; number = đang xem category
+let fmsLiveLastRes = null;    // cache response mới nhất để re-render sidebar
+// [BỔ SUNG 2026-07-14] State cho bộ lọc + page size của bảng inline Live —
+// tách riêng khỏi Manual (Manual lọc client-side qua .filter-input-fms).
+let fmsLiveTablePageSize = 25;
+let fmsLiveTableFilters = { zone: '', ward: '', account: '', reason: '', action: '', aging: '' };
+let fmsLiveFilterOptionsCache = null; // { key: 'hub|cat', data: {...} } — tránh gọi lại server mỗi lần đổi trang
+
+function fmsLiveRenderAsideStats(res) {
+    if (FMS_SOURCE !== 'live' || !res) return;
+    fmsLiveLastRes = res;
+    const totalEl = document.getElementById('totalOrdersDisplayFMS');
+    if (totalEl) totalEl.innerText = (res.health && res.health.total) || 0;
+
+    const listEl = document.getElementById('categoryListFMS');
+    if (!listEl) return;
+    const html = (res.kpi || []).map((k, i) => {
+        const cat = fmsLiveCatMeta(i);
+        const isActive = fmsLiveCurrentCat === i;
+        const activeContainer = isActive
+            ? 'bg-orange-50/80 dark:bg-orange-900/30 text-[#ee4d2d] dark:text-orange-400 shadow-sm ring-1 ring-orange-200 dark:ring-orange-800'
+            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50';
+        const iconColor = isActive ? 'text-[#ee4d2d] dark:text-orange-400' : 'text-slate-400 dark:text-slate-500';
+        const badgeClass = isActive ? 'bg-[#ee4d2d] dark:bg-orange-500 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300';
+        return `<div class="fms-live-cat-row flex justify-between items-center px-4 py-3 rounded-xl cursor-pointer transition-all ${activeContainer} font-bold text-xs uppercase tracking-wider mb-1"><div class="flex items-center gap-3"><i class="fas ${cat.i} ${iconColor} w-4 text-center text-sm"></i> ${cat.n}</div><span class="px-2 py-0.5 rounded-md ${badgeClass} text-[10px] shadow-sm">${k.count}</span></div>`;
+    }).join('');
+    listEl.innerHTML = html;
+    // Gắn onclick bằng closure thật (không nhét tên hub vào chuỗi HTML -> tránh lỗi
+    // ký tự đặc biệt/dấu tiếng Việt trong tên hub khi làm inline onclick attribute).
+    Array.from(listEl.children).forEach((el, i) => {
+        el.onclick = () => fmsLiveSwitchCategory(i, res);
+    });
+}
+
+// Chuyển category bên sidebar Live → hiện bảng inline trong fmsLiveBody
+// (giống switchCategoryFMS của Manual), KHÔNG mở popup/drawer nữa.
+function fmsLiveSwitchCategory(catIndex, res) {
+    fmsLiveCurrentCat = catIndex;
+    // Đổi category -> option lọc khác hẳn (Zone/Lý do của category này không
+    // liên quan category kia) -> reset bộ lọc, tránh lọc "kẹt" giá trị cũ
+    // không còn tồn tại trong category mới khiến bảng trống oan.
+    fmsLiveTableFilters = { zone: '', ward: '', account: '', reason: '', action: '', aging: '' };
+    fmsLiveFilterOptionsCache = null;
+    // Re-render sidebar để cập nhật highlight active
+    fmsLiveRenderAsideStats(res || fmsLiveLastRes);
+    // Render bảng inline vào fmsLiveBody
+    fmsLiveRenderInlineTable(catIndex, 1);
+}
+
+// Quay về dashboard Live (health/exception/action/timeline nếu LM/ALL,
+// hoặc view Pickup nếu đang ở FM) — dùng chung dispatcher fmsLiveRenderForOp
+// để không lặp logic rẽ nhánh LM/FM ở 2 nơi.
+function fmsLiveBackToDashboard() {
+    fmsLiveCurrentCat = null;
+    if (fmsLiveLastRes) fmsLiveRenderForOp(fmsLiveLastRes);
+}
+
+// Render bảng đơn Live trực tiếp vào fmsLiveBody (phân trang giống Explorer cũ)
+// [FIX 2026-07-15 — theo phản hồi Xuân: loading trông thô, user không biết
+// đang lag hay hệ thống chậm] Thay 2 dòng chữ tĩnh rời rạc ("Đang tải bộ
+// lọc...", "Đang tải...") — vốn nổi lẻ loi giữa khoảng trắng mênh mông, dễ
+// trông như đứng máy — bằng khung skeleton mô phỏng ĐÚNG hình hài sắp hiện
+// (dải ô lọc + bảng dữ liệu), cho cảm giác "đang có việc diễn ra" rõ ràng
+// thay vì 1 chữ "Đang tải..." trơ trọi.
+function fmsLiveFilterBarSkeletonHtml_() {
+    const widths = [92, 118, 104, 92, 108, 128, 84];
+    return widths.map(w =>
+        `<div class="animate-pulse bg-slate-100 dark:bg-slate-800 rounded-lg" style="height:30px;width:${w}px;"></div>`
+    ).join('');
+}
+
+function fmsLiveTableSkeletonHtml_(rowCount) {
+    const colWidths = [100, 70, 130, 80, 110, 60, 70];
+    const row = `<tr class="border-b border-slate-100 dark:border-slate-800">` +
+        colWidths.map(w => `<td class="px-4 py-3"><div class="animate-pulse bg-slate-100 dark:bg-slate-800 rounded" style="height:12px;width:${w}px;"></div></td>`).join('') +
+        `</tr>`;
+    return `<table class="w-full text-left border-collapse"><tbody>${row.repeat(rowCount || 8)}</tbody></table>`;
+}
+
+function fmsLiveRenderInlineTable(catIndex, page) {
+    const el = document.getElementById('fmsLiveBody');
+    if (!el) return;
+    const hub = fmsLiveCurrentHub || 'ALL';
+    const cat = fmsLiveCatMeta(catIndex);
+    const searchEl = document.getElementById('fmsLiveTableSearch');
+    const search = searchEl ? searchEl.value.trim() : '';
+
+    el.innerHTML = `
+    <div class="flex flex-col h-full">
+        <div class="flex items-center gap-3 px-4 pt-4 pb-2 shrink-0 flex-wrap">
+            <button onclick="fmsLiveBackToDashboard()" class="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-[#ee4d2d] transition-colors px-3 py-2 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/20 border border-transparent hover:border-orange-100">
+                <i class="fas fa-arrow-left"></i> Dashboard
+            </button>
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">/</span>
+            <span class="text-[11px] font-black uppercase tracking-wider ${cat.text}">${cat.n}</span>
+            <div class="ml-auto flex items-center gap-2">
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]"></i>
+                    <input type="text" id="fmsLiveTableSearch" placeholder="Tìm mã đơn / phường..." value="${search}"
+                        class="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-orange-500 rounded-lg pl-7 pr-3 py-2 text-[11px] font-bold outline-none w-52 transition-all"
+                        oninput="clearTimeout(window._fmsLiveSearchTimer); window._fmsLiveSearchTimer = setTimeout(() => fmsLiveRenderInlineTable(${catIndex}, 1), 350)">
+                </div>
+                <button onclick="fmsLiveRenderInlineTable(${catIndex}, 1)" class="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-orange-500 hover:text-white text-slate-500 dark:text-slate-300 text-[10px] font-black uppercase transition-colors"><i class="fas fa-rotate"></i></button>
+            </div>
+        </div>
+        <!-- [BỔ SUNG 2026-07-14] Hàng bộ lọc — giống Manual (Zone/Phường/Tài khoản/
+             Lý do/Hẹn-Aging/Ngày nhập kho), option lấy qua fms_live_getExplorerFilterOptions
+             (tính trên toàn category, không chỉ 1 trang, vì Live phân trang server-side). -->
+        <div id="fmsLiveFilterBar" class="flex items-center gap-2 px-4 pb-3 shrink-0 flex-wrap">
+            ${fmsLiveFilterBarSkeletonHtml_()}
+        </div>
+        <!-- [FIX 2026-07-26] min-height cũ là 60vh cố định — ép khung tối thiểu
+             60% màn hình dù chỉ có vài dòng dữ liệu, ĐÈ LÊN hiệu quả của
+             spxFitScrollContainer (hàm chỉ đổi flex, không đụng min-height).
+             Hạ xuống mức đủ tránh khung co dúm khi 1-2 dòng, còn lại để
+             spxFitScrollContainer tự co theo dữ liệu thật. -->
+        <div class="flex-1 overflow-auto" id="fmsLiveTableArea" style="min-height:180px;">
+            ${fmsLiveTableSkeletonHtml_(10)}
+        </div>
+        <!-- [FIX 2026-07-26] Trước đây chia grid-cols-3 và cố ý để trống cột phải
+             để né mascot chat nổi cố định — cách này lãng phí 1/3 chiều rộng và
+             vẫn không đảm bảo tránh đè ở màn hình hẹp. Nay đổi sang sticky
+             bottom-0 + prev/next CĂN GIỮA màn hình (info trang nằm absolute bên
+             trái) — cùng pattern đã dùng ổn định ở Pick Live (pickLivePagerInfo),
+             luôn cách xa mascot (góc phải) bất kể độ rộng khung. -->
+        <div class="sticky bottom-0 z-10 relative flex items-center justify-center gap-3 px-4 py-2 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0 text-[11px] font-bold text-slate-500 dark:text-slate-400" id="fmsLiveTablePager"></div>
+    </div>`;
+
+    fmsLiveLoadFilterOptions_(hub, catIndex);
+    fmsLiveFetchTablePage_(catIndex, page, hub, search);
+}
+
+// Lấy option lọc 1 lần/category (cache theo hub+category), tránh gọi lại
+// server mỗi lần đổi trang/search — chỉ gọi lại khi đổi hub hoặc category.
+function fmsLiveLoadFilterOptions_(hub, catIndex, isRetry) {
+    const cacheKey = hub + '|' + catIndex;
+    const bar = document.getElementById('fmsLiveFilterBar');
+    if (!bar) return;
+    if (fmsLiveFilterOptionsCache && fmsLiveFilterOptionsCache.key === cacheKey) {
+        fmsLiveRenderFilterBar_(fmsLiveFilterOptionsCache.data, catIndex);
+        return;
+    }
+    google.script.run
+        .withSuccessHandler(resStr => {
+            let res; try { res = JSON.parse(resStr); } catch (e) { res = { success: false }; }
+            if (!res || !res.success) {
+                // [FIX 2026-07-15 v11] Bộ lọc không quan trọng bằng bảng chính -> nếu
+                // "chưa sẵn sàng" (đợi trigger nền, có thể tới 5 phút) thì chỉ ẩn đi
+                // lặng lẽ, không cần thông báo to hay tự lặp lại vô ích mỗi 6s.
+                bar.innerHTML = '';
+                return;
+            }
+            fmsLiveFilterOptionsCache = { key: cacheKey, data: res };
+            // Bộ lọc có thể đã đổi trang/category trong lúc chờ phản hồi -> chỉ vẽ
+            // nếu vẫn đang đứng đúng category này.
+            if (fmsLiveCurrentCat === catIndex) fmsLiveRenderFilterBar_(res, catIndex);
+        })
+        .withFailureHandler(() => { bar.innerHTML = ''; })
+        .fms_live_getExplorerFilterOptions(JSON.stringify({ hubName: hub, category: catIndex, op: FMS_OP }));
+}
+
+function fmsLiveRenderFilterBar_(opts, catIndex) {
+    const bar = document.getElementById('fmsLiveFilterBar');
+    if (!bar) return;
+    const f = fmsLiveTableFilters;
+    const buildSelect = (id, label, values, current) => {
+        const options = ['<option value="">Tất cả ' + label + '</option>']
+            .concat((values || []).map(v => `<option value="${v}" ${v === current ? 'selected' : ''}>${v}</option>`));
+        return `<select id="${id}" onchange="fmsLiveApplyFilterChange_(${catIndex})" class="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-orange-500 rounded-lg px-2.5 py-1.5 text-[10px] font-bold outline-none max-w-[140px] truncate">${options.join('')}</select>`;
+    };
+    bar.innerHTML = buildSelect('fmsLiveFilterZone', 'Zone', opts.zone, f.zone)
+        + buildSelect('fmsLiveFilterWard', fmsT('Phường/Xã'), opts.ward, f.ward)
+        + buildSelect('fmsLiveFilterAccount', fmsT('Tài khoản'), opts.account, f.account)
+        + buildSelect('fmsLiveFilterReason', fmsT('Lý do'), opts.reason, f.reason)
+        + buildSelect('fmsLiveFilterAction', fmsT('Bước xử lý'), opts.action, f.action)
+        + buildSelect('fmsLiveFilterAging', fmsT('Tuổi tồn'), opts.aging, f.aging)
+        + `<button onclick="fmsLiveClearFilters_(${catIndex})" class="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-rose-500 hover:text-white text-slate-500 dark:text-slate-300 text-[10px] font-black uppercase transition-colors"><i class="fas fa-filter-circle-xmark mr-1"></i>Xóa lọc</button>`;
+}
+
+function fmsLiveApplyFilterChange_(catIndex) {
+    fmsLiveTableFilters = {
+        zone: (document.getElementById('fmsLiveFilterZone') || {}).value || '',
+        ward: (document.getElementById('fmsLiveFilterWard') || {}).value || '',
+        account: (document.getElementById('fmsLiveFilterAccount') || {}).value || '',
+        reason: (document.getElementById('fmsLiveFilterReason') || {}).value || '',
+        action: (document.getElementById('fmsLiveFilterAction') || {}).value || '',
+        aging: (document.getElementById('fmsLiveFilterAging') || {}).value || ''
+    };
+    fmsLiveFetchTablePage_(catIndex, 1, fmsLiveCurrentHub || 'ALL', (document.getElementById('fmsLiveTableSearch') || {}).value || '');
+}
+
+function fmsLiveClearFilters_(catIndex) {
+    fmsLiveTableFilters = { zone: '', ward: '', account: '', reason: '', action: '', aging: '' };
+    if (fmsLiveFilterOptionsCache) fmsLiveRenderFilterBar_(fmsLiveFilterOptionsCache.data, catIndex);
+    fmsLiveFetchTablePage_(catIndex, 1, fmsLiveCurrentHub || 'ALL', (document.getElementById('fmsLiveTableSearch') || {}).value || '');
+}
+
+function fmsLiveChangePageSize_(catIndex, value) {
+    fmsLiveTablePageSize = Number(value) || 25;
+    fmsLiveFetchTablePage_(catIndex, 1, fmsLiveCurrentHub || 'ALL', (document.getElementById('fmsLiveTableSearch') || {}).value || '');
+}
+
+function fmsLiveFetchTablePage_(catIndex, page, hub, search, isRetry) {
+    const cat = fmsLiveCatMeta(catIndex);
+    const tableArea = document.getElementById('fmsLiveTableArea');
+    const pager = document.getElementById('fmsLiveTablePager');
+    if (!tableArea || !pager) return;
+    if (!isRetry) tableArea.innerHTML = fmsLiveTableSkeletonHtml_(10);
+    const f = fmsLiveTableFilters;
+    google.script.run
+        .withSuccessHandler(resStr => {
+            let res; try { res = JSON.parse(resStr); } catch (e) { res = { success: false, error: fmsT('Phản hồi không hợp lệ.') }; }
+            if (!res || !res.success) {
+                // [FIX 2026-07-15 v11 — đổi kiến trúc] "Chưa sẵn sàng" giờ nghĩa là
+                // phải đợi chu kỳ trigger nền (tới 5 phút), KHÔNG phải chờ vài giây
+                // -> tự thử lại sau 6s vô nghĩa và gây hiểu lầm "tự động tải lại"
+                // như Xuân từng phản ánh. Hiện rõ lý do + nút thử lại THỦ CÔNG.
+                const isNotReady = res && res.notReady;
+                tableArea.innerHTML = `<div class="text-center py-16 px-4">
+                    <i class="fas fa-${isNotReady ?'clock' : 'triangle-exclamation'} text-${isNotReady ? 'sky' : 'rose'}-400 text-2xl mb-3 block"></i>
+                    <p class="text-${isNotReady ?'sky' : 'rose'}-500 text-xs font-bold mb-3">${((res && res.error) || fmsT('Lỗi tải dữ liệu')).toString().replace(/</g, '&lt;')}</p>
+                    <button onclick="fmsLiveFetchTablePage_('${catIndex}', ${page}, '${_fmsEscJsAttr(hub)}', '${_fmsEscJsAttr(search||'')}')" class="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-[11px] font-black uppercase transition-colors"><i class="fas fa-rotate mr-1.5"></i>Thử lại</button>
+                </div>`;
+                return;
+            }
+            if (!res.rows.length) {
+                tableArea.innerHTML = `<div class="text-center text-emerald-500 dark:text-emerald-400 text-xs font-bold py-20"><i class="fas fa-check-double text-2xl mb-2 block"></i>Không có đơn nào khớp.</div>`;
+                pager.innerHTML = '';
+                return;
+            }
+            // Render bảng giống hệt Manual (renderTableFMS)
+            const rowsHtml = res.rows.map(item => {
+                const r = item.row;
+                return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <td class="px-5 py-2"><div class="copy-id-cell bg-slate-50 dark:bg-slate-800 hover:bg-slate-800 hover:text-white dark:hover:bg-slate-600 px-3 py-1.5 rounded-md text-slate-700 dark:text-slate-200 font-black text-xs transition-all border border-slate-200 dark:border-slate-700 cursor-pointer relative" onclick="fmsDrawerCopyId('${r[0]}', this)"><i class="fas fa-copy text-slate-400 opacity-50 mr-1"></i>${r[0]}</div></td>
+                    <td class="px-4 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">${r[1] || 'N/A'}</td>
+                    <td class="px-4 py-2 text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate max-w-[150px]" title="${r[2] || ''}"><i class="fas fa-map-marker-alt text-slate-300 dark:text-slate-600 mr-1.5"></i>${r[2] || 'N/A'}</td>
+                    <td class="px-4 py-2 max-w-[190px]" title="${r[3] || ''}"><span class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-1 rounded text-[9px] font-black border border-slate-200 dark:border-slate-700 uppercase tracking-wider truncate block">${r[3] || 'N/A'}</span></td>
+                    <td class="px-4 py-2 text-[11px] text-slate-600 dark:text-slate-400 font-semibold max-w-[150px] truncate" title="${r[4] || ''}">${r[4] || 'N/A'}</td>
+                    <td class="px-5 py-2 text-center font-black text-[10px]"><span class="px-2 py-1 rounded-md ${cat.bg}">${r[5] || '—'}</span></td>
+                    <td class="px-4 py-2 text-center text-[10px] font-bold text-slate-500 dark:text-slate-400">${r[6] || '—'}</td>
+                </tr>`;
+            }).join('');
+            tableArea.innerHTML = `<table class="w-full text-left border-collapse">
+                <thead class="sticky top-0 bg-slate-50 dark:bg-slate-900 z-10">
+                    <tr class="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
+                        <th class="px-5 py-2.5">Mã đơn hàng</th>
+                        <th class="px-4 py-2.5">Zone ID</th>
+                        <th class="px-4 py-2.5">Khu vực / Phường</th>
+                        <th class="px-4 py-2.5">Tài khoản</th>
+                        <th class="px-4 py-2.5">Lý do Delay</th>
+                        <th class="px-5 py-2.5 text-center">Bước xử lý (Action)</th>
+                        <th class="px-4 py-2.5 text-center">Tuổi tồn</th>
+                    </tr>
+                </thead>
+                <tbody>${rowsHtml}</tbody>
+            </table>`;
+            // [FIX 2026-07-26] Cùng lý do như scrollContainerFMS — tránh khoảng
+            // trắng thừa dưới bảng khi trang cuối/ít dữ liệu hơn khung 60vh.
+            if (typeof spxFitScrollContainer === 'function') spxFitScrollContainer('fmsLiveTableArea');
+            const pageSizeSelect = `<select onchange="fmsLiveChangePageSize_(${catIndex}, this.value)" class="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-[10px] font-bold outline-none">
+                ${[25, 50, 75, 100].map(n => `<option value="${n}" ${n === fmsLiveTablePageSize ? 'selected' : ''}>${n}/trang</option>`).join('')}
+            </select>`;
+            pager.innerHTML = `
+                <div class="flex items-center gap-2 absolute left-4">
+                    <span>Trang ${res.page}/${res.totalPages} — ${res.totalRows} đơn</span>
+                    ${pageSizeSelect}
+                </div>
+                <div class="flex gap-1">
+                    <button onclick="fmsLiveFetchTablePage_(${catIndex}, ${Math.max(1, res.page - 1)}, '${_fmsEscJsAttr(hub)}', '${_fmsEscJsAttr(search)}')" ${res.page <= 1 ? 'disabled' : ''} class="px-3 py-1.5 rounded bg-slate-100 dark:bg-slate-800 disabled:opacity-30 hover:bg-orange-500 hover:text-white transition-colors"><i class="fas fa-chevron-left"></i></button>
+                    <button onclick="fmsLiveFetchTablePage_(${catIndex}, ${Math.min(res.totalPages, res.page + 1)}, '${_fmsEscJsAttr(hub)}', '${_fmsEscJsAttr(search)}')" ${res.page >= res.totalPages ? 'disabled' : ''} class="px-3 py-1.5 rounded bg-slate-100 dark:bg-slate-800 disabled:opacity-30 hover:bg-orange-500 hover:text-white transition-colors"><i class="fas fa-chevron-right"></i></button>
+                </div>`;
+        })
+        .withFailureHandler(err => {
+            tableArea.innerHTML = `<div class="text-center text-rose-500 dark:text-rose-400 text-xs font-bold py-20">Lỗi kết nối: ${(err && err.message) || err}</div>`;
+        })
+        .fms_live_getExplorerPage(JSON.stringify({
+            hubName: hub, category: catIndex, search, page, pageSize: fmsLiveTablePageSize, op: FMS_OP,
+            zone: f.zone, ward: f.ward, account: f.account, reason: f.reason, action: f.action, aging: f.aging
+        }));
+}
+
+function fmsLiveRenderBody(res) {
+    const el = document.getElementById('fmsLiveBody');
+    if (!el) return;
+    const lastSyncEl = document.getElementById('fmsLiveLastSync');
+    if (lastSyncEl) lastSyncEl.textContent = res.lastSyncIso ? (fmsT('Cập nhật') + ': ' + res.lastSyncIso.replace('T', ' ')) : '';
+
+    const healthState = res.health.state === 'good' ? 'good' : (res.health.state === 'warning' ? 'warning' : 'bad');
+    const healthCard = `
+    <div class="fms-health-card ${healthState} rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
+        <i class="fas fa-heart-pulse absolute -right-2 -bottom-2 text-white/20 text-6xl"></i>
+        <div class="relative z-10 flex items-center justify-between flex-wrap gap-4">
+            <div><p class="text-[10px] font-black text-white/80 uppercase tracking-widest mb-1">Live Health Score</p>
+            <p class="text-4xl font-black tracking-tighter">${res.health.score}<span class="text-lg">/100</span></p></div>
+            <div class="flex gap-4 text-right">
+                <div><p class="text-[9px] uppercase font-black text-white/70">Tổng tồn</p><p class="text-xl font-black">${res.health.total}</p></div>
+                <div><p class="text-[9px] uppercase font-black text-white/70">Quá 3 Ca</p><p class="text-xl font-black">${res.health.quaHan3Ca}</p></div>
+                <div><p class="text-[9px] uppercase font-black text-white/70">Tồn &gt;5N</p><p class="text-xl font-black">${res.health.ton5N}</p></div>
+            </div>
+        </div>
+    </div>`;
+
+    // [FIX 2026-07-14] ĐÃ BỎ khối kpiGrid (7 thẻ category) từng render ở đây —
+    // trùng lặp 100% với fmsLiveRenderAsideStats() vẽ CÙNG 7 category, CÙNG
+    // số liệu res.kpi, vào #categoryListFMS bên sidebar (khối aside dùng
+    // chung với Manual). Sidebar đã có sẵn click-to-drawer cho từng category
+    // nên bỏ ở đây không mất chức năng, chỉ bỏ phần hiển thị thừa.
+
+    const reasonBars = (res.exceptions.reasonTop || []).map(r => {
+        const max = Math.max(1, ...(res.exceptions.reasonTop.map(x => x.count)));
+        const pct = Math.round((r.count / max) * 100);
+        return `<div class="mb-2"><div class="flex justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-0.5"><span class="truncate max-w-[70%]">${r.reason || 'N/A'}</span><span>${r.count}</span></div>
+        <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="h-full bg-orange-400" style="width:${pct}%"></div></div></div>`;
+    }).join('') || `<p class="text-[11px] text-slate-400 font-semibold">Không có lý do delay nổi bật.</p>`;
+
+    const exceptionBlock = `
+    <div class="bg-white dark:bg-[#0b1121] rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm">
+        <div class="flex items-center justify-between mb-3"><h4 class="text-xs font-black uppercase tracking-wider text-slate-500">Exception Center</h4>
+        <button onclick="fmsOpenDrawer('${res.selectedHub}', 'ALL', fmsT('Toàn bộ Exception'))" class="text-[10px] font-black text-orange-500 dark:text-orange-400 hover:underline">Xem tất cả (${res.exceptions.totalCritical})</button></div>
+        ${reasonBars}
+    </div>`;
+
+    const actionBlock = `
+    <div class="bg-white dark:bg-[#0b1121] rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm">
+        <h4 class="text-xs font-black uppercase tracking-wider text-slate-500 mb-3">Action Center</h4>
+        ${(res.actionCenter || []).map(a => {
+            const sevClass = a.severity === 'critical' ? 'fms-sev-critical' : (a.severity === 'warning' ? 'fms-sev-warning' : 'fms-sev-ok');
+            const sevIcon = a.severity === 'critical' ? 'fa-circle-exclamation' : (a.severity === 'warning' ? 'fa-triangle-exclamation' : 'fa-circle-check');
+            return `<div class="flex items-start gap-2.5 p-2.5 rounded-xl ${sevClass} mb-2"><i class="fas ${sevIcon} fms-sev-icon mt-0.5"></i><span class="text-[11px] font-semibold">${a.message}</span></div>`;
+        }).join('')}
+    </div>`;
+
+    const maxTl = Math.max(1, ...(res.timeline || []).map(t => t.count), 1);
+    const timelineBlock = `
+    <div class="bg-white dark:bg-[#0b1121] rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm">
+        <h4 class="text-xs font-black uppercase tracking-wider text-slate-500 mb-3">Timeline (7 ngày gần nhất — theo Ngày Nhập Kho)</h4>
+        <div class="flex items-end gap-2 h-24">
+        ${(res.timeline || []).map(t => `<div class="flex-1 flex flex-col items-center gap-1"><div class="w-full bg-orange-400 dark:bg-orange-500 rounded-t-md" style="height:${Math.round((t.count / maxTl) * 100)}%"></div><span class="text-[9px] font-bold text-slate-400">${t.date.slice(5)}</span></div>`).join('') || '<p class="text-[11px] text-slate-400 font-semibold">Chưa đủ dữ liệu.</p>'}
+        </div>
+    </div>`;
+
+    el.innerHTML = healthCard + exceptionBlock + actionBlock + timelineBlock;
+}
+
+// ── EXPLORER + DRAWER ─────────────────────────────────────────────────
+let fmsDrawerState = { hub: '', category: 'ALL', page: 1, pageSize: 25, search: '', debounceTimer: null };
+
+function fmsEnsureDrawer_() {
+    if (document.getElementById('fmsLiveDrawer')) return;
+    const el = document.createElement('div');
+    el.id = 'fmsLiveDrawer';
+    el.style.cssText = 'position:fixed;inset:0;z-index:9999;display:none;';
+    el.innerHTML = `
+    <div class="absolute inset-0 bg-black/40" onclick="fmsCloseDrawer()"></div>
+    <div class="absolute inset-2 sm:inset-6 bg-white dark:bg-[#0b1121] shadow-2xl rounded-2xl flex flex-col overflow-hidden">
+        <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
+            <h3 class="text-sm font-black uppercase tracking-wider text-slate-700 dark:text-slate-200" id="fmsDrawerTitle">Shipment Explorer</h3>
+            <button onclick="fmsCloseDrawer()" class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-rose-500 hover:text-white text-slate-500 flex items-center justify-center transition-colors"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="p-3 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2 shrink-0">
+            <input type="text" id="fmsDrawerSearch" placeholder="Tìm mã đơn / phường..." class="flex-1 bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-xs font-bold outline-none border border-transparent focus:border-orange-500" oninput="fmsDrawerSearchDebounced()">
+        </div>
+        <div class="flex-1 overflow-auto" id="fmsDrawerBody"></div>
+        <div class="p-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 text-[11px] font-bold text-slate-500 dark:text-slate-400" id="fmsDrawerPager"></div>
+    </div>`;
+    document.body.appendChild(el);
+}
+
+function fmsOpenDrawer(hub, category, title) {
+    fmsEnsureDrawer_();
+    fmsDrawerState = { hub, category, page: 1, pageSize: 25, search: '', debounceTimer: null };
+    document.getElementById('fmsDrawerTitle').textContent = 'Explorer — ' + (title || hub);
+    document.getElementById('fmsDrawerSearch').value = '';
+    document.getElementById('fmsLiveDrawer').style.display = 'block';
+    fmsDrawerFetchPage(1);
+}
+
+function fmsCloseDrawer() {
+    const el = document.getElementById('fmsLiveDrawer');
+    if (el) el.style.display = 'none';
+}
+
+function fmsDrawerSearchDebounced() {
+    clearTimeout(fmsDrawerState.debounceTimer);
+    fmsDrawerState.debounceTimer = setTimeout(() => {
+        fmsDrawerState.search = document.getElementById('fmsDrawerSearch').value.trim();
+        fmsDrawerFetchPage(1);
+    }, 350);
+}
+
+function fmsDrawerFetchPage(page) {
+    const body = document.getElementById('fmsDrawerBody');
+    body.innerHTML = '<div class="text-center text-slate-400 text-xs font-bold py-16"><i class="fas fa-circle-notch fa-spin mr-2"></i>Đang tải...</div>';
+    google.script.run
+        .withSuccessHandler(resStr => {
+            let res; try { res = JSON.parse(resStr); } catch (e) { res = { success: false, error: fmsT('Phản hồi không hợp lệ.') }; }
+            if (!res || !res.success) { body.innerHTML = `<div class="text-center text-rose-500 dark:text-rose-400 text-xs font-bold py-16">${(res && res.error) || fmsT('Lỗi tải dữ liệu')}</div>`; return; }
+            fmsDrawerState.page = res.page;
+            fmsDrawerRenderRows(res);
+        })
+        .withFailureHandler(err => { body.innerHTML = `<div class="text-center text-rose-500 dark:text-rose-400 text-xs font-bold py-16">Lỗi kết nối: ${(err && err.message) || err}</div>`; })
+        .fms_live_getExplorerPage(JSON.stringify({ hubName: fmsDrawerState.hub, category: fmsDrawerState.category, search: fmsDrawerState.search, page, pageSize: fmsDrawerState.pageSize, op: FMS_OP }));
+}
+
+function fmsDrawerRenderRows(res) {
+    const body = document.getElementById('fmsDrawerBody');
+    const pager = document.getElementById('fmsDrawerPager');
+    if (!res.rows.length) { body.innerHTML = '<div class="text-center text-emerald-500 dark:text-emerald-400 text-xs font-bold py-16"><i class="fas fa-check-double text-2xl mb-2 block"></i>Không có đơn nào khớp.</div>'; pager.innerHTML = ''; return; }
+    // [FIX 2026-07-14] Đổi từ danh sách card (chỉ hiện mã đơn + 1 dòng mờ nhạt,
+    // phải bấm mới xổ chi tiết) sang BẢNG đầy đủ cột — giống hệt cấu trúc cột
+    // Manual đang dùng (renderTableFMS: Mã đơn/Zone ID/Khu vực/Phường/Tài khoản/
+    // Lý do Delay/Hẹn-Aging/Ngày nhập kho) — hiện thẳng ra, không cần bấm mới
+    // thấy, để vận hành tra cứu/kiểm tra đơn được ngay từ Explorer.
+    const rowsHtml = res.rows.map(item => {
+        const r = item.row; const cat = fmsLiveCatMeta(item.category);
+        return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-100 dark:border-slate-800">
+            <td class="px-4 py-2"><div class="copy-id-cell bg-slate-50 dark:bg-slate-800 hover:bg-slate-800 hover:text-white dark:hover:bg-slate-600 px-2.5 py-1 rounded-md text-slate-700 dark:text-slate-200 font-black text-[11px] transition-all border border-slate-200 dark:border-slate-700 cursor-pointer inline-block" onclick="fmsDrawerCopyId('${r[0]}', this)"><i class="fas fa-copy text-slate-400 opacity-50 mr-1"></i>${r[0]}</div></td>
+            <td class="px-3 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">${r[1] || 'N/A'}</td>
+            <td class="px-3 py-2 text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate max-w-[140px]" title="${r[2] || ''}"><i class="fas fa-map-marker-alt text-slate-300 dark:text-slate-600 mr-1"></i>${r[2] || 'N/A'}</td>
+            <td class="px-3 py-2"><span class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded text-[9px] font-black border border-slate-200 dark:border-slate-700 uppercase tracking-wider">${r[3] || 'N/A'}</span></td>
+            <td class="px-3 py-2 text-[11px] text-slate-600 dark:text-slate-400 font-semibold max-w-[180px] truncate" title="${r[4] || ''}">${r[4] || 'N/A'}</td>
+            <td class="px-3 py-2 text-center font-black text-[10px]"><span class="px-2 py-0.5 rounded-md ${cat.bg}">${r[5] || '—'}</span></td>
+            <td class="px-3 py-2 text-center text-[10px] font-bold text-slate-500 dark:text-slate-400">${r[6] || '—'}</td>
+            <td class="px-3 py-2 text-[9px] font-black uppercase text-right"><span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 ${cat.text}">${cat.n}</span></td>
+        </tr>`;
+    }).join('');
+    body.innerHTML = `<table class="w-full text-left border-collapse">
+        <thead class="sticky top-0 bg-slate-50 dark:bg-slate-900 z-10">
+            <tr class="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <th class="px-4 py-2">Mã đơn hàng</th><th class="px-3 py-2">Zone ID</th><th class="px-3 py-2">Khu vực/Phường</th>
+                <th class="px-3 py-2">Tài khoản</th><th class="px-3 py-2">Lý do Delay</th><th class="px-3 py-2 text-center">Bước xử lý</th>
+                <th class="px-3 py-2 text-center">Tuổi tồn</th><th class="px-3 py-2 text-right">Category</th>
+            </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+    </table>`;
+    pager.innerHTML = `<span>Trang ${res.page}/${res.totalPages} — ${res.totalRows} đơn</span>
+        <div class="flex gap-1">
+            <button onclick="fmsDrawerFetchPage(${Math.max(1, res.page - 1)})" ${res.page <= 1 ? 'disabled' : ''} class="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 disabled:opacity-30"><i class="fas fa-chevron-left"></i></button>
+            <button onclick="fmsDrawerFetchPage(${Math.min(res.totalPages, res.page + 1)})" ${res.page >= res.totalPages ? 'disabled' : ''} class="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 disabled:opacity-30"><i class="fas fa-chevron-right"></i></button>
+        </div>`;
+}
+
+function fmsDrawerCopyId(id, cellEl) {
+    // [FIX LỖI THẬT — phát hiện qua báo cáo trực tiếp "search trên hệ thống
+    // SPX phải xoá tay '✅ Đã copy!' "] TRƯỚC ĐÂY thay THẲNG nội dung ô bằng
+    // "✅ Đã copy!" trong 1.2s — nếu user chọn/copy HÀNG LOẠT nhiều dòng
+    // (Ctrl+C hoặc kéo chọn) đúng lúc đó, chữ xác nhận này bị dính lẫn vào
+    // nội dung copy thật, lộn xộn khi dán sang hệ thống SPX. Đổi sang dùng
+    // toast dùng chung (showToast — cùng cơ chế nút "Copy tất cả" bên dưới
+    // đã dùng) — KHÔNG đụng vào nội dung thật của ô, tránh đúng lỗi này.
+    navigator.clipboard.writeText(id).then(() => {
+        if (typeof showToast === 'function') showToast(fmsT('✅ Đã copy: ') + id, 'success', 'fms');
+    });
+}
+
+// ── COMPARE ENGINE ────────────────────────────────────────────────────
+// Chỉ dùng dataFMS (Manual, đã có sẵn trong bộ nhớ) + Live cache phía
+// backend (fms_live_getHubDetailFull đọc từ cache 90s, KHÔNG đọc lại Sheet).
+function fmsPopulateCompareHubSelect() {
+    const sel = document.getElementById('hubSelectFMSCompare');
+    if (!sel) return;
+    const oldVal = sel.value;
+    let html = '<option value="" data-i18n-ui="-- Chọn Hub để so sánh --">-- Chọn Hub để so sánh --</option>';
+    if (dataFMS && dataFMS.hubs) {
+        dataFMS.hubs.slice().sort().forEach(h => { html += `<option value="${h}">${h}</option>`; });
+    }
+    sel.innerHTML = html;
+    if (Array.from(sel.options).some(o => o.value === oldVal)) sel.value = oldVal;
+    else if (!dataFMS || !dataFMS.hubs || !dataFMS.hubs.length) {
+        document.getElementById('fmsCompareBody').innerHTML = '<div class="text-center text-slate-400 text-xs font-bold py-20">Chưa có dữ liệu Manual (CSV). Vui lòng nạp file FMS ở tab Manual trước khi so sánh.</div>';
+    }
+}
+
+function fmsCompareRun() {
+    const sel = document.getElementById('hubSelectFMSCompare');
+    const hub = sel ? sel.value : '';
+    const body = document.getElementById('fmsCompareBody');
+    if (!hub) { showToast(fmsT('Vui lòng chọn Hub để so sánh.'), 'error', 'fms'); return; }
+    const manualHubData = (dataFMS && dataFMS.data) ? dataFMS.data[hub] : null;
+    if (!manualHubData) { body.innerHTML = '<div class="text-center text-rose-500 dark:text-rose-400 text-xs font-bold py-16">Không có dữ liệu Manual (CSV) cho hub này.</div>'; return; }
+
+    body.innerHTML = '<div class="text-center text-slate-400 text-xs font-bold py-16"><i class="fas fa-circle-notch fa-spin mr-2"></i>Đang tải dữ liệu Live để so sánh...</div>';
+    google.script.run
+        .withSuccessHandler(resStr => {
+            let res; try { res = JSON.parse(resStr); } catch (e) { res = { success: false, error: fmsT('Phản hồi không hợp lệ.') }; }
+            if (!res || !res.success) { body.innerHTML = `<div class="text-center text-rose-500 dark:text-rose-400 text-xs font-bold py-16">${(res && res.error) || fmsT('Lỗi tải Live')}</div>`; return; }
+            fmsCompareRender(manualHubData, res, hub);
+        })
+        .withFailureHandler(err => { body.innerHTML = `<div class="text-center text-rose-500 dark:text-rose-400 text-xs font-bold py-16">Lỗi kết nối: ${(err && err.message) || err}</div>`; })
+        .fms_live_getHubDetailFull(JSON.stringify({ hubName: hub }));
+}
+
+function fmsCompareRender(manualHubData, liveRes, hub) {
+    const body = document.getElementById('fmsCompareBody');
+    // [FIX 2026-07-15 v13] fms_live_getHubDetailFull() giờ trả CẢ 2 nhánh
+    // {LM, FM} (cùng cấu trúc thống nhất — xem backend). Manual (CSV) chưa
+    // từng phân biệt LM/FM, nên so sánh Manual vs Live CHỈ có ý nghĩa với
+    // nhánh LM (tương đương phạm vi Manual đang phủ) — nhánh FM của Live
+    // hiện chưa có gì bên Manual để đối chiếu.
+    const liveStage = liveRes.LM || { stats: [0,0,0,0,0,0,0,0,0], details: [[],[],[],[],[],[],[],[]] };
+
+    function flatten(details) {
+        const map = {};
+        details.forEach((catArr, catIdx) => catArr.forEach(r => { if (r[0]) map[r[0]] = { category: catIdx, row: r }; }));
+        return map;
+    }
+    const manualMap = flatten(manualHubData.details);
+    const liveMap = flatten(liveStage.details);
+    const manualIds = Object.keys(manualMap);
+    const liveIds = Object.keys(liveMap);
+
+    const missingInLive = manualIds.filter(id => !liveMap[id]);       // đã xử lý xong / rời backlog kể từ lúc chụp Manual
+    const missingInManual = liveIds.filter(id => !manualMap[id]);     // phát sinh mới sau thời điểm chụp Manual
+    const statusDiff = manualIds.filter(id => liveMap[id] && liveMap[id].category !== manualMap[id].category);
+
+    const totalManual = manualHubData.stats[7] || 0;
+    const totalLive = liveStage.stats[7] || 0;
+    const backlogDelta = totalLive - totalManual;
+
+    const onHoldRows = fmsLiveCategoryLabelsAll().map((label, i) => {
+        const m = manualHubData.stats[i] || 0, l = liveStage.stats[i] || 0, d = l - m;
+        return `<tr class="border-b border-slate-100 dark:border-slate-800"><td class="py-2 px-3 font-bold text-slate-600 dark:text-slate-300">${label}</td>
+        <td class="py-2 px-3 text-center font-black">${m}</td><td class="py-2 px-3 text-center font-black">${l}</td>
+        <td class="py-2 px-3 text-center font-black ${d > 0 ?'text-rose-500' : (d < 0 ? 'text-emerald-500' : 'text-slate-400')}">${d > 0 ? '+' : ''}${d}</td></tr>`;
+    }).join('');
+
+    function idListBlock(title, ids, colorClass) {
+        if (!ids.length) return `<div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-[11px] font-bold text-slate-400">${title}: không có chênh lệch.</div>`;
+        const preview = ids.slice(0, 100);
+        return `<div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+            <div class="flex items-center justify-between mb-2"><span class="text-[11px] font-black uppercase ${colorClass}">${title} (${ids.length})</span>
+            <button onclick="navigator.clipboard.writeText('${_fmsEscJsAttr(preview.join(' '))}');showToast('${fmsT('Đã copy')} '+${preview.length}+' ${fmsT('mã!')}','success','fms')" class="text-[9px] font-black uppercase bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded hover:bg-orange-500 hover:text-white transition-colors"><i class="fas fa-copy"></i> Copy</button></div>
+            <div class="text-[11px] font-mono text-slate-600 dark:text-slate-300 max-h-28 overflow-y-auto leading-relaxed">${preview.map(_fmsEsc).join('<br>')}${ids.length > 100 ? `<br><i>...và ${ids.length - 100} mã khác</i>` : ''}</div>
+        </div>`;
+    }
+
+    body.innerHTML = `
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700"><p class="text-[9px] font-black uppercase text-slate-400 mb-1">Backlog Difference</p><p class="text-2xl font-black ${backlogDelta > 0 ?'text-rose-500' : (backlogDelta < 0 ? 'text-emerald-500' : 'text-slate-600')}">${backlogDelta > 0 ? '+' : ''}${backlogDelta}</p><p class="text-[10px] text-slate-400 font-semibold">Manual: ${totalManual} → Live: ${totalLive}</p></div>
+        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700"><p class="text-[9px] font-black uppercase text-slate-400 mb-1">Status Difference</p><p class="text-2xl font-black text-amber-500 dark:text-amber-400">${statusDiff.length}</p><p class="text-[10px] text-slate-400 font-semibold">đơn đổi category so với Manual</p></div>
+        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700"><p class="text-[9px] font-black uppercase text-slate-400 mb-1">Trend Difference</p><p class="text-2xl font-black ${backlogDelta > 0 ?'text-rose-500' : 'text-emerald-500'}">${totalManual > 0 ? (Math.round((backlogDelta / totalManual) * 1000) / 10) : 0}%</p><p class="text-[10px] text-slate-400 font-semibold">so với thời điểm chụp Manual</p></div>
+    </div>
+    <div class="mb-4 bg-white dark:bg-[#0b1121] rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden">
+        <table class="w-full text-[11px]"><thead><tr class="bg-slate-50 dark:bg-slate-800/60 text-slate-400 uppercase text-[9px] font-black"><td class="py-2 px-3">OnHold Category</td><td class="py-2 px-3 text-center">Manual</td><td class="py-2 px-3 text-center">Live</td><td class="py-2 px-3 text-center">Δ</td></tr></thead>
+        <tbody>${onHoldRows}</tbody></table>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        ${idListBlock(fmsT('Missing Shipments — rời khỏi Live'), missingInLive, 'text-emerald-600')}
+        ${idListBlock(fmsT('Missing Shipments — mới phát sinh trên Live'), missingInManual, 'text-amber-600')}
+    </div>
+    ${statusDiff.length ? `<div class="mt-3">${idListBlock(fmsT('Status Difference — đổi category'), statusDiff, 'text-rose-600')}</div>` : ''}
+    <p class="mt-4 text-[10px] text-slate-400 font-semibold text-center">So sánh chỉ áp dụng cho nhánh LM (Manual/CSV chưa có dữ liệu FM để đối chiếu) — Live snapshot lúc: ${liveRes.lastSync ? new Date(liveRes.lastSync).toLocaleString('vi-VN') : '—'}</p>`;
+}
+
+function fmsLiveCategoryLabelsAll() { return categoriesFMS.map(c => c.n); }
+</script>

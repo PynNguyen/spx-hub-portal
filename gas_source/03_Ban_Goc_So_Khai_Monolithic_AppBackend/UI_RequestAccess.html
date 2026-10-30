@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+    .floating { animation: float 3s ease-in-out infinite; }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6">
+  <div class="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl p-10 text-center border border-slate-100 relative overflow-hidden">
+    <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#ee4d2d] to-orange-400"></div>
+    
+    <div class="w-20 h-20 bg-orange-50 text-[#ee4d2d] rounded-3xl flex items-center justify-center text-4xl mx-auto mb-6 floating">
+      <i class="fas fa-lock"></i>
+    </div>
+    
+    <h2 class="text-2xl font-black text-slate-800 mb-2 uppercase tracking-tight">Quyền truy cập bị hạn chế</h2>
+    <p class="text-slate-500 text-sm font-medium mb-8 leading-relaxed">
+      Chào <span class="text-[#ee4d2d] font-bold"><?= userEmail ?></span>,<br> 
+      Hệ thống ghi nhận bạn chưa có quyền truy cập vào các công cụ điều phối của Hub.
+    </p>
+
+    <button onclick="requestAccess()" id="reqBtn" class="w-full bg-[#ee4d2d] hover:bg-[#d73d22] text-white font-black py-4 rounded-2xl shadow-lg shadow-orange-500/30 transition-all active:scale-95 flex items-center justify-center gap-2">
+      <i class="fas fa-paper-plane"></i> GỬI YÊU CẦU TRUY CẬP
+    </button>
+    
+    <div id="statusMsg" class="mt-6 text-sm font-bold hidden animate-pulse"></div>
+
+    <p class="mt-10 text-[10px] font-black text-slate-400 uppercase tracking-widest border-t pt-6">
+      SPX Express • Internal Security • Contact xuan.nguyenthanh01@spxexpress.com 
+    </p>
+  </div>
+
+  <script>
+    function requestAccess() {
+      const btn = document.getElementById('reqBtn');
+      const msg = document.getElementById('statusMsg');
+      
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> ĐANG GỬI...';
+      
+      google.script.run
+        .withSuccessHandler(res => {
+          btn.classList.add('hidden');
+          msg.classList.remove('hidden');
+          msg.className = "mt-6 text-sm font-bold text-emerald-600";
+          msg.innerHTML = '<i class="fas fa-check-circle"></i> ' + res;
+        })
+        .submitAccessRequest();
+    }
+  </script>
+</body>
+</html>

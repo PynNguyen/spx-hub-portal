@@ -547,7 +547,7 @@ function kfnEnsureRecords() {
   google.script.run.withFailureHandler(function (e) { R.loading = false; R.err = kfnT('recErr', (e && e.message) || e); kpifailRenderAll(); })
     .withSuccessHandler(function (str) {
       if (R.hub !== hub) return;
-      var res; try { res = typeof str === 'string' ? JSON.parse(str) : str; } catch (e) { res = str; }
+      var res; try { res = JSON.parse(str); } catch (e) { res = null; }
       R.loading = false;
       if (!res || !res.success) { R.err = kfnT('recErr', (res && res.error) || '—'); kpifailRenderAll(); return; }
       R.list = (res.records || []).filter(function (r) { return r.category === 'FM' || r.category === 'LM' || r.category === 'SOP'; });
@@ -592,7 +592,7 @@ function kfnLoadDay() {
   google.script.run.withFailureHandler(function (e) { if (seq !== D.seq) return; D.loading = false; D.err = (e && e.message) || String(e); kfnRenderDay(); })
     .withSuccessHandler(function (str) {
       if (seq !== D.seq) return;
-      var res; try { res = typeof str === 'string' ? JSON.parse(str) : str; } catch (e) { res = str; }
+      var res; try { res = JSON.parse(str); } catch (e) { res = null; }
       D.loading = false;
       if (!res || !res.success) { D.err = (res && res.error) || '—'; D.data = null; } else { D.data = res; D.page = res.page; }
       kfnRenderDay();
@@ -633,7 +633,7 @@ function kfnDayCsv() {
   };
   if (D.local) { save(KFN.rec.list.filter(function (r) { return r.date === D.date && (D.cat === 'ALL' || r.category === D.cat); })); return; }
   google.script.run.withFailureHandler(function (e) { kfnToast(kfnT('dErr', (e && e.message) || e), 'error'); })
-    .withSuccessHandler(function (str) { var res; try { res = typeof str === 'string' ? JSON.parse(str) : str; } catch (e) { res = str; } if (res && res.success) save(res.rows); else kfnToast(kfnT('dErr', (res && res.error) || kfnT('unk')), 'error'); })
+    .withSuccessHandler(function (str) { var res; try { res = JSON.parse(str); } catch (e) { res = null; } if (res && res.success) save(res.rows); else kfnToast(kfnT('dErr', (res && res.error) || kfnT('unk')), 'error'); })
     .flm_getFailOrdersByDay(JSON.stringify({ date: D.date, category: D.cat, hubs: kfnDayScopeHubs(), search: D.q, all: true }));
 }
 
@@ -662,7 +662,7 @@ function kfnSaveNote(force, retry) {
   var reset = function () { if (btn) { btn.disabled = false; btn.textContent = kfnT('dSave'); } };
   google.script.run.withFailureHandler(function (e) { reset(); kfnToast(kfnT('dErr', (e && e.message) || e), 'error'); })
     .withSuccessHandler(function (str) {
-      var res; try { res = typeof str === 'string' ? JSON.parse(str) : str; } catch (e) { res = str; } reset();
+      var res; try { res = JSON.parse(str); } catch (e) { res = null; } reset();
       if (res && res.conflict) {
         var msg = id + ' — ' + res.currentUser + ' · ' + res.currentTime + '\n\n"' + res.currentNote + '"\n\n' + kfnT('cfAsk');
         if (typeof spxConfirm === 'function') spxConfirm({ title: kfnT('cfTitle'), message: msg, okText: kfnT('cfOk'), danger: true, onOk: function () { kfnSaveNote(true, 0); } });
@@ -722,7 +722,7 @@ function kpifailLoadData(force, prefetch) {
     else kfnToast(kfnT('refreshFail'), 'error');
   }).withSuccessHandler(function (str) {
     KPIFAIL_STATE.loading = false;
-    var res; try { res = typeof str === 'string' ? JSON.parse(str) : str; } catch (e) { res = str; }
+    var res; try { res = JSON.parse(str); } catch (e) { res = null; }
     var body = document.getElementById('kfn-body');
     if (!res || !res.success) {
       var msg = (res && res.error) || '—', det = (res && res.detail) ? '<br><small>' + kfnT('detail') + ': ' + kfnEsc(res.detail) + '</small>' : '';
