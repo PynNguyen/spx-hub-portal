@@ -437,7 +437,7 @@ class WorkspaceDatabase {
       this.isDirty = true;
     }
 
-    if (!this.data.rescueOrders || this.data.rescueOrders.length === 0 || this.data.rescueOrders[0].tracking_no.startsWith('SPX7788')) {
+    if (!this.data.rescueOrders || this.data.rescueOrders.length === 0 || (this.data.rescueOrders[0].tracking_no && this.data.rescueOrders[0].tracking_no.startsWith('SPX7788'))) {
       this.data.rescueOrders = [
         {
           tracking_no: 'SPXVN06317039536A',
