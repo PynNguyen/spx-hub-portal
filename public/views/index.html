@@ -17131,20 +17131,20 @@ function toggleAlertDrawerSize() {
   window._spxModulePromises = window._spxModulePromises || {};
 
   function _spxExecuteScripts(container) {
-    var scripts = container.querySelectorAll('script');
-    scripts.forEach(function (oldScript) {
-      try {
-        var newScript = document.createElement('script');
-        for (var i = 0; i < oldScript.attributes.length; i++) {
-          var attr = oldScript.attributes[i];
-          newScript.setAttribute(attr.name, attr.value);
+      if (!container) return;
+      var scripts = container.querySelectorAll('script');
+      scripts.forEach(function(s) {
+        var type = (s.getAttribute('type') || '').toLowerCase();
+        if (type && type !== 'text/javascript' && type !== 'application/javascript') return;
+        var ns = document.createElement('script');
+        Array.from(s.attributes).forEach(function(attr) { ns.setAttribute(attr.name, attr.value); });
+        ns.textContent = s.textContent;
+        try {
+          s.parentNode.replaceChild(ns, s);
+        } catch (err) {
+          console.warn('[Script safe catch]:', err.message);
         }
-        newScript.async = false;
-        newScript.textContent = oldScript.textContent;
-        oldScript.parentNode.replaceChild(newScript, oldScript);
-      } catch (err) {
-        console.error('[SPX Lazy Loader] Script execution error:', err);
-      }
+      });
     });
   }
 
