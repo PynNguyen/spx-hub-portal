@@ -6,13 +6,8 @@ const gas = require('./services/gas_runtime');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// BẢO VỆ TIẾN TRÌNH: Ngăn chặn triệt để mọi lỗi unhandled làm sập server (gây lỗi 502)
-process.on('uncaughtException', (err) => {
-  console.error('[UNCAUGHT EXCEPTION SAFEGUARD]', err.message);
-});
-process.on('unhandledRejection', (reason) => {
-  console.error('[UNHANDLED REJECTION SAFEGUARD]', reason);
-});
+process.on('uncaughtException', (err) => console.error('[UNCAUGHT]', err.message));
+process.on('unhandledRejection', (reason) => console.error('[UNHANDLED]', reason));
 
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 app.use(express.json({ limit: '50mb' }));
@@ -42,39 +37,26 @@ function findViewFile(viewName) {
     const files = fs.readdirSync(viewsDir);
     const match = files.find(f => f.toLowerCase() === targetFile.toLowerCase());
     if (match) return path.join(viewsDir, match);
-    const matchRaw = files.find(f => f.toLowerCase() === (clean + '.html').toLowerCase());
-    if (matchRaw) return path.join(viewsDir, matchRaw);
   } catch (e) {}
-
   return null;
 }
 
-// Render template an toàn có bộ nhớ đệm và chống đệ quy lặp vô tận
-const templateCache = new Map();
-
-function renderTemplate(viewName, visited = new Set()) {
-  const cleanKey = String(viewName || 'index').trim().toLowerCase();
-  if (visited.has(cleanKey)) {
-    return '<!-- Circular include avoided -->';
-  }
-  visited.add(cleanKey);
-
+function renderTemplate(viewName) {
   const filePath = findViewFile(viewName);
   if (!filePath || !fs.existsSync(filePath)) {
-    return `<div style="color:#ee4d2d;padding:20px;font-weight:bold">Module: ${viewName}</div>`;
+    return `<div style="color:red;padding:20px;font-weight:bold">Module: ${viewName}</div>`;
   }
-
   let content = fs.readFileSync(filePath, 'utf8');
 
-  // Đệ quy thay thế include an toàn
+  // Đệ quy include
   content = content.replace(/<\?!=\s*include\(['"]([^'"]+)['"]\);?\s*\?>/g, (match, p1) => {
-    return renderTemplate(p1, new Set(visited));
+    return renderTemplate(p1);
   });
   content = content.replace(/<\?=\s*include\(['"]([^'"]+)['"]\);?\s*\?>/g, (match, p1) => {
-    return renderTemplate(p1, new Set(visited));
+    return renderTemplate(p1);
   });
   content = content.replace(/<\?\s*include\(['"]([^'"]+)['"]\);?\s*\?>/g, (match, p1) => {
-    return renderTemplate(p1, new Set(visited));
+    return renderTemplate(p1);
   });
 
   content = content.replace(/<\?!=[^>]*\?>/g, 'null');
@@ -84,15 +66,9 @@ function renderTemplate(viewName, visited = new Set()) {
   return content;
 }
 
-app.get('/login', (req, res) => {
-  res.send(renderTemplate('login'));
-});
+app.get('/login', (req, res) => res.send(renderTemplate('login')));
+app.get('/', (req, res) => res.send(renderTemplate('index')));
 
-app.get('/', (req, res) => {
-  res.send(renderTemplate('index'));
-});
-
-// RPC getModuleHtml - phục vụ tức thì mọi module con
 app.all('/api/rpc/getModuleHtml', (req, res) => {
   try {
     let moduleName = 'JS_TrangChu';
@@ -102,22 +78,12 @@ app.all('/api/rpc/getModuleHtml', (req, res) => {
     moduleName = String(moduleName || 'JS_TrangChu').trim();
     return res.json(renderTemplate(moduleName));
   } catch (err) {
-    return res.json(`<div style="padding:20px;color:red">Lỗi tải module: ${err.message}</div>`);
+    return res.json('');
   }
 });
 
-// Các RPC mặc định của SPX để không bao giờ bị 502/500
-app.all('/api/rpc/spx_getHeartbeat', (req, res) => {
-  return res.json({ status: 'OK', time: Date.now(), hub: '45-DLK Mdrak Hub' });
-});
-
-app.all('/api/rpc/spx_getWebAppUrl', (req, res) => {
-  return res.json('https://spx-hub-portal.onrender.com');
-});
-
-app.all('/api/rpc/pick_getSummaryFm', (req, res) => {
-  return res.json({ pickup: 16, inbound: 8, packed: 8, seal: 0, mp: 0, social: 0, reverse: 0, cb: 0, wh: 0 });
-});
+app.all('/api/rpc/spx_getHeartbeat', (req, res) => res.json({ status: 'OK' }));
+app.all('/api/rpc/spx_getWebAppUrl', (req, res) => res.json('https://spx-hub-portal.onrender.com'));
 
 app.all('/api/rpc/:fn', (req, res) => {
   const fn = req.params.fn;
@@ -130,12 +96,8 @@ app.all('/api/rpc/:fn', (req, res) => {
     const result = gas.call(fn, args);
     return res.json(result);
   } catch (err) {
-    console.warn(`[Safe RPC Handled] ${fn}:`, err.message);
-    // Luôn trả về 200 kèm error để frontend không bao giờ bị 502
     return res.json({ success: false, error: err.message });
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Standalone Portal running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`🚀 Standalone Portal running on port ${PORT}`));

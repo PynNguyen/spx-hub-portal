@@ -4,87 +4,44 @@
 
 <head>
 <script>
-(function() {
-  window.google = window.google || {};
-  window.google.script = window.google.script || {};
-
-  function makeRunner(successHandler, failureHandler, userObj) {
+window.google = window.google || {};
+window.google.script = window.google.script || {};
+window.google.script.run = (function() {
+  function makeProxy(sh, fh, uo) {
     return new Proxy({}, {
       get: function(target, prop) {
-        if (prop === 'withSuccessHandler') {
-          return function(sh) { return makeRunner(sh, failureHandler, userObj); };
-        }
-        if (prop === 'withFailureHandler') {
-          return function(fh) { return makeRunner(successHandler, fh, userObj); };
-        }
-        if (prop === 'withUserObject') {
-          return function(uo) { return makeRunner(successHandler, failureHandler, uo); };
-        }
-
-        // Tự động chuyển tiếp hàm gọi sang Node.js RPC
+        if (prop === 'withSuccessHandler') return function(s) { return makeProxy(s, fh, uo); };
+        if (prop === 'withFailureHandler') return function(f) { return makeProxy(sh, f, uo); };
+        if (prop === 'withUserObject') return function(u) { return makeProxy(sh, fh, u); };
         return function(...args) {
-          const fn = prop;
-          fetch('/api/rpc/' + encodeURIComponent(fn), {
+          fetch('/api/rpc/' + encodeURIComponent(prop), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(args)
           })
           .then(async function(res) {
-            if (!res.ok) {
-              const err = await res.text();
-              throw new Error('HTTP ' + res.status + ': ' + err);
-            }
+            if (!res.ok) throw new Error('HTTP ' + res.status);
             return res.json();
           })
           .then(function(data) {
-            if (typeof successHandler === 'function') {
-              successHandler(data, userObj);
-            }
+            if (typeof sh === 'function') sh(data, uo);
           })
           .catch(function(err) {
-            console.error('[RPC Fail]', fn, err);
-            if (typeof failureHandler === 'function') {
-              failureHandler(err, userObj);
-            }
+            if (typeof fh === 'function') fh(err, uo);
           });
         };
       }
     });
   }
-
-  window.google.script.run = makeRunner();
+  return makeProxy();
 })();
 </script>
-<script>
-  window.RUNTIME_CACHE = window.RUNTIME_CACHE || {};
-  window.SPX_ACCESS = window.SPX_ACCESS || {
-    role: 'ADMIN',
-    roleLevel: 99,
-    email: 'admin@spxexpress.com',
-    allowedStations: ['ALL'],
-    isSuperAdmin: true,
-    isAdmin: true
-  };
-  window.CURRENT_STATION = '45-DLK Mdrak Hub';
-  window.IS_PREVIEW = false;
-  window.IS_DEMO = false;
-  window.IS_GAS = true;
-  window.IS_PRODUCTION = true;
-  window.GAS_HOST = true;
-  try {
-    localStorage.setItem('spx_current_hub', '45-DLK Mdrak Hub');
-    localStorage.setItem('spx_selected_hub', '45-DLK Mdrak Hub');
-    localStorage.setItem('spx_active_station', '45-DLK Mdrak Hub');
-  } catch(e) {}
-</script>
-
-
 
 <base target="_top">
 
 <!-- [ZERO-LATENCY BOOTSTRAP] Nhận trực tiếp dữ liệu phân quyền & trạng thái từ máy chủ -->
 <script>
-  window.__SERVER_BOOTSTRAP__ = {"userEmail":"admin@spxexpress.com","hub":"45-DLK Mdrak Hub","moduleAccess":{"role":"admin","level":"L4","hubs":["ALL"],"allowedModules":["ALL"]},"hubOrgDir":{}};
+  window.__SERVER_BOOTSTRAP__ = {"userEmail":"xuan.nguyenthanh01@spxexpress.com","hub":"45-DLK Mdrak Hub","moduleAccess":{"role":"admin","level":"L4","hubs":["ALL"],"allowedModules":["ALL"]},"hubOrgDir":{}};
   window.__SERVER_MOD_STATUS__ = {"kpiFail":"OK","pick":"OK","fms":"OK","aging":"OK"};
   if (window.__SERVER_MOD_STATUS__) {
     window.SPX_MODULE_STATUS = window.__SERVER_MOD_STATUS__;
@@ -582,7 +539,7 @@
      chưa đưa vào lần build này: Analytics_Block, JS_Tracuu, JS_TaiLieu,
      JS_Rider_plan, JS_KPIFail, JS_Luong), phải build lại TailwindBuild.html
      bằng script đính kèm, nếu không style của class mới sẽ không hiện. -->
-<?!= include("TailwindBuild") ?>
+<?!= include('TailwindBuild'); ?>
 
 <!-- [FIX 2026-07-24] Lưới an toàn cho các class Tailwind bị DÙNG trong HTML nhưng
      CHƯA có trong TailwindBuild.html (do quên build lại sau khi thêm class mới —
@@ -4585,7 +4542,7 @@ function spxRenderRealOverview(body, opts){
 
   if (!(typeof google !== 'undefined' && google.script && google.script.run)) {
     body.innerHTML = header_(spxUiLabel('Tổng quan'), spxUiLabel('XEM NGOÀI'), 'SPX HUB / ' + spxUiLabel('Tổng quan')) +
-      noteBox('raw', spxUiLabel(''));
+      noteBox('raw', spxUiLabel('Đang mở ngoài Apps Script thật (preview/demo) — không thể gọi dữ liệu thật ở đây. Deploy thật để xem đầy đủ.'));
     return;
   }
 
@@ -6036,7 +5993,7 @@ var I18N_UI = {
   'ĐANG TẢI...': 'LOADING...',
   'Đang tải dữ liệu thật...': 'Loading real data...',
   'XEM NGOÀI': 'EXTERNAL VIEW',
-  '': 'Opened outside the real Apps Script environment (preview/demo) — real data cannot be loaded here. Deploy for real to see full data.',
+  'Đang mở ngoài Apps Script thật (preview/demo) — không thể gọi dữ liệu thật ở đây. Deploy thật để xem đầy đủ.': 'Opened outside the real Apps Script environment (preview/demo) — real data cannot be loaded here. Deploy for real to see full data.',
   'Lỗi phân tích dữ liệu trả về': 'Error parsing returned data',
   'LỖI': 'ERROR',
   'Không tải được': 'Failed to load',
@@ -8531,11 +8488,11 @@ function spxGetOrgEntityList(field){
 <div id="view-quahan" class="hidden module-view absolute inset-0 w-full h-full flex flex-row bg-[#f4f7fb] dark:bg-[#0b1121]"></div>
 
 <div id="view-tondong" class="hidden module-view absolute inset-0 w-full h-full flex flex-col bg-[#f1f5f9] dark:bg-[#0b1121] overflow-hidden">
-  <?!= include("JS_FMS") ?>
+  <?!= include('JS_FMS'); ?>
 </div>
 
 <div id="view-pick" class="hidden module-view absolute inset-0 w-full h-full flex flex-col bg-[#f1f5f9] dark:bg-[#0b1121] z-10 overflow-hidden">
-  <?!= include("JS_Pick") ?>
+  <?!= include('JS_Pick'); ?>
 </div>
 
 <div id="view-luong" class="hidden module-view absolute inset-0 w-full h-full flex flex-col bg-[#f1f5f9] dark:bg-[#0b1121] z-10 overflow-hidden"></div>
@@ -12556,10 +12513,10 @@ function taoWatermarkBaoMat(email, roleLabel) {
       ctx.fillText(email + ' | ' + roleLabel, 0, 0);
     }
 
-    // Dòng 3: 
+    // Dòng 3: SPX CONFIDENTIAL
     ctx.font = "bold 10px 'Plus Jakarta Sans', sans-serif";
     ctx.fillStyle = "rgba(148, 163, 184, 0.09)";
-    ctx.fillText("", 0, roleLabel ? 18 : 10);
+    ctx.fillText("SPX CONFIDENTIAL", 0, roleLabel ? 18 : 10);
 
     // 7. Lớp phủ toàn màn hình
     // Xóa watermark cũ nếu đã có (khi gọi lại để update role)
@@ -12688,7 +12645,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }).spx_getBootstrap();
     } else {
         // KHI CHẠY OFFLINE TRÊN MÁY TÍNH: Tự động cấp trạm giả lập để sếp test click module
-        taoWatermarkBaoMat("admin@spxexpress.com"); 
+        taoWatermarkBaoMat("demo.spx@gmail.com"); 
         window.MANAGED_STATIONS = ["45-DLK Krong Pak 02 Hub"]; // Gán trạm giả lập để mở khóa nút bấm
         
         const analyticsCard = document.getElementById('analytics-function-block');
@@ -17564,171 +17521,11 @@ function toggleAlertDrawerSize() {
 <script>
   window.addEventListener('load', function() {
     setTimeout(function() {
-      // Tìm và bấm vào menu Tổng quan nếu đang bị kẹt ở Pick
-      var navOverview = document.querySelector('[data-module="JS_TrangChu"], [onclick*="JS_TrangChu"], [onclick*="trangchu"], a[href*="tongquan"]');
-      if (navOverview) {
-        navOverview.click();
-      } else if (typeof navTo === 'function') {
-        navTo('JS_TrangChu');
-      } else if (typeof switchModule === 'function') {
-        switchModule('JS_TrangChu');
+      if (typeof spxJumpToNav === 'function') {
+        spxJumpToNav('overview');
       }
-    }, 300);
+    }, 200);
   });
-</script>
-
-
-<script>
-(function() {
-  console.log('[Router] Khởi động bộ chuyển đổi Module chuyên dụng SPX...');
-
-  // 1. Tạo vùng chứa động cho các module nếu chưa có
-  var mainContentArea = document.querySelector('main, #main-content, .main-content, #app, .content-wrapper') || document.body;
-  
-  // Tạo container riêng cho từng module
-  var dynamicContainer = document.getElementById('spx-dynamic-module-container');
-  if (!dynamicContainer) {
-    dynamicContainer = document.createElement('div');
-    dynamicContainer = document.createElement('div');
-    dynamicContainer.id = 'spx-dynamic-module-container';
-    dynamicContainer.style.width = '100%';
-    dynamicContainer.style.minHeight = '600px';
-    dynamicContainer.style.display = 'none';
-    if (mainContentArea) {
-      mainContentArea.appendChild(dynamicContainer);
-    }
-  }
-
-  // 2. Tìm khối giao diện Pick tĩnh đang nằm đè màn hình
-  function getPickStaticElement() {
-    var allDivs = document.querySelectorAll('div, section');
-    for (var i = 0; i < allDivs.length; i++) {
-      var d = allDivs[i];
-      if (d.innerHTML && d.innerHTML.indexOf('NẠP FILE TASK') !== -1 && d.innerHTML.indexOf('NẠP FILE ASSIGN') !== -1) {
-        // Tìm thẻ cha bao trùm bảng Pick
-        var parent = d;
-        while (parent && parent.parentElement && parent.parentElement !== document.body && parent.parentElement.tagName !== 'MAIN') {
-          if (parent.classList.contains('sidebar') || parent.id === 'sidebar') break;
-          parent = parent.parentElement;
-        }
-        return parent;
-      }
-    }
-    return null;
-  }
-
-  var pickWrapper = getPickStaticElement();
-  if (pickWrapper) {
-    pickWrapper.id = 'spx-pick-static-view';
-    console.log('[Router] Đã định danh thành công vùng chứa module Pick:', pickWrapper);
-  }
-
-  // 3. Hàm kích hoạt chuyển Module chính thức
-  window.spxSwitchTab = function(moduleName) {
-    console.log('🔄 Đang chuyển sang module:', moduleName);
-    var pickView = document.getElementById('spx-pick-static-view') || getPickStaticElement();
-    var dynContainer = document.getElementById('spx-dynamic-module-container');
-
-    // Cập nhật trạng thái active trên sidebar
-    document.querySelectorAll('.sidebar a, .sidebar li, [data-module]').forEach(function(el) {
-      el.classList.remove('active', 'bg-blue-600', 'bg-orange-600');
-    });
-
-    if (moduleName === 'JS_Pick' || moduleName === 'pick') {
-      // Hiện Pick, ẩn container động
-      if (pickView) pickView.style.display = 'block';
-      if (dynContainer) dynContainer.style.display = 'none';
-      return;
-    }
-
-    // Với TẤT CẢ các module khác: BẮT BUỘC ẨN PICK
-    if (pickView) {
-      pickView.style.display = 'none';
-    }
-
-    if (dynContainer) {
-      dynContainer.style.display = 'block';
-      dynContainer.innerHTML = '<div style="padding: 60px; text-align: center; color: #94a3b8; font-size: 16px;"><i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #ee4d2d; margin-bottom: 16px;"></i><br>Đang nạp dữ liệu module ' + moduleName + '...</div>';
-
-      // Gọi server lấy nội dung module
-      fetch('/api/rpc/getModuleHtml', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify([moduleName])
-      })
-      .then(function(res) { return res.json(); })
-      .then(function(html) {
-        dynContainer.innerHTML = html;
-        console.log('✅ Đã nạp xong giao diện module:', moduleName);
-
-        // Kích hoạt các script nội bộ bên trong module vừa nạp
-        var scripts = dynContainer.querySelectorAll('script');
-        scripts.forEach(function(s) {
-          try {
-            var newScript = document.createElement('script');
-            if (s.src) {
-              newScript.src = s.src;
-            } else {
-              newScript.textContent = s.textContent;
-            }
-            document.body.appendChild(newScript);
-          } catch(e) {
-            console.error('Lỗi thực thi script module:', e);
-          }
-        });
-      })
-      .catch(function(err) {
-        dynContainer.innerHTML = '<div style="color: red; padding: 20px;">Lỗi kết nối module: ' + err.message + '</div>';
-      });
-    }
-  };
-
-  // 4. Gắn sự kiện click cho toàn bộ các mục trên Sidebar
-  function bindSidebarEvents() {
-    var mapping = [
-      { text: 'Tổng quan', mod: 'JS_TrangChu' },
-      { text: 'Đơn không đạt KPI', mod: 'JS_KPIFail' },
-      { text: 'Kiểm soát giao hàng', mod: 'JS_Quahan' },
-      { text: 'Quản lý Pick', mod: 'JS_Pick' },
-      { text: 'Tồn đọng LastMile', mod: 'JS_FMS' },
-      { text: 'Đơn cần cứu cứu', mod: 'JS_Rescue' },
-      { text: 'Phòng ngừa thất lạc', mod: 'JS_Rescue' },
-      { text: 'Kế hoạch Rider', mod: 'JS_RiderPlan' },
-      { text: 'Hiệu suất Rider', mod: 'JS_RiderPlan' },
-      { text: 'Vi phạm', mod: 'JS_ViPham' },
-      { text: 'Hiệu quả chi phí', mod: 'JS_Luong' },
-      { text: 'Báo cáo (BI)', mod: 'JS_BI' },
-      { text: 'Tra cứu', mod: 'JS_TraCuu' },
-      { text: 'Tài liệu', mod: 'JS_TaiLieu' }
-    ];
-
-    document.querySelectorAll('a, li, button, div').forEach(function(el) {
-      if (el.children.length > 2) return; // Bỏ qua thẻ cha lớn
-      var txt = (el.innerText || '').trim();
-      mapping.forEach(function(item) {
-        if (txt === item.text || (txt.indexOf(item.text) !== -1 && txt.length < item.text.length + 5)) {
-          el.style.cursor = 'pointer';
-          el.onclick = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            window.spxSwitchTab(item.mod);
-          };
-        }
-      });
-    });
-  }
-
-  // Khởi chạy khi tài nguyên sẵn sàng
-  window.addEventListener('DOMContentLoaded', bindSidebarEvents);
-  setTimeout(bindSidebarEvents, 500);
-  setTimeout(bindSidebarEvents, 1500);
-
-  // Mặc định ban đầu: Chuyển về Tổng quan nếu URL không chỉ định
-  setTimeout(function() {
-    window.spxSwitchTab('JS_TrangChu');
-  }, 300);
-
-})();
 </script>
 
 </body>
