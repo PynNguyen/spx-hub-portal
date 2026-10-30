@@ -32,8 +32,8 @@
 
 <!-- [ZERO-LATENCY BOOTSTRAP] Nhận trực tiếp dữ liệu phân quyền & trạng thái từ máy chủ -->
 <script>
-  window.__SERVER_BOOTSTRAP__ = <?!= (typeof BOOTSTRAP_JSON !== 'undefined' && BOOTSTRAP_JSON) ? BOOTSTRAP_JSON : 'null' ?>;
-  window.__SERVER_MOD_STATUS__ = <?!= (typeof MOD_STATUS_JSON !== 'undefined' && MOD_STATUS_JSON) ? MOD_STATUS_JSON : 'null' ?>;
+  window.__SERVER_BOOTSTRAP__ = {"userEmail":"admin@spxexpress.com","hub":"45-DLK Mdrak Hub","moduleAccess":{"role":"admin","level":"L4","hubs":["ALL"],"allowedModules":["ALL"]},"hubOrgDir":{}};
+  window.__SERVER_MOD_STATUS__ = {"kpiFail":"OK","pick":"OK","fms":"OK","aging":"OK"};
   if (window.__SERVER_MOD_STATUS__) {
     window.SPX_MODULE_STATUS = window.__SERVER_MOD_STATUS__;
     window._spxModStatusReady = true;
@@ -530,7 +530,7 @@
      chưa đưa vào lần build này: Analytics_Block, JS_Tracuu, JS_TaiLieu,
      JS_Rider_plan, JS_KPIFail, JS_Luong), phải build lại TailwindBuild.html
      bằng script đính kèm, nếu không style của class mới sẽ không hiện. -->
-<?!= include('TailwindBuild'); ?>
+<?!= include("TailwindBuild") ?>
 
 <!-- [FIX 2026-07-24] Lưới an toàn cho các class Tailwind bị DÙNG trong HTML nhưng
      CHƯA có trong TailwindBuild.html (do quên build lại sau khi thêm class mới —
@@ -4307,14 +4307,7 @@ th{color:#7a8597;font-weight:650;background:var(--spxnew--spxnew--panel-soft);po
          không cần thiết). GIỜ: chỉ còn NHÃN hiển thị tên trạm (không phải ô
          chọn), nút "Chuyển trạm" MỞ POPUP riêng — chọn + xác nhận trong popup
          mới thực sự đổi, đúng luồng BI cũ. -->
-    <span id="spxHeaderHubLabel" class="spx-hub-label" data-i18n-ui="Chưa chọn Hub" data-i18n-dynamic="1"><?!= (function(){
-  var boot = (typeof BOOTSTRAP_DATA !== 'undefined') ? BOOTSTRAP_DATA : null;
-  var hub = '';
-  if (boot && boot.moduleAccess && boot.moduleAccess.hubs && boot.moduleAccess.hubs.length === 1) {
-    hub = boot.moduleAccess.hubs[0];
-  }
-  return hub || 'Chưa chọn Hub';
-})() ?></span>
+    <span id="spxHeaderHubLabel" class="spx-hub-label" data-i18n-ui="Chưa chọn Hub" data-i18n-dynamic="1">45-DLK Mdrak Hub</span>
 <script>
   // Fast hydration cho Hub từ localStorage ngay lúc parse HTML (trước khi sơn khung hình)
   (function(){
@@ -4338,88 +4331,8 @@ th{color:#7a8597;font-weight:650;background:var(--spxnew--spxnew--panel-soft);po
        cùng nguyên tắc đã áp dụng cho mọi nút admin-only khác trong app). Đổi
        level ở đây tác động NGAY module đang mở qua spxSetPreviewLevel()
        (cùng kiến trúc dispatch theo currentActiveModule như đổi Hub). -->
-  <div id="spxHeaderPreviewLevelWrap" class="spx-header-preview-level <?= (typeof BOOTSTRAP_DATA !== 'undefined' && BOOTSTRAP_DATA && BOOTSTRAP_DATA.moduleAccess && BOOTSTRAP_DATA.moduleAccess.role === 'admin') ? '' : 'hidden' ?>" title="Xem thử giao diện theo từng cấp — dữ liệu vẫn là dữ liệu thật của Admin">
-    <i class="fas fa-eye text-amber-500"></i>
-    <span class="spx-header-preview-level-label" data-i18n-ui="Xem thử:">Xem thử:</span>
-    <select id="spxHeaderPreviewLevelSelect" class="spx-header-preview-level-select" onchange="spxSetPreviewLevel(this.value)">
-      <option value="admin">👑 Admin (Toàn hệ thống)</option>
-      <option value="rom">🌐 L1 · ROM (Toàn vùng)</option>
-      <option value="aom">🏢 L2 · AOM (Khu vực)</option>
-      <option value="sup">🛡️ L3 · SUP (Nhóm Hub)</option>
-      <option value="lead">📍 L4 · Lead (Trưởng Hub)</option>
-      <option value="staff">🚴 L5 · Staff (Nhân viên)</option>
-    </select>
-    <div id="spxHeaderPreviewLevelBtns" style="display:none"></div>
-  </div>
-  <!-- [MỚI — theo yêu cầu "cần có lựa chọn ROM/AOM/SUP/Lead/Staff CỤ THỂ,
-       giống kiểu chọn trạm hiện tại"] Dropdown chọn ĐÚNG 1 AOM/SUP thật để mô
-       phỏng chính xác góc nhìn của người đó — không chỉ đổi cách nhóm chung
-       chung. CHỈ hiện khi Admin thật đã chọn Level AOM/SUP (spxRenderHeaderPreviewEntityPicker()
-       tự ẩn/hiện + populate đúng danh sách thật, không đoán/hiện bừa) — cùng
-       nguyên tắc admin-only đã áp dụng cho toàn bộ khung "Xem thử". -->
-  <div id="spxHeaderPreviewEntityWrap" class="spx-header-preview-level hidden">
-    <select id="spxHeaderPreviewEntitySelect" class="spx-header-preview-entity-select" onchange="spxSetPreviewEntity(this.value)">
-      <option value="">— Chọn cụ thể —</option>
-    </select>
-  </div>
-  <span class="spx-topheader-note" id="spxHeaderHubNote"></span>
-  <!-- [FIX LỖI THẬT — phát hiện qua góp ý so sánh header demo/thật] Đã bỏ chuông
-       tự xây (spx-bell-wrap) — phát hiện hệ thống thật ĐÃ CÓ SẴN chuông cảnh báo
-       tinh vi hơn hẳn (toggleAlertDrawer/alert-bell-btn, có ngữ cảnh AI, animation
-       rung chuông). [DỌN SẠCH — theo phát hiện thật qua ảnh chụp: nút mới thêm
-       (VI/EN) bị kẹt lại trong khung ops-nav CŨ vì lỡ quên thêm vào danh sách
-       JS di chuyển] Trước đây các nút này (theme/sync/cleanup/bell/đồng hồ/
-       user) được VIẾT trong 1 khung <nav class="ops-nav"> cũ tách biệt, rồi
-       DÙNG JS (appendChild) DI CHUYỂN sang đây mỗi lần tải trang — 1 lớp gián
-       tiếp không cần thiết, và là NGUYÊN NHÂN THẬT của lỗi "thêm nút mới mà
-       không hiện" (quên thêm nút đó vào danh sách di chuyển). Nay bỏ hẳn lớp
-       gián tiếp này — viết THẲNG các nút thật ngay tại đây (giữ nguyên 100%
-       id/onclick/logic gốc, chỉ đổi NƠI khai báo trong HTML), khung ops-nav
-       cũ (brand-mark trùng lặp + station-chip đã deprecated + 2 nút admin dư
-       thừa do sidebar đã có) đã XOÁ HẲN — không còn tồn tại song song 2 khung
-       header nữa, không còn nguy cơ "quên thêm vào danh sách di chuyển". -->
-  <div id="spxHeaderRealControls" style="display:flex;align-items:center;gap:8px;margin-left:auto">
-    <button onclick="toggleDarkMode()" class="ops-icon-btn" aria-label="Chuyển đổi chế độ Sáng/Tối" title="Chuyển đổi Sáng/Tối/Auto"><i id="themeIcon" class="fas fa-circle-half-stroke text-emerald-500"></i></button>
-    <div id="spx-lang-toggle" class="flex items-center rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 text-[10px] font-black" title="Đổi ngôn ngữ giao diện">
-      <button onclick="spxSetLanguage('vi')" data-lang-btn="vi" class="px-2 py-1.5 transition-colors">VI</button>
-      <button onclick="spxSetLanguage('en')" data-lang-btn="en" class="px-2 py-1.5 transition-colors">EN</button>
-    </div>
-    <button onclick="runBackgroundSync(true)" class="ops-icon-btn" aria-label="Đồng bộ dữ liệu ngay" title="Đồng bộ toàn bộ dữ liệu (tất cả các module) — Bấm để làm mới ngay"><i id="topSyncIcon" class="fas fa-check-circle text-emerald-500"></i></button>
-    <button id="spx-cleanup-btn" onclick="spxOpenCleanupModal()" class="ops-icon-btn relative" aria-label="Dọn dẹp bộ nhớ đệm" title="Dọn dẹp bộ nhớ đệm (Cache)">
-      <i class="fas fa-broom text-amber-500"></i>
-      <span id="spx-cleanup-badge-dot" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-[#0b1121]" style="pointer-events:none"></span>
-    </button>
-    <!-- [MỚI — theo yêu cầu: hướng dẫn sử dụng dạng nút "?"] Một nút DUY NHẤT
-         ở header, tự hiện đúng hướng dẫn của module ĐANG MỞ — có mặt trong mọi
-         module mà không phải chèn nút vào từng file module riêng lẻ. -->
-    <!-- [MỚI] Nút Góp ý / Báo lỗi — luôn hiện, mọi cấp người dùng. Đặt cạnh nút
-         hướng dẫn: người dùng bí chỗ nào thì ngay đó có cả trợ giúp lẫn kênh báo. -->
-    <button id="spx-feedback-btn" onclick="spxOpenFeedback()" class="ops-icon-btn" aria-label="Góp ý / Báo lỗi" title="Góp ý / Báo lỗi">
-      <i class="fas fa-comment-dots text-slate-400"></i>
-    </button>
-    <button id="spx-help-btn" onclick="spxOpenHelp()" class="ops-icon-btn relative" aria-label="Hướng dẫn sử dụng" title="Hướng dẫn sử dụng module này">
-      <i class="fas fa-circle-question text-slate-400"></i>
-    </button>
-    <button id="alert-bell-btn" onclick="toggleAlertDrawer()" class="ops-icon-btn relative" aria-label="Cảnh báo vận hành" title="Cảnh báo vận hành" style="overflow:visible">
-      <i class="fas fa-bell text-slate-400" id="alert-bell-icon"></i>
-      <span id="alert-bell-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[17px] h-[17px] px-1 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-[#0b1121] leading-none" style="z-index:10;pointer-events:none"></span>
-    </button>
-    <!-- [MỚI — "FCM foreground" theo yêu cầu trực tiếp] Bật thông báo đẩy của
-         trình duyệt — CHỈ hoạt động khi tab đang mở (Apps Script không serve
-         được Service Worker ở path cần cho lúc đã đóng tab, đã trao đổi rõ
-         giới hạn này). Mặc định ẩn — JS tự hiện đúng trạng thái phù hợp
-         (Notification.permission) lúc tải trang. -->
-    <button id="spx-fcm-enable-btn" onclick="spxEnablePushNotification()" class="ops-icon-btn hidden" aria-label="Bật thông báo đẩy" title="Bật thông báo đẩy trình duyệt (chỉ khi tab đang mở)">
-      <i class="fas fa-bell-slash text-slate-400"></i>
-    </button>
-    <div id="spx-clock-wrap" class="hidden lg:flex flex-col items-end border-l border-slate-200 dark:border-slate-700 pl-4">
-      <span id="liveTime" class="text-lg font-black text-sky-500 dark:text-sky-400 leading-none tracking-tight">00:00:00</span>
-      <span id="liveDate" class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">DD/MM/YYYY</span>
-    </div>
-    <div id="spx-userinfo-wrap" class="flex items-center gap-3 pl-3 md:pl-4 border-l border-slate-200 dark:border-slate-700">
-      <div class="flex flex-col items-end hidden sm:flex">
-        <span id="navCurrentUserDisplay" class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase"><?= typeof Session !== 'undefined' ? Session.getActiveUser().getEmail().split('@')[0] : 'ADMIN XUÂN' ?></span>
-        <span id="navCurrentUserLevel" class="text-[11px] font-bold text-slate-400 uppercase"><?= (typeof BOOTSTRAP_DATA !== 'undefined' && BOOTSTRAP_DATA && BOOTSTRAP_DATA.moduleAccess && BOOTSTRAP_DATA.moduleAccess.role && BOOTSTRAP_DATA.moduleAccess.role !== 'denied') ? (BOOTSTRAP_DATA.moduleAccess.role === 'admin' ? 'ADMIN' : BOOTSTRAP_DATA.moduleAccess.role.toUpperCase()) : 'Đang tải...' ?></span>
+  <div id="spxHeaderPreviewLevelWrap" class="spx-header-preview-level ADMIN</span>
+        <span id="navCurrentUserLevel" class="text-[11px] font-bold text-slate-400 uppercase">ADMIN</span>
       </div>
       <div class="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 relative shadow-sm">
         <i class="fas fa-user-shield"></i>
@@ -8566,11 +8479,11 @@ function spxGetOrgEntityList(field){
 <div id="view-quahan" class="hidden module-view absolute inset-0 w-full h-full flex flex-row bg-[#f4f7fb] dark:bg-[#0b1121]"></div>
 
 <div id="view-tondong" class="hidden module-view absolute inset-0 w-full h-full flex flex-col bg-[#f1f5f9] dark:bg-[#0b1121] overflow-hidden">
-  <?!= include('JS_FMS'); ?>
+  <?!= include("JS_FMS") ?>
 </div>
 
 <div id="view-pick" class="hidden module-view absolute inset-0 w-full h-full flex flex-col bg-[#f1f5f9] dark:bg-[#0b1121] z-10 overflow-hidden">
-  <?!= include('JS_Pick'); ?>
+  <?!= include("JS_Pick") ?>
 </div>
 
 <div id="view-luong" class="hidden module-view absolute inset-0 w-full h-full flex flex-col bg-[#f1f5f9] dark:bg-[#0b1121] z-10 overflow-hidden"></div>
