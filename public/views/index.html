@@ -4,6 +4,58 @@
 
 <head>
 <script>
+(function() {
+  window.google = window.google || {};
+  window.google.script = window.google.script || {};
+
+  function makeRunner(successHandler, failureHandler, userObj) {
+    return new Proxy({}, {
+      get: function(target, prop) {
+        if (prop === 'withSuccessHandler') {
+          return function(sh) { return makeRunner(sh, failureHandler, userObj); };
+        }
+        if (prop === 'withFailureHandler') {
+          return function(fh) { return makeRunner(successHandler, fh, userObj); };
+        }
+        if (prop === 'withUserObject') {
+          return function(uo) { return makeRunner(successHandler, failureHandler, uo); };
+        }
+
+        // Tự động chuyển tiếp hàm gọi sang Node.js RPC
+        return function(...args) {
+          const fn = prop;
+          fetch('/api/rpc/' + encodeURIComponent(fn), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(args)
+          })
+          .then(async function(res) {
+            if (!res.ok) {
+              const err = await res.text();
+              throw new Error('HTTP ' + res.status + ': ' + err);
+            }
+            return res.json();
+          })
+          .then(function(data) {
+            if (typeof successHandler === 'function') {
+              successHandler(data, userObj);
+            }
+          })
+          .catch(function(err) {
+            console.error('[RPC Fail]', fn, err);
+            if (typeof failureHandler === 'function') {
+              failureHandler(err, userObj);
+            }
+          });
+        };
+      }
+    });
+  }
+
+  window.google.script.run = makeRunner();
+})();
+</script>
+<script>
   window.RUNTIME_CACHE = window.RUNTIME_CACHE || {};
   window.SPX_ACCESS = window.SPX_ACCESS || {
     role: 'ADMIN',

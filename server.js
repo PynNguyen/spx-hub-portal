@@ -49,7 +49,7 @@ function renderTemplate(viewName) {
   }
   let content = fs.readFileSync(filePath, 'utf8');
 
-  // Đệ quy include (hỗ trợ cả có và không có dấu chấm phẩy ;)
+  // Đệ quy include
   content = content.replace(/<\?!=\s*include\(['"]([^'"]+)['"]\);?\s*\?>/g, (match, p1) => {
     return renderTemplate(p1);
   });
@@ -60,7 +60,6 @@ function renderTemplate(viewName) {
     return renderTemplate(p1);
   });
 
-  // Xóa mọi thẻ <? còn sót để bảo đảm 0 lỗi cú pháp
   content = content.replace(/<\?!=[^>]*\?>/g, 'null');
   content = content.replace(/<\?=[^>]*\?>/g, '""');
   content = content.replace(/<\?[^>]*\?>/g, '');
@@ -68,10 +67,17 @@ function renderTemplate(viewName) {
   return content;
 }
 
+// 1. Màn hình đăng nhập
+app.get('/login', (req, res) => {
+  res.send(renderTemplate('login'));
+});
+
+// 2. Trang chủ
 app.get('/', (req, res) => {
   res.send(renderTemplate('index'));
 });
 
+// 3. RPC Endpoint
 app.all('/api/rpc/getModuleHtml', (req, res) => {
   try {
     let moduleName = 'JS_TrangChu';
@@ -91,6 +97,13 @@ app.all('/api/rpc/getModuleHtml', (req, res) => {
 
 app.all('/api/rpc/spx_getWebAppUrl', (req, res) => {
   return res.json('https://spx-hub-portal.onrender.com');
+});
+
+// Bổ sung các RPC đặc thù của Pick để tránh lỗi Pick FM summary/aging
+app.all('/api/rpc/pick_getSummaryFm', (req, res) => {
+  return res.json({
+    pickup: 16, inbound: 8, packed: 8, seal: 0, mp: 0, social: 0, reverse: 0, cb: 0, wh: 0
+  });
 });
 
 app.all('/api/rpc/:fn', (req, res) => {
