@@ -125,7 +125,58 @@ class GasRuntime {
       _anaAcquireNamedLock: () => true,
       _anaReleaseNamedLock: () => true,
       console,
-      Logger: console,
+      Logger: {
+        log: (...args) => console.log('[GAS Logger]', ...args),
+        clear: () => {},
+        getLog: () => ''
+      },
+      checkUserAccess: () => true,
+      ScriptApp: {
+        getService: () => ({
+          getUrl: () => 'https://spx-hub-portal.onrender.com'
+        }),
+        newTrigger: () => ({
+          timeBased: () => ({
+            everyHours: () => ({ create: () => {} }),
+            everyDays: () => ({ atHour: () => ({ create: () => {} }) })
+          })
+        }),
+        deleteTrigger: () => {}
+      },
+      HtmlService: {
+        createTemplateFromFile: (name) => ({
+          evaluate: () => ({
+            getContent: () => {
+              try {
+                const viewsDir = require('path').join(__dirname, '../public/views');
+                const fn = name.endsWith('.html') ? name : name + '.html';
+                let c = require('fs').readFileSync(require('path').join(viewsDir, fn), 'utf8');
+                return c.replace(/<\?!=\s*include\(['"]([^'"]+)['"]\)\s*\?>/g, (_, inc) => {
+                  try {
+                    const ifn = inc.endsWith('.html') ? inc : inc + '.html';
+                    return require('fs').readFileSync(require('path').join(viewsDir, ifn), 'utf8');
+                  } catch(e) { return ''; }
+                });
+              } catch(e) { return ''; }
+            }
+          })
+        }),
+        createHtmlOutputFromFile: (name) => ({
+          getContent: () => {
+            try {
+              const viewsDir = require('path').join(__dirname, '../public/views');
+              const fn = name.endsWith('.html') ? name : name + '.html';
+              return require('fs').readFileSync(require('path').join(viewsDir, fn), 'utf8');
+            } catch(e) { return ''; }
+          }
+        }),
+        createHtmlOutput: (html) => ({
+          getContent: () => html,
+          setTitle: () => {},
+          addMetaTag: () => {},
+          setXFrameOptionsMode: () => {}
+        })
+      },
       checkUserAccess: () => true,
       include: (name) => { try { return require('fs').readFileSync(require('path').join(__dirname, '../public/views/' + name + '.html'), 'utf8'); } catch(e){ return ''; } },
       Date,
