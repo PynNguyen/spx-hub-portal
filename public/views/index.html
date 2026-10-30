@@ -3,9 +3,9 @@
 <html lang="vi">
 
 <head>
-<style id="spx-fix-hidden-clash">
+<style>
   .hidden { display: none !important; }
-  [id^="view-"].hidden { display: none !important; visibility: hidden !important; }
+  [id^="view-"].hidden { display: none !important; }
 </style>
 <script>
   window.RUNTIME_CACHE = window.RUNTIME_CACHE || {};
@@ -24,12 +24,12 @@
   window.google = window.google || {};
   window.google.script = window.google.script || {};
   window.google.script.run = (function() {
-    function makeRunner(sh, fh, uo) {
+    function makeProxy(sh, fh, uo) {
       return new Proxy({}, {
         get: function(target, prop) {
-          if (prop === 'withSuccessHandler') return function(s) { return makeRunner(s, fh, uo); };
-          if (prop === 'withFailureHandler') return function(f) { return makeRunner(sh, f, uo); };
-          if (prop === 'withUserObject') return function(u) { return makeRunner(sh, fh, u); };
+          if (prop === 'withSuccessHandler') return function(s) { return makeProxy(s, fh, uo); };
+          if (prop === 'withFailureHandler') return function(f) { return makeProxy(sh, f, uo); };
+          if (prop === 'withUserObject') return function(u) { return makeProxy(sh, fh, u); };
           return function(...args) {
             fetch('/api/rpc/' + encodeURIComponent(prop), {
               method: 'POST',
@@ -41,6 +41,10 @@
               return res.json();
             })
             .then(function(data) {
+              // Tự động phân giải nếu backend trả về JSON string
+              if (typeof data === 'string' && (data.startsWith('{') || data.startsWith('['))) {
+                try { data = JSON.parse(data); } catch(e) {}
+              }
               if (typeof sh === 'function') sh(data, uo);
             })
             .catch(function(err) {
@@ -50,7 +54,7 @@
         }
       });
     }
-    return makeRunner();
+    return makeProxy();
   })();
 </script>
 

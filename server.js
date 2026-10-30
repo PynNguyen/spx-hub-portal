@@ -72,11 +72,9 @@ function renderTemplate(viewName, visited = new Set()) {
   return content;
 }
 
-// 1. Phục vụ giao diện gốc
 app.get('/login', (req, res) => res.send(renderTemplate('login')));
 app.get('/', (req, res) => res.send(renderTemplate('index')));
 
-// 2. RPC Endpoints cho code gốc
 app.all('/api/rpc/getModuleHtml', (req, res) => {
   try {
     let moduleName = 'JS_TrangChu';
@@ -93,6 +91,7 @@ app.all('/api/rpc/getModuleHtml', (req, res) => {
 app.all('/api/rpc/spx_getHeartbeat', (req, res) => res.json({ status: 'OK' }));
 app.all('/api/rpc/spx_getWebAppUrl', (req, res) => res.json('https://spx-hub-portal.onrender.com'));
 
+// Gọi trực tiếp vào động cơ .gs gốc
 app.all('/api/rpc/:fn', (req, res) => {
   const fn = req.params.fn;
   let args = Array.isArray(req.body) ? req.body : (req.body && typeof req.body === 'object' ? Object.values(req.body) : []);
@@ -101,16 +100,19 @@ app.all('/api/rpc/:fn', (req, res) => {
     if (fn === 'spx_getHeartbeat') return res.json({ status: 'OK' });
     if (fn === 'spx_getWebAppUrl') return res.json('https://spx-hub-portal.onrender.com');
 
-    const result = gas.call(fn, args);
+    let result = gas.call(fn, args);
+
+    // GIẢI PHÁP CHỐNG DOUBLE-ENCODING: Nếu hàm gốc trả về chuỗi JSON string, parse ra object để gửi đúng JSON
+    if (typeof result === 'string' && (result.startsWith('{') || result.startsWith('['))) {
+      try {
+        result = JSON.parse(result);
+      } catch (e) {}
+    }
+
     return res.json(result);
   } catch (err) {
     return res.json({ success: false, error: err.message });
   }
 });
 
-// Chặn mọi request /api/* không tìm thấy để không bao giờ trả về HTML (tránh lỗi Unexpected token '<')
-app.all('/api/*', (req, res) => {
-  res.status(200).json({ success: true, data: [] });
-});
-
-app.listen(PORT, () => console.log(`🚀 Portal gốc nguyên bản đang chạy tại http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Standalone Portal đang chạy tại http://localhost:${PORT}`));
