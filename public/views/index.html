@@ -17577,6 +17577,160 @@ function toggleAlertDrawerSize() {
   });
 </script>
 
+
+<script>
+(function() {
+  console.log('[Router] Khởi động bộ chuyển đổi Module chuyên dụng SPX...');
+
+  // 1. Tạo vùng chứa động cho các module nếu chưa có
+  var mainContentArea = document.querySelector('main, #main-content, .main-content, #app, .content-wrapper') || document.body;
+  
+  // Tạo container riêng cho từng module
+  var dynamicContainer = document.getElementById('spx-dynamic-module-container');
+  if (!dynamicContainer) {
+    dynamicContainer = document.createElement('div');
+    dynamicContainer = document.createElement('div');
+    dynamicContainer.id = 'spx-dynamic-module-container';
+    dynamicContainer.style.width = '100%';
+    dynamicContainer.style.minHeight = '600px';
+    dynamicContainer.style.display = 'none';
+    if (mainContentArea) {
+      mainContentArea.appendChild(dynamicContainer);
+    }
+  }
+
+  // 2. Tìm khối giao diện Pick tĩnh đang nằm đè màn hình
+  function getPickStaticElement() {
+    var allDivs = document.querySelectorAll('div, section');
+    for (var i = 0; i < allDivs.length; i++) {
+      var d = allDivs[i];
+      if (d.innerHTML && d.innerHTML.indexOf('NẠP FILE TASK') !== -1 && d.innerHTML.indexOf('NẠP FILE ASSIGN') !== -1) {
+        // Tìm thẻ cha bao trùm bảng Pick
+        var parent = d;
+        while (parent && parent.parentElement && parent.parentElement !== document.body && parent.parentElement.tagName !== 'MAIN') {
+          if (parent.classList.contains('sidebar') || parent.id === 'sidebar') break;
+          parent = parent.parentElement;
+        }
+        return parent;
+      }
+    }
+    return null;
+  }
+
+  var pickWrapper = getPickStaticElement();
+  if (pickWrapper) {
+    pickWrapper.id = 'spx-pick-static-view';
+    console.log('[Router] Đã định danh thành công vùng chứa module Pick:', pickWrapper);
+  }
+
+  // 3. Hàm kích hoạt chuyển Module chính thức
+  window.spxSwitchTab = function(moduleName) {
+    console.log('🔄 Đang chuyển sang module:', moduleName);
+    var pickView = document.getElementById('spx-pick-static-view') || getPickStaticElement();
+    var dynContainer = document.getElementById('spx-dynamic-module-container');
+
+    // Cập nhật trạng thái active trên sidebar
+    document.querySelectorAll('.sidebar a, .sidebar li, [data-module]').forEach(function(el) {
+      el.classList.remove('active', 'bg-blue-600', 'bg-orange-600');
+    });
+
+    if (moduleName === 'JS_Pick' || moduleName === 'pick') {
+      // Hiện Pick, ẩn container động
+      if (pickView) pickView.style.display = 'block';
+      if (dynContainer) dynContainer.style.display = 'none';
+      return;
+    }
+
+    // Với TẤT CẢ các module khác: BẮT BUỘC ẨN PICK
+    if (pickView) {
+      pickView.style.display = 'none';
+    }
+
+    if (dynContainer) {
+      dynContainer.style.display = 'block';
+      dynContainer.innerHTML = '<div style="padding: 60px; text-align: center; color: #94a3b8; font-size: 16px;"><i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #ee4d2d; margin-bottom: 16px;"></i><br>Đang nạp dữ liệu module ' + moduleName + '...</div>';
+
+      // Gọi server lấy nội dung module
+      fetch('/api/rpc/getModuleHtml', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify([moduleName])
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(html) {
+        dynContainer.innerHTML = html;
+        console.log('✅ Đã nạp xong giao diện module:', moduleName);
+
+        // Kích hoạt các script nội bộ bên trong module vừa nạp
+        var scripts = dynContainer.querySelectorAll('script');
+        scripts.forEach(function(s) {
+          try {
+            var newScript = document.createElement('script');
+            if (s.src) {
+              newScript.src = s.src;
+            } else {
+              newScript.textContent = s.textContent;
+            }
+            document.body.appendChild(newScript);
+          } catch(e) {
+            console.error('Lỗi thực thi script module:', e);
+          }
+        });
+      })
+      .catch(function(err) {
+        dynContainer.innerHTML = '<div style="color: red; padding: 20px;">Lỗi kết nối module: ' + err.message + '</div>';
+      });
+    }
+  };
+
+  // 4. Gắn sự kiện click cho toàn bộ các mục trên Sidebar
+  function bindSidebarEvents() {
+    var mapping = [
+      { text: 'Tổng quan', mod: 'JS_TrangChu' },
+      { text: 'Đơn không đạt KPI', mod: 'JS_KPIFail' },
+      { text: 'Kiểm soát giao hàng', mod: 'JS_Quahan' },
+      { text: 'Quản lý Pick', mod: 'JS_Pick' },
+      { text: 'Tồn đọng LastMile', mod: 'JS_FMS' },
+      { text: 'Đơn cần cứu cứu', mod: 'JS_Rescue' },
+      { text: 'Phòng ngừa thất lạc', mod: 'JS_Rescue' },
+      { text: 'Kế hoạch Rider', mod: 'JS_RiderPlan' },
+      { text: 'Hiệu suất Rider', mod: 'JS_RiderPlan' },
+      { text: 'Vi phạm', mod: 'JS_ViPham' },
+      { text: 'Hiệu quả chi phí', mod: 'JS_Luong' },
+      { text: 'Báo cáo (BI)', mod: 'JS_BI' },
+      { text: 'Tra cứu', mod: 'JS_TraCuu' },
+      { text: 'Tài liệu', mod: 'JS_TaiLieu' }
+    ];
+
+    document.querySelectorAll('a, li, button, div').forEach(function(el) {
+      if (el.children.length > 2) return; // Bỏ qua thẻ cha lớn
+      var txt = (el.innerText || '').trim();
+      mapping.forEach(function(item) {
+        if (txt === item.text || (txt.indexOf(item.text) !== -1 && txt.length < item.text.length + 5)) {
+          el.style.cursor = 'pointer';
+          el.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            window.spxSwitchTab(item.mod);
+          };
+        }
+      });
+    });
+  }
+
+  // Khởi chạy khi tài nguyên sẵn sàng
+  window.addEventListener('DOMContentLoaded', bindSidebarEvents);
+  setTimeout(bindSidebarEvents, 500);
+  setTimeout(bindSidebarEvents, 1500);
+
+  // Mặc định ban đầu: Chuyển về Tổng quan nếu URL không chỉ định
+  setTimeout(function() {
+    window.spxSwitchTab('JS_TrangChu');
+  }, 300);
+
+})();
+</script>
+
 </body>
 
 </html>
