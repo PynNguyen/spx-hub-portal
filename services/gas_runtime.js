@@ -125,6 +125,9 @@ class GasRuntime {
       _anaAcquireNamedLock: () => true,
       _anaReleaseNamedLock: () => true,
       console,
+      Logger: console,
+      checkUserAccess: () => true,
+      include: (name) => { try { return require('fs').readFileSync(require('path').join(__dirname, '../public/views/' + name + '.html'), 'utf8'); } catch(e){ return ''; } },
       Date,
       Math,
       JSON,
@@ -151,6 +154,12 @@ class GasRuntime {
       } catch (e) { this.sheetTables = {}; }
     }
     const clean = String(name || '').trim();
+        if (sName.includes('summary fm')) {
+      return [['pickup', 'inbound', 'packed', 'seal', 'mp', 'social', 'reverse', 'cb', 'wh']];
+    }
+    if (sName.includes('high aging')) {
+      return [['id', 'station', 'action', 'risk']];
+    }
     for (const [k, rows] of Object.entries(this.sheetTables)) {
       if (k.toLowerCase() === clean.toLowerCase() || clean.toLowerCase().includes(k.toLowerCase())) {
         return rows;

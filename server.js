@@ -38,9 +38,15 @@ function renderTemplate(viewName) {
 app.get(['/', '/index.html'], (req, res) => {
   let html = renderTemplate('index');
   // Đảm bảo có cầu nối spx_rpc_bridge
-  if (!html.includes('spx_rpc_bridge.js')) {
-    html = html.replace('</head>', '<script src="/js/spx_rpc_bridge.js"></script></head>');
-  }
+  const runtimeInit = `
+    <script>
+      var RUNTIME_CACHE = {};
+      var SPX_ACCESS = { role: 'admin', level: 'L4', levelCode: 'admin', levelNum: 5, email: 'xuan.nguyenthanh01@spxexpress.com', hubs: ['ALL'] };
+      var SPX_CURRENT_USER = { email: 'xuan.nguyenthanh01@spxexpress.com', role: 'admin' };
+    </script>
+    <script src="/js/spx_rpc_bridge.js"></script>
+  `;
+  html = html.replace('</head>', runtimeInit + '</head>');
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.send(html);
 });
@@ -49,6 +55,16 @@ app.get(['/', '/index.html'], (req, res) => {
 app.post('/api/rpc/:func', async (req, res) => {
   const funcName = req.params.func;
   const payload = req.body.params || [];
+
+  if (funcName === 'spx_getWebAppUrl') {
+    return res.send('https://spx-hub-portal.onrender.com');
+  }
+
+  if (funcName === 'getModuleHtml') {
+    const mod = payload[0];
+    const modHtml = renderTemplate(mod);
+    return res.send(modHtml);
+  }
   try {
     const result = gas.call(funcName, payload);
     if (result !== null && result !== undefined) {
