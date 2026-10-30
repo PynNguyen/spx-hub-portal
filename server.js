@@ -10,20 +10,46 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Hàm đọc và render template HTML có chứa cú pháp include của Google Apps Script
-function renderTemplate(viewName) {
-  const viewsDir = path.join(__dirname, 'public/views');
-  let target = String(viewName || 'index').trim();
-  if (!target.endsWith('.html')) target += '.html';
-  const filePath = path.join(viewsDir, target);
+const MODULE_ALIASES = {
+  'js_riderplan': 'JS_Rider_plan.html',
+  'js_rescue': 'JS_DonCauCuu.html',
+  'js_admin': 'JS_AdminZone.html',
+  'js_bi': 'Analytics_Block.html',
+  'js_tracuu': 'JS_Tracuu.html',
+  'js_tailieu': 'JS_Tailieu.html'
+};
 
-  if (!fs.existsSync(filePath)) {
-    console.warn(`[renderTemplate] Không tìm thấy file: ${filePath}`);
+function findViewFile(viewName) {
+  const viewsDir = path.join(__dirname, 'public/views');
+  let clean = String(viewName || 'index').trim();
+  if (clean.toLowerCase().endsWith('.html')) clean = clean.slice(0, -5);
+
+  const lower = clean.toLowerCase();
+  let targetFile = MODULE_ALIASES[lower] || (clean + '.html');
+
+  let fullPath = path.join(viewsDir, targetFile);
+  if (fs.existsSync(fullPath)) return fullPath;
+
+  try {
+    const files = fs.readdirSync(viewsDir);
+    const match = files.find(f => f.toLowerCase() === targetFile.toLowerCase());
+    if (match) return path.join(viewsDir, match);
+    const matchRaw = files.find(f => f.toLowerCase() === (clean + '.html').toLowerCase());
+    if (matchRaw) return path.join(viewsDir, matchRaw);
+  } catch (e) {}
+
+  return null;
+}
+
+function renderTemplate(viewName) {
+  const filePath = findViewFile(viewName);
+  if (!filePath || !fs.existsSync(filePath)) {
+    console.warn(`[renderTemplate] Không tìm thấy file: ${viewName}`);
     return `<div style="color:red;padding:20px;font-weight:bold">Module không tồn tại: ${viewName}</div>`;
   }
   let content = fs.readFileSync(filePath, 'utf8');
 
-  // Đệ quy biên dịch thẻ <?!= include('...') ?> và <? include('...') ?>
+  // Đệ quy biên dịch thẻ include
   content = content.replace(/<\?!=\s*include\(['"]([^'"]+)['"]\)\s*\?>/g, (match, p1) => {
     return renderTemplate(p1);
   });
@@ -37,7 +63,7 @@ function renderTemplate(viewName) {
   return content;
 }
 
-// 1. Phục vụ trang chủ index.html
+// 1. Trang chủ index.html
 app.get('/', (req, res) => {
   let html = renderTemplate('index');
 
@@ -72,7 +98,7 @@ app.get('/', (req, res) => {
   res.send(html);
 });
 
-// 2. Endpoint chuyên biệt: getModuleHtml (tải module UI khi click sidebar)
+// 2. RPC getModuleHtml - phục vụ tức thì 100% module
 app.all('/api/rpc/getModuleHtml', (req, res) => {
   try {
     let moduleName = 'JS_TrangChu';
@@ -84,7 +110,7 @@ app.all('/api/rpc/getModuleHtml', (req, res) => {
       moduleName = req.query.module;
     }
     moduleName = String(moduleName || 'JS_TrangChu').trim();
-    console.log(`[RPC getModuleHtml] Tải module: ${moduleName}`);
+    console.log(`[RPC getModuleHtml] Nạp module: ${moduleName}`);
     const html = renderTemplate(moduleName);
     return res.json(html);
   } catch (err) {
@@ -93,12 +119,12 @@ app.all('/api/rpc/getModuleHtml', (req, res) => {
   }
 });
 
-// 3. Endpoint chuyên biệt: spx_getWebAppUrl
+// 3. RPC spx_getWebAppUrl
 app.all('/api/rpc/spx_getWebAppUrl', (req, res) => {
   return res.json('https://spx-hub-portal.onrender.com');
 });
 
-// 4. Router tổng hợp tất cả RPC gọi vào hàm nghiệp vụ Google Apps Script
+// 4. RPC thực thi logic Google Apps Script gốc
 app.all('/api/rpc/:fn', (req, res) => {
   const fn = req.params.fn;
   let args = [];
@@ -118,7 +144,6 @@ app.all('/api/rpc/:fn', (req, res) => {
       return res.json('https://spx-hub-portal.onrender.com');
     }
 
-    // Thực thi trực tiếp hàm Google Apps Script gốc
     const result = gas.call(fn, args);
     return res.json(result);
   } catch (err) {
@@ -127,16 +152,15 @@ app.all('/api/rpc/:fn', (req, res) => {
   }
 });
 
-// Chuyển hướng các đường dẫn view sang template tương ứng
 app.get('/:view', (req, res, next) => {
   const view = req.params.view;
-  const filePath = path.join(__dirname, 'public/views', view + '.html');
-  if (fs.existsSync(filePath)) {
+  const filePath = findViewFile(view);
+  if (filePath && fs.existsSync(filePath)) {
     return res.send(renderTemplate(view));
   }
   next();
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Standalone Portal đang chạy tại http://localhost:${PORT}`);
+  console.log(`🚀 Standalone Portal chạy tại cổng ${PORT}`);
 });
