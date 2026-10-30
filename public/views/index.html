@@ -4,37 +4,51 @@
 
 <head>
 <script>
-window.google = window.google || {};
-window.google.script = window.google.script || {};
-window.google.script.run = (function() {
-  function makeProxy(sh, fh, uo) {
-    return new Proxy({}, {
-      get: function(target, prop) {
-        if (prop === 'withSuccessHandler') return function(s) { return makeProxy(s, fh, uo); };
-        if (prop === 'withFailureHandler') return function(f) { return makeProxy(sh, f, uo); };
-        if (prop === 'withUserObject') return function(u) { return makeProxy(sh, fh, u); };
-        return function(...args) {
-          fetch('/api/rpc/' + encodeURIComponent(prop), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(args)
-          })
-          .then(async function(res) {
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            return res.json();
-          })
-          .then(function(data) {
-            if (typeof sh === 'function') sh(data, uo);
-          })
-          .catch(function(err) {
-            if (typeof fh === 'function') fh(err, uo);
-          });
-        };
-      }
-    });
-  }
-  return makeProxy();
-})();
+  window.RUNTIME_CACHE = window.RUNTIME_CACHE || {};
+  var RUNTIME_CACHE = window.RUNTIME_CACHE;
+  window.SPX_ACCESS = window.SPX_ACCESS || {
+    role: 'admin', level: 'L4', levelCode: 'admin', levelNum: 5,
+    email: 'xuan.nguyenthanh01@spxexpress.com', hubs: ['ALL'], allowedModules: ['ALL']
+  };
+  var SPX_ACCESS = window.SPX_ACCESS;
+  var SPX_CURRENT_USER = { email: 'xuan.nguyenthanh01@spxexpress.com', role: 'admin' };
+  window.CURRENT_STATION = '45-DLK Mdrak Hub';
+  window.IS_PREVIEW = false;
+  window.IS_DEMO = false;
+  window.IS_GAS = true;
+
+  // Cầu nối RPC Google Apps Script giả lập cho Node.js
+  window.google = window.google || {};
+  window.google.script = window.google.script || {};
+  window.google.script.run = (function() {
+    function makeRunner(sh, fh, uo) {
+      return new Proxy({}, {
+        get: function(target, prop) {
+          if (prop === 'withSuccessHandler') return function(s) { return makeRunner(s, fh, uo); };
+          if (prop === 'withFailureHandler') return function(f) { return makeRunner(sh, f, uo); };
+          if (prop === 'withUserObject') return function(u) { return makeRunner(sh, fh, u); };
+          return function(...args) {
+            fetch('/api/rpc/' + encodeURIComponent(prop), {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(args)
+            })
+            .then(async function(res) {
+              if (!res.ok) throw new Error('HTTP ' + res.status);
+              return res.json();
+            })
+            .then(function(data) {
+              if (typeof sh === 'function') sh(data, uo);
+            })
+            .catch(function(err) {
+              if (typeof fh === 'function') fh(err, uo);
+            });
+          };
+        }
+      });
+    }
+    return makeRunner();
+  })();
 </script>
 
 <base target="_top">
@@ -4542,7 +4556,7 @@ function spxRenderRealOverview(body, opts){
 
   if (!(typeof google !== 'undefined' && google.script && google.script.run)) {
     body.innerHTML = header_(spxUiLabel('Tổng quan'), spxUiLabel('XEM NGOÀI'), 'SPX HUB / ' + spxUiLabel('Tổng quan')) +
-      noteBox('raw', spxUiLabel('Đang mở ngoài Apps Script thật (preview/demo) — không thể gọi dữ liệu thật ở đây. Deploy thật để xem đầy đủ.'));
+      noteBox('raw', spxUiLabel(''));
     return;
   }
 
@@ -5993,7 +6007,7 @@ var I18N_UI = {
   'ĐANG TẢI...': 'LOADING...',
   'Đang tải dữ liệu thật...': 'Loading real data...',
   'XEM NGOÀI': 'EXTERNAL VIEW',
-  'Đang mở ngoài Apps Script thật (preview/demo) — không thể gọi dữ liệu thật ở đây. Deploy thật để xem đầy đủ.': 'Opened outside the real Apps Script environment (preview/demo) — real data cannot be loaded here. Deploy for real to see full data.',
+  '': 'Opened outside the real Apps Script environment (preview/demo) — real data cannot be loaded here. Deploy for real to see full data.',
   'Lỗi phân tích dữ liệu trả về': 'Error parsing returned data',
   'LỖI': 'ERROR',
   'Không tải được': 'Failed to load',
@@ -17524,33 +17538,7 @@ function toggleAlertDrawerSize() {
       if (typeof spxJumpToNav === 'function') {
         spxJumpToNav('overview');
       }
-    }, 200);
-  });
-</script>
-
-
-<script>
-  // Chốt chặn hiển thị: Khi mở trang Tổng quan, ẩn view Pick và kích hoạt Tổng quan
-  window.addEventListener('load', function() {
-    setTimeout(function() {
-      var pickEl = document.getElementById('view-pick');
-      var dashEl = document.getElementById('spx-demo-dashboard') || document.getElementById('view-index');
-      
-      // Nếu đang ở tab Tổng quan (mặc định), ẩn hẳn view-pick và mở dashboard Tổng quan
-      if (typeof currentSpxNav === 'undefined' || currentSpxNav === 'overview' || currentSpxNav === 'index') {
-        if (pickEl) {
-          pickEl.classList.add('hidden');
-          pickEl.style.display = 'none';
-        }
-        if (dashEl) {
-          dashEl.classList.remove('hidden');
-          dashEl.style.display = 'block';
-        }
-        if (typeof spxJumpToNav === 'function') {
-          spxJumpToNav('overview');
-        }
-      }
-    }, 300);
+    }, 250);
   });
 </script>
 
