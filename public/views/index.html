@@ -17560,6 +17560,23 @@ function toggleAlertDrawerSize() {
 })();
 </script>
 
+
+<script>
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      // Tìm và bấm vào menu Tổng quan nếu đang bị kẹt ở Pick
+      var navOverview = document.querySelector('[data-module="JS_TrangChu"], [onclick*="JS_TrangChu"], [onclick*="trangchu"], a[href*="tongquan"]');
+      if (navOverview) {
+        navOverview.click();
+      } else if (typeof navTo === 'function') {
+        navTo('JS_TrangChu');
+      } else if (typeof switchModule === 'function') {
+        switchModule('JS_TrangChu');
+      }
+    }, 300);
+  });
+</script>
+
 </body>
 
 </html>
