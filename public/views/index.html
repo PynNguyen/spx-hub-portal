@@ -17528,6 +17528,32 @@ function toggleAlertDrawerSize() {
   });
 </script>
 
+
+<script>
+  // Chốt chặn hiển thị: Khi mở trang Tổng quan, ẩn view Pick và kích hoạt Tổng quan
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      var pickEl = document.getElementById('view-pick');
+      var dashEl = document.getElementById('spx-demo-dashboard') || document.getElementById('view-index');
+      
+      // Nếu đang ở tab Tổng quan (mặc định), ẩn hẳn view-pick và mở dashboard Tổng quan
+      if (typeof currentSpxNav === 'undefined' || currentSpxNav === 'overview' || currentSpxNav === 'index') {
+        if (pickEl) {
+          pickEl.classList.add('hidden');
+          pickEl.style.display = 'none';
+        }
+        if (dashEl) {
+          dashEl.classList.remove('hidden');
+          dashEl.style.display = 'block';
+        }
+        if (typeof spxJumpToNav === 'function') {
+          spxJumpToNav('overview');
+        }
+      }
+    }, 300);
+  });
+</script>
+
 </body>
 
 </html>
