@@ -54,7 +54,7 @@ function renderTemplate(viewName, visited = new Set()) {
   }
   let content = fs.readFileSync(filePath, 'utf8');
 
-  // Đệ quy include chuẩn
+  // Đệ quy include
   content = content.replace(/<\?!=\s*include\(['"]([^'"]+)['"]\);?\s*\?>/g, (match, p1) => {
     return renderTemplate(p1, new Set(visited));
   });
@@ -72,9 +72,11 @@ function renderTemplate(viewName, visited = new Set()) {
   return content;
 }
 
+// 1. Phục vụ giao diện gốc
 app.get('/login', (req, res) => res.send(renderTemplate('login')));
 app.get('/', (req, res) => res.send(renderTemplate('index')));
 
+// 2. RPC Endpoints cho code gốc
 app.all('/api/rpc/getModuleHtml', (req, res) => {
   try {
     let moduleName = 'JS_TrangChu';
@@ -91,7 +93,6 @@ app.all('/api/rpc/getModuleHtml', (req, res) => {
 app.all('/api/rpc/spx_getHeartbeat', (req, res) => res.json({ status: 'OK' }));
 app.all('/api/rpc/spx_getWebAppUrl', (req, res) => res.json('https://spx-hub-portal.onrender.com'));
 
-// Gọi trực tiếp 12 file .gs gốc để tính toán
 app.all('/api/rpc/:fn', (req, res) => {
   const fn = req.params.fn;
   let args = Array.isArray(req.body) ? req.body : (req.body && typeof req.body === 'object' ? Object.values(req.body) : []);
@@ -105,6 +106,11 @@ app.all('/api/rpc/:fn', (req, res) => {
   } catch (err) {
     return res.json({ success: false, error: err.message });
   }
+});
+
+// Chặn mọi request /api/* không tìm thấy để không bao giờ trả về HTML (tránh lỗi Unexpected token '<')
+app.all('/api/*', (req, res) => {
+  res.status(200).json({ success: true, data: [] });
 });
 
 app.listen(PORT, () => console.log(`🚀 Portal gốc nguyên bản đang chạy tại http://localhost:${PORT}`));

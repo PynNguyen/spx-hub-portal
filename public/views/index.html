@@ -17,7 +17,6 @@
   window.IS_DEMO = false;
   window.IS_GAS = true;
 
-  // Cầu nối RPC Google Apps Script giả lập cho Node.js
   window.google = window.google || {};
   window.google.script = window.google.script || {};
   window.google.script.run = (function() {
@@ -17529,17 +17528,6 @@ function toggleAlertDrawerSize() {
   if (document.readyState === 'complete') _scheduleAutoClean();
   else window.addEventListener('load', _scheduleAutoClean);
 })();
-</script>
-
-
-<script>
-  window.addEventListener('load', function() {
-    setTimeout(function() {
-      if (typeof spxJumpToNav === 'function') {
-        spxJumpToNav('overview');
-      }
-    }, 250);
-  });
 </script>
 
 </body>
